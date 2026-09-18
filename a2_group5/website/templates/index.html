@@ -1,0 +1,797 @@
+{# Homepage (route main.index). Ported from A1: the filters, search and event cards
+   are hardcoded HTML, not database data. Every card's data-href points at the
+   placeholder event page; the jQuery in the scripts block makes cards clickable. #}
+{% extends "base_epicurean.html" %}
+
+{% block title %}Epicurean{% endblock %}
+{% block description %}Epicurean Home Page{% endblock %}
+
+{% block content %}
+
+
+    <!-- ==== Hero banner ============================== -->
+    <div class="jumbotron jumbotron-fluid p-0">
+        <img src="{{ url_for('static', filename='img/homepage_feast.jpg') }}" class="img-fluid w-100"
+            alt="A long table of shared dishes at an Epicurean event">
+    </div>
+
+
+    <div class="container-fluid">
+
+        <!-- ==== Filters ============================== -->
+        <!-- defaults to "None"  -->
+        <div class="row event-section-px py-1">
+            <div class="col-12 col-sm-4 mb-2 mb-sm-0">
+                <label for="selectDietary" class="event-filter-label">Dietary Preference</label>
+                <select class="form-control" id="selectDietary">
+                    <option selected>None</option>
+                    <option>Gluten-Free</option>
+                    <option>Halal</option>
+                    <option>Keto Friendly</option>
+                    <option>Kosher</option>
+                    <option>Low Carb</option>
+                    <option>Paleo</option>
+                    <option>Vegan</option>
+                    <option>Vegetarian</option>
+                </select>
+            </div>
+            <div class="col-12 col-sm-4 mb-2 mb-sm-0">
+                <label for="selectSeasonal" class="event-filter-label">Seasonal / Cultural Options</label>
+                <select class="form-control" id="selectSeasonal">
+                    <option selected>None</option>
+                    <option>Spring Flavours</option>
+                    <option>Summer BBQ</option>
+                    <option>Autumn Harvest</option>
+                    <option>Winter Comforts</option>
+                    <option>Cultural</option>
+                    <option>Holidays</option>
+                </select>
+            </div>
+            <div class="col-12 col-sm-4 mb-2 mb-sm-0">
+                <label for="selectProficiency" class="event-filter-label">Proficiency Filter</label>
+                <select class="form-control" id="selectProficiency">
+                    <option selected>None</option>
+                    <option>Beginner</option>
+                    <option>Intermediate</option>
+                    <option>Expert</option>
+                    <option>Foodie</option>
+                    <option>Chef</option>
+                    <option>Family Friendly</option>
+                </select>
+            </div>
+        </div>
+
+
+        <!-- ==== Event sections ============================== -->
+        <h2 class="event-section-px event-heading mt-0">Popular</h2>
+        <div class="row event-section-px py-3">
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/cinco-de-mayo_event.jpg') }}" class="card-img-top event-card-img" alt="Cinco De Mayo Fiesta">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Cinco De Mayo Fiesta</h5>
+                        <p class="event-card-date mb-0">Sat 2 May at 12:00 PM</p>
+                        <p class="event-card-location mb-2">Fiesta Square, Riverside Markets</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $35.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 412 likes</p>
+                            </div>
+                            <span class="event-status event-status--sold-out event-status--sm mb-0">Sold Out</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/oktoberfest_event.jpg') }}" class="card-img-top event-card-img" alt="Oktoberfest">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Oktoberfest</h5>
+                        <p class="event-card-date mb-0">Fri 25 Sep at 6:00 PM</p>
+                        <p class="event-card-location mb-2">The Beer Hall, Warehouse District</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $29.99</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 356 likes</p>
+                            </div>
+                            <span class="event-status event-status--available event-status--sm mb-0">Open</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/underwater_event.jpg') }}" class="card-img-top event-card-img" alt="Underwater Dining Experience">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Underwater Dining Experience</h5>
+                        <p class="event-card-date mb-0">Sat 14 Nov at 7:00 PM</p>
+                        <p class="event-card-location mb-2">The Reef Room, Marina Point</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $250.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 289 likes</p>
+                            </div>
+                            <span class="event-status event-status--sold-out event-status--sm mb-0">Sold Out</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/vegan-vinyard_event.jpg') }}" class="card-img-top event-card-img" alt="Vineyard Vegan Picnic">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Vineyard Vegan Picnic</h5>
+                        <p class="event-card-date mb-0">Sun 8 Feb at 12:30 PM</p>
+                        <p class="event-card-location mb-2">Hillside Vineyard, Valley Road</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $75.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 178 likes</p>
+                            </div>
+                            <span class="event-status event-status--cancelled event-status--sm mb-0">Cancelled</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/truffle-hunt_event.jpg') }}" class="card-img-top event-card-img" alt="Truffle Hunting &amp; Feast">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Truffle Hunting &amp; Feast</h5>
+                        <p class="event-card-date mb-0">Sat 21 Jun at 9:00 AM</p>
+                        <p class="event-card-location mb-2">Blackwood Forest Estate</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $120.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 233 likes</p>
+                            </div>
+                            <span class="event-status event-status--available event-status--sm mb-0">Open</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/midnight-ramen_event.jpg') }}" class="card-img-top event-card-img" alt="Midnight Ramen Society">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Midnight Ramen Society</h5>
+                        <p class="event-card-date mb-0">Fri 10 Jul at 11:00 PM</p>
+                        <p class="event-card-location mb-2">Back Alley Kitchen, Chinatown</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $28.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 501 likes</p>
+                            </div>
+                            <span class="event-status event-status--ending-soon event-status--sm mb-0">Sales End Soon</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/chef-table_event.jpg') }}" class="card-img-top event-card-img" alt="Chef's Table Tasting Menu">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Chef's Table Tasting Menu</h5>
+                        <p class="event-card-date mb-0">Sat 30 Aug at 7:30 PM</p>
+                        <p class="event-card-location mb-2">The Pass, City Centre</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $180.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 94 likes</p>
+                            </div>
+                            <span class="event-status event-status--available event-status--sm mb-0">Open</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/harbor-seafood_event.jpg') }}" class="card-img-top event-card-img" alt="Harbourside Seafood Festival">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Harbourside Seafood Festival</h5>
+                        <p class="event-card-date mb-0">Sun 15 Mar at 11:00 AM</p>
+                        <p class="event-card-location mb-2">Harbourside Promenade, Pier 4</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $15.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 620 likes</p>
+                            </div>
+                            <span class="event-status event-status--available event-status--sm mb-0">Open</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+
+        <h2 class="event-section-px event-heading mt-5">This Weekend</h2>
+        <div class="row event-section-px py-3">
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/gnocchi_workshop.jpg') }}" class="card-img-top event-card-img" alt="Gnocchi Culinary Workshop">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Gnocchi Culinary Workshop</h5>
+                        <p class="event-card-date mb-0">Sat 6 Sep at 10:00 AM</p>
+                        <p class="event-card-location mb-2">Trattoria Alessandra, Little Italy</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $40.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 87 likes</p>
+                            </div>
+                            <span class="event-status event-status--cancelled event-status--sm mb-0">Cancelled</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/night-noodle_event.jpg') }}" class="card-img-top event-card-img" alt="Night Market Noodle Crawl">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Night Market Noodle Crawl</h5>
+                        <p class="event-card-date mb-0">Fri 5 Sep at 6:30 PM</p>
+                        <p class="event-card-location mb-2">Lantern Night Market</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $60.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 145 likes</p>
+                            </div>
+                            <span class="event-status event-status--inactive event-status--sm mb-0">Inactive</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/bbq-seminar_event.jpg') }}" class="card-img-top event-card-img" alt="Smoked BBQ Masterclass">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Smoked BBQ Masterclass</h5>
+                        <p class="event-card-date mb-0">Sat 6 Sep at 1:00 PM</p>
+                        <p class="event-card-location mb-2">Pitmaster's Yard, Southside</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $85.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 210 likes</p>
+                            </div>
+                            <span class="event-status event-status--ending-soon event-status--sm mb-0">Sales End Soon</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/farmers-market_event.jpg') }}" class="card-img-top event-card-img" alt="Farmers Market Brunch Tour">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Farmers Market Brunch Tour</h5>
+                        <p class="event-card-date mb-0">Sat 6 Sep at 8:00 AM</p>
+                        <p class="event-card-location mb-2">Old Town Farmers Market</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $25.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 132 likes</p>
+                            </div>
+                            <span class="event-status event-status--available event-status--sm mb-0">Open</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/sunday-roast_event.jpg') }}" class="card-img-top event-card-img" alt="Sunday Roast Pop-Up">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Sunday Roast Pop-Up</h5>
+                        <p class="event-card-date mb-0">Sun 7 Sep at 1:00 PM</p>
+                        <p class="event-card-location mb-2">The Ivy Kitchen, Parkside</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $32.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 76 likes</p>
+                            </div>
+                            <span class="event-status event-status--available event-status--sm mb-0">Open</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/craft-beer-and-cheese_event.jpg') }}" class="card-img-top event-card-img" alt="Craft Beer &amp; Cheese Pairing">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Craft Beer &amp; Cheese Pairing</h5>
+                        <p class="event-card-date mb-0">Sat 6 Sep at 4:00 PM</p>
+                        <p class="event-card-location mb-2">Hopyard Taproom, Dock Street</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $45.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 168 likes</p>
+                            </div>
+                            <span class="event-status event-status--available event-status--sm mb-0">Open</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/dumpling-dongzhi-festival_event.jpg') }}" class="card-img-top event-card-img" alt="Dongzhi Festival Dumpling Class">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Dongzhi Festival Dumpling Class</h5>
+                        <p class="event-card-date mb-0">Sat 6 Sep at 11:00 AM</p>
+                        <p class="event-card-location mb-2">Golden Wok Studio</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $38.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 99 likes</p>
+                            </div>
+                            <span class="event-status event-status--ending-soon event-status--sm mb-0">Sales End Soon</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/riverside-foodtruck_event.jpg') }}" class="card-img-top event-card-img" alt="Riverside Food Truck Rally">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Riverside Food Truck Rally</h5>
+                        <p class="event-card-date mb-0">Sun 7 Sep at 12:00 PM</p>
+                        <p class="event-card-location mb-2">Riverside Green, East Bank</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $10.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 304 likes</p>
+                            </div>
+                            <span class="event-status event-status--available event-status--sm mb-0">Open</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+
+        <h2 class="event-section-px event-heading mt-5">Bring Your Kids</h2>
+        <div class="row event-section-px py-3">
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/sourdough-class_event.jpg') }}" class="card-img-top event-card-img" alt="Sunrise Sourdough Bake">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Sunrise Sourdough Bake</h5>
+                        <p class="event-card-date mb-0">Sat 13 Sep at 7:00 AM</p>
+                        <p class="event-card-location mb-2">The Rustic Loaf Bakery</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $45.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 63 likes</p>
+                            </div>
+                            <span class="event-status event-status--available event-status--sm mb-0">Open</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/petting-zoo_event.jpg') }}" class="card-img-top event-card-img" alt="Petting Zoo Picnic Day">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Petting Zoo Picnic Day</h5>
+                        <p class="event-card-date mb-0">Sun 14 Sep at 10:00 AM</p>
+                        <p class="event-card-location mb-2">Green Meadows Farm</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $15.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 221 likes</p>
+                            </div>
+                            <span class="event-status event-status--available event-status--sm mb-0">Open</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/kids-pizza_event.jpg') }}" class="card-img-top event-card-img" alt="Kids' Pizza Making Party">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Kids' Pizza Making Party</h5>
+                        <p class="event-card-date mb-0">Sat 13 Sep at 2:00 PM</p>
+                        <p class="event-card-location mb-2">Little Chefs Kitchen Studio</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $30.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 189 likes</p>
+                            </div>
+                            <span class="event-status event-status--ending-soon event-status--sm mb-0">Sales End Soon</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/campsite-smore_event.jpg') }}" class="card-img-top event-card-img" alt="Storytime &amp; S'mores Campfire">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Storytime &amp; S'mores Campfire</h5>
+                        <p class="event-card-date mb-0">Sat 13 Sep at 6:00 PM</p>
+                        <p class="event-card-location mb-2">Lakeside Campgrounds</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $20.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 154 likes</p>
+                            </div>
+                            <span class="event-status event-status--available event-status--sm mb-0">Open</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/cupcake-decor-workshop_event.jpg') }}" class="card-img-top event-card-img" alt="Cupcake Decorating Workshop">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Cupcake Decorating Workshop</h5>
+                        <p class="event-card-date mb-0">Sun 14 Sep at 11:00 AM</p>
+                        <p class="event-card-location mb-2">Sweet Tooth Studio</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $25.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 267 likes</p>
+                            </div>
+                            <span class="event-status event-status--available event-status--sm mb-0">Open</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/kids-cooking_event.jpg') }}" class="card-img-top event-card-img" alt="Kids Cooking Challenge">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Kids Cooking Challenge</h5>
+                        <p class="event-card-date mb-0">Sat 13 Sep at 10:00 AM</p>
+                        <p class="event-card-location mb-2">Community Kitchen Hall</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $35.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 312 likes</p>
+                            </div>
+                            <span class="event-status event-status--available event-status--sm mb-0">Open</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/icecream-bar_event.jpg') }}" class="card-img-top event-card-img" alt="Ice Cream Sundae Bar">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Ice Cream Sundae Bar</h5>
+                        <p class="event-card-date mb-0">Sun 14 Sep at 1:00 PM</p>
+                        <p class="event-card-location mb-2">Scoops &amp; Sprinkles Parlour</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $18.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 198 likes</p>
+                            </div>
+                            <span class="event-status event-status--available event-status--sm mb-0">Open</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card event-card h-100" data-href="{{ url_for('main.view_event') }}">
+                    <div class="event-card-img-wrap">
+                        <img src="{{ url_for('static', filename='img/carnival-funfaire_event.jpg') }}" class="card-img-top event-card-img" alt="Carnival Fun Fair Food Trail">
+                        <div class="event-card-actions">
+                            <button class="event-icon-btn event-icon-btn--favourite" type="button" title="Favourite">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                                <i class="fa fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">Carnival Fun Fair Food Trail</h5>
+                        <p class="event-card-date mb-0">Sat 13 Sep at 12:00 PM</p>
+                        <p class="event-card-location mb-2">Riverside Green, East Bank</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-end">
+                            <div>
+                                <p class="event-card-price mb-1">From $12.00</p>
+                                <p class="event-card-likes mb-0"><i class="fa fa-heart"></i> 276 likes</p>
+                            </div>
+                            <span class="event-status event-status--available event-status--sm mb-0">Open</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==== Footer ============================== -->
+{% endblock %}
+
+{% block scripts %}
+    <!-- ==== Scripts ============================== -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+        integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
+        integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV"
+        crossorigin="anonymous"></script>
+
+    <!-- ==== Event card buttons ============================== -->
+    <!-- One handler shared by all cards -->
+    <script>
+        $(function () {
+
+            // Clicking a card opens the page named in its data-href
+            $('.event-card').on('click', function () {
+                window.location.href = $(this).data('href');
+            });
+
+            // Heart button: fill the heart in, or empty it again.
+            // stopPropagation keeps the click from also opening the card.
+            $('.event-icon-btn--favourite').on('click', function (event) {
+                event.stopPropagation();
+                $(this).toggleClass('is-favourited');
+                $(this).find('i').toggleClass('fa-heart-o fa-heart');
+            });
+
+            // Share isn't built yet - the click just does nothing for now
+            $('.event-icon-btn--share').on('click', function (event) {
+                event.stopPropagation();
+            });
+
+        });
+    </script>
+{% endblock %}

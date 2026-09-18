@@ -1,0 +1,338 @@
+{# Create Event page (route main.create_event). Static A1 form: it has no action or
+   method, and its Submit button just navigates home - nothing is saved yet.
+   The scripts block runs the date picker, time spinner, ticket-row buttons and
+   image preview. #}
+{% extends "base_epicurean.html" %}
+
+{% block title %}Create Event - Epicurean{% endblock %}
+{% block description %}Epicurean List Event Page{% endblock %}
+
+{% block head_extra %}
+    <!-- bootstrap-datepicker (date field only - no time support) -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker3.min.css">
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid px-5 py-5">
+        <h1 class="page-heading">Create Event</h1>
+        <p class="text-muted">Fill in the details below to publish your event.</p>
+
+        <form class="event-form-card">
+
+            <h2 class="section-heading">Event Details</h2>
+
+            <div class="event-form-columns">
+
+                <!-- Left: what the event is -->
+                <div class="event-form-col">
+
+                    <div class="event-form-row">
+                        <label class="event-form-label" for="enterEventTitle">Event Title<span
+                                class="event-form-required">*</span></label>
+                        <div class="event-form-field">
+                            <input type="text" class="form-control" id="enterEventTitle" placeholder="Event title" required>
+                        </div>
+                    </div>
+
+                    <div class="event-form-row">
+                        <label class="event-form-label">Event Image</label>
+                        <div class="event-form-field">
+                            <img src="{{ url_for('static', filename='img/image-placeholder.jpg') }}"
+                                class="img-fluid event-form-image-preview" id="eventImagePreview"
+                                alt="Event image preview">
+                            {# plain file input: the browser shows the chosen filename
+                               itself. Bootstrap's .custom-file label needs JavaScript
+                               to update, which this unit does not allow. #}
+                            <input type="file" class="form-control-file mt-2" id="enterEventImage"
+                                name="enterEventImage" accept="image/*">
+                        </div>
+                    </div>
+
+                    <div class="event-form-row">
+                        <label class="event-form-label" for="enterDescription">Description</label>
+                        <div class="event-form-field">
+                            <textarea class="form-control" id="enterDescription" rows="6"
+                                placeholder="What your event is about!"></textarea>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right: filters, when/where, and capacity/price -->
+                <div class="event-form-col">
+
+                    <div class="event-form-row">
+                        <label class="event-form-label" for="selectDietary">Dietary Preference</label>
+                        <div class="event-form-field">
+                            <select class="form-control" id="selectDietary">
+                                <option selected>None</option>
+                                <option>Gluten-Free</option>
+                                <option>Halal</option>
+                                <option>Keto Friendly</option>
+                                <option>Kosher</option>
+                                <option>Low Carb</option>
+                                <option>Paleo</option>
+                                <option>Vegan</option>
+                                <option>Vegetarian</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="event-form-row">
+                        <label class="event-form-label" for="selectSeasonal">Seasonal / Cultural Options</label>
+                        <div class="event-form-field">
+                            <select class="form-control" id="selectSeasonal">
+                                <option selected>None</option>
+                                <option>Spring Flavours</option>
+                                <option>Summer BBQ</option>
+                                <option>Autumn Harvest</option>
+                                <option>Winter Comforts</option>
+                                <option>Cultural</option>
+                                <option>Holidays</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="event-form-row">
+                        <label class="event-form-label" for="selectProficiency">Proficiency</label>
+                        <div class="event-form-field">
+                            <select class="form-control" id="selectProficiency">
+                                <option selected>None</option>
+                                <option>Beginner</option>
+                                <option>Intermediate</option>
+                                <option>Expert</option>
+                                <option>Foodie</option>
+                                <option>Chef</option>
+                                <option>Family Friendly</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="event-form-row">
+                        <label class="event-form-label" for="enterVenue">Venue / Address<span
+                                class="event-form-required">*</span></label>
+                        <div class="event-form-field">
+                            <input type="text" class="form-control" id="enterVenue"
+                                placeholder="Please enter the venue address" required>
+                        </div>
+                    </div>
+
+                    <div class="event-form-row event-form-row--split">
+                        <div class="event-form-subfield">
+                            <label class="event-filter-label" for="enterEventDate">Event Date<span
+                                    class="event-form-required">*</span></label>
+                            <div class="input-group">
+                                <input type="text" class="form-control event-form-picker-input" id="enterEventDate"
+                                    placeholder="dd/mm/yyyy" autocomplete="off" readonly required>
+                                <div class="input-group-append">
+                                    <span class="input-group-text event-form-date-addon" id="enterEventDateAddon"
+                                        title="Choose a date">
+                                        <i class="fa fa-calendar"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="event-form-subfield event-time-picker" id="eventTimePicker">
+                            <label class="event-filter-label" for="enterEventTime">Event Time<span
+                                    class="event-form-required">*</span></label>
+                            <input type="text" class="form-control event-form-picker-input"
+                                id="enterEventTime" placeholder="hh:mm" autocomplete="off" readonly required>
+                            <div class="event-time-popover" id="eventTimePopover">
+                                <div class="event-time-popover-title">Select Time</div>
+                                <div class="event-time-popover-body">
+                                    <div class="event-time-spinner">
+                                        <button type="button" class="event-time-spin-btn" data-unit="hour"
+                                            data-dir="up" title="Increase hour"><i class="fa fa-chevron-up"></i></button>
+                                        <div class="event-time-spin-value" id="eventTimeHourValue">09</div>
+                                        <button type="button" class="event-time-spin-btn" data-unit="hour"
+                                            data-dir="down" title="Decrease hour"><i class="fa fa-chevron-down"></i></button>
+                                    </div>
+                                    <div class="event-time-colon">:</div>
+                                    <div class="event-time-spinner">
+                                        <button type="button" class="event-time-spin-btn" data-unit="minute"
+                                            data-dir="up" title="Increase minute"><i class="fa fa-chevron-up"></i></button>
+                                        <div class="event-time-spin-value" id="eventTimeMinuteValue">00</div>
+                                        <button type="button" class="event-time-spin-btn" data-unit="minute"
+                                            data-dir="down" title="Decrease minute"><i class="fa fa-chevron-down"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+
+            </div>
+
+            <!-- ==== Ticket Types ============================== -->
+            <h2 class="section-heading mt-2">Ticket Types<span class="event-form-required">*</span></h2>
+
+            <div class="table-responsive">
+                <table class="table ticket-type-table mb-2">
+                    <thead>
+                        <tr>
+                            <th>Ticket Type</th>
+                            <th>Price ($)</th>
+                            <th>Capacity</th>
+                            <th>Ticket Description</th>
+                            <th class="ticket-remove-cell"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="ticketTypeTableBody">
+                        <tr>
+                            <td><input type="text" class="form-control" placeholder="e.g. General Admission"
+                                    aria-label="Ticket type" required></td>
+                            <td><input type="number" class="form-control" min="0" step="0.01" placeholder="0.00"
+                                    aria-label="Price" required></td>
+                            <td><input type="number" class="form-control" min="1" placeholder="0"
+                                    aria-label="Capacity" required></td>
+                            <td><input type="text" class="form-control" placeholder="Optional details"
+                                    aria-label="Ticket description"></td>
+                            <td class="ticket-remove-cell">
+                                <button type="button" class="btn btn-danger btn-sm ticket-remove-btn d-none"
+                                    title="Remove ticket type">
+                                    <i class="fa fa-times"></i> Remove
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="addTicketTypeBtn">
+                <i class="fa fa-plus"></i> Add Ticket Type
+            </button>
+
+            <!-- Nothing is saved yet: Cancel and Submit both return to the home page -->
+            <div class="event-form-actions mt-4">
+                <button class="btn btn-secondary text-nowrap mx-2" type="button"
+                    onclick="window.location.href='{{ url_for('main.index') }}'">Cancel</button>
+                <button class="btn btn-secondary text-nowrap mx-2" type="button"
+                    title="Save as draft (coming soon)">Draft</button>
+                <button class="btn btn-primary text-nowrap mx-2" type="button"
+                    onclick="window.location.href='{{ url_for('main.index') }}'">Submit</button>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- ==== Footer ============================== -->
+{% endblock %}
+
+{% block scripts %}
+    <!-- bootstrap-datepicker plugin, used by the Event Date field below -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js"></script>
+
+    <!-- ====Page scripts ============================== -->
+    <!-- date picker, time spinner, add/remove buttons on Ticket Types table -->
+    <script>
+        $(function () {
+
+            /* ---- Event Date: calendar picker -------------------- */
+
+            var $eventDate = $('#enterEventDate').datepicker({
+                format: 'dd/mm/yyyy',
+                weekStart: 1,           // weeks start on Monday
+                startDate: new Date(),  // an event cannot be listed in the past
+                todayHighlight: true,
+                autoclose: true,
+                clearBtn: true,
+                orientation: 'bottom auto'
+            });
+
+            // The calendar icon opens the same picker as clicking the field
+            $('#enterEventDateAddon').on('click', function () {
+                $eventDate.datepicker('show');
+            });
+
+
+            /* ---- Event Time: hour/minute spinner -------------------- */
+
+            var hour = 9;     // the time the spinner starts on
+            var minute = 0;
+
+            // Turns 9 into "09" so the time always shows two digits
+            function twoDigits(number) {
+                if (number < 10) {
+                    return '0' + number;
+                }
+                return '' + number;
+            }
+
+            // Copies the current hour and minute into the popover
+            function showTime() {
+                $('#eventTimeHourValue').text(twoDigits(hour));
+                $('#eventTimeMinuteValue').text(twoDigits(minute));
+            }
+            showTime();
+
+            // Clicking the field opens / closes the popover
+            $('#enterEventTime').on('click', function (event) {
+                event.stopPropagation();
+                $('#eventTimePopover').toggleClass('show');
+            });
+
+            // Each chevron steps its number up or down by one and wraps around
+            $('#eventTimePicker').on('click', '.event-time-spin-btn', function () {
+                var unit = $(this).data('unit');
+                var goingUp = $(this).data('dir') === 'up';
+
+                if (unit === 'hour') {
+                    hour = goingUp ? hour + 1 : hour - 1;
+                    if (hour > 23) { hour = 0; }
+                    if (hour < 0) { hour = 23; }
+                } else {
+                    minute = goingUp ? minute + 1 : minute - 1;
+                    if (minute > 59) { minute = 0; }
+                    if (minute < 0) { minute = 59; }
+                }
+
+                showTime();
+
+                // The field stays empty until the user picks a time
+                $('#enterEventTime').val(twoDigits(hour) + ':' + twoDigits(minute));
+            });
+
+            // Clicking anywhere outside picker closes popover
+            $(document).on('click', function (event) {
+                if ($(event.target).closest('#eventTimePicker').length === 0) {
+                    $('#eventTimePopover').removeClass('show');
+                }
+            });
+
+
+            /* ----Ticket Types: add and remove rows -------------------- */
+
+            var $tableBody = $('#ticketTypeTableBody');
+
+            $('#addTicketTypeBtn').on('click', function () {
+                var $newRow = $tableBody.find('tr').first().clone();
+                $newRow.find('input').val('');
+                $newRow.find('.ticket-remove-btn').removeClass('d-none');
+                $tableBody.append($newRow);
+            });
+
+            $tableBody.on('click', '.ticket-remove-btn', function () {
+                $(this).closest('tr').remove();
+            });
+
+            /* ---- Event Image: show the chosen file in place of the placeholder ---- */
+
+            $('#enterEventImage').on('change', function () {
+                var file = this.files && this.files[0];
+                if (!file) { return; }
+                var $preview = $('#eventImagePreview');
+
+                // release the previous preview so the browser can free it
+                var previous = $preview.data('objectUrl');
+                if (previous) { URL.revokeObjectURL(previous); }
+
+                var url = URL.createObjectURL(file);
+                $preview.attr('src', url).data('objectUrl', url);
+            });
+
+        });
+    </script>
+{% endblock %}

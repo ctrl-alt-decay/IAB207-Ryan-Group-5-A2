@@ -1,0 +1,9 @@
+# Local data - never commit
+# SQLite database (created automatically by create_app on first run)
+instance/
+
+# User-uploaded files such as profile pictures (the app recreates the folder)
+website/static/uploads/
+
+# Python bytecode caches
+__pycache__/

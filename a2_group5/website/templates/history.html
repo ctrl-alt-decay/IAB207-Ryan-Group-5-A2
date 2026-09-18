@@ -1,0 +1,105 @@
+{# Booking history page (route main.history). Static A1 rows - not the logged-in
+   user's real bookings yet. #}
+{% extends "base_epicurean.html" %}
+
+{% block title %}Booking History - Epicurean{% endblock %}
+{% block description %}Epicurean Booking History Page{% endblock %}
+
+{% block content %}
+    <div class="container-fluid px-5 py-5">
+        <h1 class="page-heading">Booking History</h1>
+
+        <!-- ==== Booking table ============================== -->
+        <div class="row">
+            <div class="col-12">
+                <div class="table-responsive">
+                    <table class="table ticket-type-table" id="bookingHistoryTable">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Order Number</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Date : Time Booked</th>
+                                <th class="sr-only">View</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ url_for('static', filename='img/chef-table_event.jpg') }}" class="history-table-thumb mr-3" alt="Chef's Table Tasting Menu">
+                                        <span class="entry-title">Chef's Table Tasting Menu</span>
+                                    </div>
+                                </td>
+                                <td>#EPI-64118</td>
+                                <td>$210.00</td>
+                                <td><span class="event-status event-status--available">Open</span></td>
+                                <td>15/08/2026, 19:10</td>
+                                <td class="text-right"><a href="{{ url_for('main.view_event') }}" class="btn btn-primary btn-sm">View</a></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ url_for('static', filename='img/truffle-hunt_event.jpg') }}" class="history-table-thumb mr-3" alt="Truffle Hunting &amp; Feast">
+                                        <span class="entry-title">Truffle Hunting &amp; Feast</span>
+                                    </div>
+                                </td>
+                                <td>#EPI-63042</td>
+                                <td>$145.00</td>
+                                <td><span class="event-status event-status--available">Open</span></td>
+                                <td>02/07/2026, 11:05</td>
+                                <td class="text-right"><a href="{{ url_for('main.view_event') }}" class="btn btn-primary btn-sm">View</a></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ url_for('static', filename='img/bbq-seminar_event.jpg') }}" class="history-table-thumb mr-3" alt="Smoked BBQ Masterclass">
+                                        <span class="entry-title">Smoked BBQ Masterclass</span>
+                                    </div>
+                                </td>
+                                <td>#EPI-61870</td>
+                                <td>$89.50</td>
+                                <td><span class="event-status event-status--cancelled">Cancelled</span></td>
+                                <td>20/05/2026, 14:30</td>
+                                <td class="text-right"><a href="{{ url_for('main.view_event') }}" class="btn btn-primary btn-sm">View</a></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ url_for('static', filename='img/vegan-vinyard_event.jpg') }}" class="history-table-thumb mr-3" alt="Vineyard Vegan Picnic">
+                                        <span class="entry-title">Vineyard Vegan Picnic</span>
+                                    </div>
+                                </td>
+                                <td>#EPI-59561</td>
+                                <td>$65.00</td>
+                                <td><span class="event-status event-status--inactive">Inactive</span></td>
+                                <td>14/03/2026, 09:45</td>
+                                <td class="text-right"><a href="{{ url_for('main.view_event') }}" class="btn btn-primary btn-sm">View</a></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ url_for('static', filename='img/dumpling-dongzhi-festival_event.jpg') }}" class="history-table-thumb mr-3" alt="Dongzhi Festival Dumpling Class">
+                                        <span class="entry-title">Dongzhi Festival Dumpling Class</span>
+                                    </div>
+                                </td>
+                                <td>#EPI-57289</td>
+                                <td>$52.00</td>
+                                <td><span class="event-status event-status--inactive">Inactive</span></td>
+                                <td>08/01/2026, 16:20</td>
+                                <td class="text-right"><a href="{{ url_for('main.view_event') }}" class="btn btn-primary btn-sm">View</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==== Footer ============================== -->
+{% endblock %}
+
+{% block scripts %}
+        crossorigin="anonymous"></script>
+{% endblock %}

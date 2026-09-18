@@ -1,0 +1,847 @@
+/* =======================================================================
+   Epicurean - site stylesheet
+
+   How this file is organised:
+     1. Every rule is grouped with the part of the site it belongs to, under
+        a heading comment like the one below.
+     2. All colours live together in the Colours region at the very bottom,
+        in the same group order. So a class can appear twice: once here for
+        its size and layout, once down there for its colours.
+   ======================================================================= */
+
+
+/* ============================== Navbar ============================== */
+/* Logo on the left, split search bar in the middle, page links on the right */
+
+.epicurean-logo {
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+}
+
+.epicurean-logo-img {
+    height: 36px;
+    width: auto;
+}
+
+/* On mobile the search bar gets its own full-width line */
+.event-search-form {
+    flex: 1 1 100%;
+    margin: 0.5rem 0;
+}
+
+/* From tablet up it sits inline and grows to fill the toolbar */
+@media (min-width: 768px) {
+    .event-search-form {
+        flex: 1 1 auto;
+        min-width: 0;
+        margin: 0 1.5rem;
+    }
+}
+
+.event-search-bar {
+    display: flex;
+    align-items: stretch;
+    border-radius: 2rem;
+    overflow: hidden;
+}
+
+/* One half of the split bar: keyword on the left, location on the right */
+.event-search-segment {
+    display: flex;
+    align-items: center;
+    flex: 1 1 50%;
+    min-width: 0;
+    padding: 0.375rem 0.75rem;
+}
+
+.event-search-icon {
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+}
+
+.event-search-input {
+    border: none;
+    outline: none;
+    width: 100%;
+    min-width: 0;
+    background: transparent;
+}
+
+.event-search-divider {
+    width: 1px;
+    margin: 0.5rem 0;
+}
+
+.event-search-submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    flex-shrink: 0;
+    border: none;
+}
+
+
+/* ============================ Event cards ============================= */
+/* The clickable event tiles in the three sections on the home page */
+
+.event-card {
+    border: none;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+/* Lifts the card slightly on hover */
+.event-card:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    transform: translateY(-3px);
+}
+
+/* Positioning parent for the favourite/share buttons sitting over the photo */
+.event-card-img-wrap {
+    position: relative;
+}
+
+/* Fixed height keeps every card the same size, whatever the photo shape is */
+.event-card-img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+}
+
+.event-card .card-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.event-card-date {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* Truncates to one line so a long venue name never wraps or breaks card height */
+.event-card-location {
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.event-card-price {
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.event-card-likes {
+    font-size: 0.8rem;
+}
+
+.event-card-likes i {
+    margin-right: 0.3rem;
+}
+
+/* Favourite/share circles over the photo, hidden until the card is hovered */
+.event-card-actions {
+    position: absolute;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    display: flex;
+    gap: 0.4rem;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.event-card:hover .event-card-actions {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.event-icon-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.event-icon-btn:hover {
+    transform: scale(1.08);
+}
+
+
+/* =========================== Status badges ============================ */
+/* Coloured pill showing whether an event is open, sold out, cancelled and
+   so on. Used on the event cards, the view-item page and the history table. */
+
+.event-status {
+    display: inline-block;
+    padding: 0.25em 0.85em;
+    border-radius: 50rem;
+    font-weight: 600;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+/* Smaller version for the bottom-right corner of an event card */
+.event-status--sm {
+    padding: 0.2em 0.6em;
+    font-size: 0.7em;
+    flex-shrink: 0;
+}
+
+
+/* ======================== Page layout & headings ======================= */
+/* Shared spacing, headings and image sizes used across the pages */
+
+/* Side padding for the home page sections, widening on bigger screens */
+.event-section-px {
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+@media (min-width: 768px) {
+    .event-section-px {
+        padding-left: 3rem;
+        padding-right: 3rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    .event-section-px {
+        padding-left: 6rem;
+        padding-right: 6rem;
+    }
+}
+
+/* Banner photo at the top of the view-item page. The height is fixed and the
+   photo is cropped to fill it, so every event page's banner is the same size. */
+.event-banner-img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+}
+
+@media (min-width: 768px) {
+    .event-banner-img {
+        height: 320px;
+    }
+}
+
+@media (min-width: 1200px) {
+    .event-banner-img {
+        height: 400px;
+    }
+}
+
+/* Small caps caption above a filter dropdown or a picker field */
+.event-filter-label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* Section heading above a row of cards, e.g. "Popular", "This Weekend" */
+.event-heading {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+/* Main title of a page, e.g. "Booking History", "Create Event" */
+.page-heading {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+/* Secondary heading within a page, e.g. "Overview", "Comments" */
+.section-heading {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+/* Name of a single item in a list or table row */
+.entry-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+/* Standalone price display, e.g. the "From $25.00" line in the sidebar */
+.price-heading {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+/* Icon + text line, e.g. the venue and date rows on the view-item page */
+.event-meta-line {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Fixed width keeps the text lined up whichever icon is used */
+.event-meta-icon {
+    width: 1.1em;
+    text-align: center;
+}
+
+/* Sidebar that stays put below the navbar while the main column scrolls */
+.event-sidebar-sticky {
+    position: sticky;
+    top: 90px;
+}
+
+/* Anchor target for the "Get Tickets" button. The offset stops the sticky
+   navbar covering the heading once the page has scrolled to it. */
+.scroll-target {
+    scroll-margin-top: 100px;
+}
+
+/* Small square event photo inside a table row, e.g. the history table */
+.history-table-thumb {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 0.5rem;
+}
+
+/* Profile picture, used for the event publisher and every comment */
+.avatar-icon {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+}
+
+
+/* ========================= Create Event form ========================== */
+/* Two-column form layout: label on the left, field on the right */
+
+/* White card container. Started as the form wrapper, and is reused for the
+   price and filters boxes in the view-item sidebar - same box, different
+   contents. */
+.event-form-card {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+    padding: 1.5rem 2rem;
+}
+
+/* Two side-by-side field groups; stacks into one column on mobile */
+.event-form-columns {
+    display: flex;
+    flex-direction: column;
+}
+
+@media (min-width: 768px) {
+    .event-form-columns {
+        flex-direction: row;
+        gap: 2.5rem;
+    }
+}
+
+/* The two columns are stretched to equal height by the flex row above.
+   Making each column a flex column with space-between spreads its own rows
+   out to fill that height, instead of leaving a gap under the shorter one. */
+.event-form-col {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* One field: label left, input right. Stacks to label-above-input on mobile. */
+.event-form-row {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 0;
+    border-bottom: 1px dashed #e2e6ea;
+}
+
+.event-form-row:last-child {
+    border-bottom: none;
+}
+
+@media (min-width: 768px) {
+    .event-form-row {
+        flex-direction: row;
+        align-items: center;
+    }
+}
+
+.event-form-label {
+    flex: 0 0 220px;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+@media (min-width: 768px) {
+    .event-form-label {
+        margin-bottom: 0;
+    }
+}
+
+.event-form-field {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* The red asterisk marking a required field */
+.event-form-required {
+    margin-left: 0.15rem;
+}
+
+/* Two fields sharing one row, e.g. Event Date + Event Time */
+.event-form-row--split {
+    flex-direction: row;
+    gap: 1rem;
+}
+
+.event-form-subfield {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+/* Centred row of buttons at the bottom of the form. It has no label to line
+   up with, so it skips the label-left/field-right layout. */
+.event-form-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding-top: 1.5rem;
+    border-top: 1px dashed #e2e6ea;
+}
+
+.event-form-image-preview {
+    max-width: 160px;
+}
+
+
+/* ========================= Date & time pickers ======================== */
+/* Both fields are readonly: a calendar or a spinner is the only way to fill
+   them in, so nothing invalid can be typed into them. */
+
+.event-form-picker-input,
+.event-form-date-addon {
+    cursor: pointer;
+}
+
+/* Positioning parent for the time popover below */
+.event-time-picker {
+    position: relative;
+}
+
+/* Hidden until the JS adds the .show class */
+.event-time-popover {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    z-index: 1060;
+    width: 220px;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    display: none;
+}
+
+.event-time-popover.show {
+    display: block;
+}
+
+.event-time-popover-title {
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.75rem;
+}
+
+.event-time-popover-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+/* One column of the spinner: up arrow, number, down arrow */
+.event-time-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.event-time-spin-btn {
+    border: none;
+    background: transparent;
+    padding: 0.25rem 0.75rem;
+    line-height: 1;
+}
+
+.event-time-spin-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    min-width: 2.2ch;
+    text-align: center;
+    padding: 0.15rem 0;
+}
+
+.event-time-colon {
+    font-size: 1.75rem;
+    font-weight: 700;
+    padding-bottom: 0.1rem;
+}
+
+
+/* ============================ Ticket tables =========================== */
+/* One shared table style, used by the Create Event ticket types, the
+   view-item ticket purchase table, and the booking history table */
+
+.ticket-type-table th {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    border-top: none;
+}
+
+.ticket-type-table td {
+    vertical-align: middle;
+}
+
+.ticket-type-table .form-control {
+    min-width: 110px;
+}
+
+/* Remove-button column: only as wide as the button itself */
+.ticket-remove-cell {
+    width: 1%;
+    white-space: nowrap;
+}
+
+/* Quantity control in the view-item table, used instead of a typed number box */
+.ticket-purchase-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.ticket-stepper-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.ticket-stepper-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    min-width: 1.5ch;
+    text-align: center;
+}
+
+
+/* =============================== Colours =============================== */
+/* Every colour in the site, grouped in the same order as the sections above.
+   Brand blue #a0c1ec and its darker hover shade #86adde are sampled from the
+   Epicurean logo. */
+
+
+/* Navbar */
+
+/* Off-white so it stays distinguishable from the pure-white page background */
+.epicurean-navbar {
+    background-color: #f8f9fa;
+}
+
+.event-search-bar {
+    background-color: #fff;
+    border: 1px solid #ced4da;
+}
+
+.event-search-icon {
+    color: #888;
+}
+
+.event-search-divider {
+    background-color: #ced4da;
+}
+
+.event-search-submit {
+    background-color: #a0c1ec;
+    color: #fff;
+}
+
+.event-search-submit:hover {
+    background-color: #86adde;
+}
+
+
+/* Event cards */
+
+.event-card {
+    background-color: #fff;
+}
+
+.event-card-date {
+    color: #1a1a1a;
+}
+
+.event-card-location {
+    color: #6c757d;
+}
+
+.event-card-price {
+    color: #1a1a1a;
+}
+
+.event-card-likes {
+    color: #6c757d;
+}
+
+.event-card-likes .fa-heart {
+    color: #dc3545;
+}
+
+.event-icon-btn {
+    background-color: rgba(255, 255, 255, 0.92);
+    color: #333;
+}
+
+.event-icon-btn:hover {
+    background-color: #fff;
+}
+
+/* Red on hover, and stays red once favourited */
+.event-icon-btn--favourite:hover,
+.event-icon-btn--favourite.is-favourited {
+    color: #dc3545;
+}
+
+.event-icon-btn--share:hover {
+    color: #007bff;
+}
+
+
+/* Status badges */
+
+.event-status--available {
+    color: #155724;
+    background-color: #d4edda;
+    border: 1px solid #28a745;
+}
+
+.event-status--sold-out {
+    color: #7a4100;
+    background-color: #ffe5c2;
+    border: 1px solid #fd7e14;
+}
+
+.event-status--cancelled {
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #dc3545;
+}
+
+.event-status--ending-soon {
+    color: #4b1d80;
+    background-color: #e7d9f7;
+    border: 1px solid #6f42c1;
+}
+
+.event-status--inactive {
+    color: #495057;
+    background-color: #e2e3e5;
+    border: 1px solid #adb5bd;
+}
+
+
+/* Page layout & headings */
+
+.event-filter-label {
+    color: #6c757d;
+}
+
+.event-heading,
+.page-heading,
+.section-heading {
+    color: #475569;
+}
+
+.price-heading {
+    color: #1a1a1a;
+}
+
+.event-meta-icon {
+    color: #6c757d;
+}
+
+
+/* Create Event form */
+
+.event-form-card {
+    background-color: #fff;
+}
+
+.event-form-label {
+    color: #212529;
+}
+
+.event-form-required {
+    color: #dc3545;
+}
+
+
+/* Date & time pickers */
+
+/* Bootstrap greys out readonly fields; these are readonly by design, not disabled */
+.event-form-picker-input[readonly] {
+    background-color: #fff;
+}
+
+.event-time-popover {
+    background-color: #fff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.event-time-popover-title,
+.event-time-colon {
+    color: #6c757d;
+}
+
+.event-time-spin-value {
+    color: #1a1a1a;
+}
+
+.event-time-spin-btn {
+    color: #a0c1ec;
+}
+
+.event-time-spin-btn:hover {
+    color: #86adde;
+}
+
+/* The rules below override the bootstrap-datepicker plugin's own colours so
+   the calendar matches the rest of the site */
+
+.datepicker table tr td.active.active,
+.datepicker table tr td.active:hover.active,
+.datepicker table tr td span.active.active {
+    background-color: #a0c1ec;
+    background-image: none;
+    border-color: #a0c1ec;
+    color: #fff;
+}
+
+.datepicker table tr td.today,
+.datepicker table tr td.today:hover {
+    background-color: #fff3ed;
+    background-image: none;
+    border-color: #a0c1ec;
+    color: #1a1a1a;
+}
+
+.datepicker table tr td.day:hover {
+    background-color: #eef4fc;
+}
+
+.datepicker table tr td.old,
+.datepicker table tr td.new,
+.datepicker table tr td.disabled,
+.datepicker table tr td.disabled:hover {
+    color: #adb5bd;
+}
+
+/* Month/year banner and the prev/next arrows either side of it */
+.datepicker table tr th.datepicker-switch,
+.datepicker table tr th.prev,
+.datepicker table tr th.next {
+    background-color: #a0c1ec;
+    color: #fff;
+}
+
+.datepicker table tr th.datepicker-switch:hover,
+.datepicker table tr th.prev:hover,
+.datepicker table tr th.next:hover {
+    background-color: #86adde;
+}
+
+.datepicker table tr th.prev.disabled,
+.datepicker table tr th.next.disabled {
+    background-color: #cfd8e3;
+    color: #fff;
+}
+
+.datepicker table tr th.dow {
+    color: #6c757d;
+}
+
+
+/* Ticket tables */
+
+.ticket-type-table th {
+    color: #6c757d;
+    border-bottom: 2px solid #e2e6ea;
+}
+
+/* Reuses the navbar's off-white for a subtle row stripe */
+.ticket-type-table tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+/* Grey minus, brand-blue plus, matching the site's button colours */
+.ticket-stepper-btn {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.ticket-stepper-btn--add {
+    background-color: #a0c1ec;
+    color: #fff;
+}
+
+.ticket-stepper-btn--add:hover {
+    background-color: #86adde;
+}
+
+
+/* Buttons */
+
+/* Brand blue instead of Bootstrap's default, to match the search button */
+.btn-primary {
+    background-color: #a0c1ec;
+    border-color: #a0c1ec;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: #86adde;
+    border-color: #86adde;
+}
+
+
+/* Footer */
+
+/* Reuses the navbar's off-white background */
+.epicurean-footer {
+    background-color: #f8f9fa;
+}
