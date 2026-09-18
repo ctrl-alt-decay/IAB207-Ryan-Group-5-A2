@@ -4,9 +4,9 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms.fields import (TextAreaField, SubmitField, StringField,
-                            PasswordField)
+                            PasswordField, SelectField, IntegerField)
 from wtforms.validators import (InputRequired, DataRequired, Length, Email,
-                                EqualTo)
+                                EqualTo, NumberRange)
 
 
 # creates the login information
@@ -58,3 +58,16 @@ class ProfilePictureForm(FlaskForm):
         FileRequired('Choose an image to upload'),
         FileAllowed(ALLOWED, 'Images only - jpg, jpeg, png or gif')])
     submit = SubmitField("Upload")
+
+
+# Buying tickets for one event. A booking is for ONE ticket type at a time,
+# because each Booking row holds a single ticket_type_id (see models.py).
+class BookingForm(FlaskForm):
+    # choices are filled in by the route with that event's own ticket types, so
+    # validation also rejects a ticket type belonging to a different event
+    ticket_type = SelectField("Ticket Type", coerce=int, validators=[
+        InputRequired('Choose a ticket type')])
+    quantity = IntegerField("Quantity", validators=[
+        InputRequired('Choose how many tickets'),
+        NumberRange(min=1, message='Choose at least 1 ticket')])
+    submit = SubmitField("Purchase")

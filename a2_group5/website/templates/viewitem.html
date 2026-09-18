@@ -168,8 +168,16 @@
                     </table>
                 </div>
                 <div class="text-center">
+                    {# Buying needs an account (#5). The real check is on the server
+                       (main.book_tickets); this just shows logged-out visitors the way in.
+                       Purchase is still the static A1 button until #20/#21 wire it up. #}
+                    {% if current_user.is_authenticated %}
                     <button class="btn btn-primary text-nowrap" type="button"
                         onclick="window.location.href='{{ url_for('main.index') }}'">Purchase</button>
+                    {% else %}
+                    <a class="btn btn-primary text-nowrap"
+                        href="{{ url_for('auth.login', next=request.path) }}">Log in to buy tickets</a>
+                    {% endif %}
                 </div>
             </div>
         </div>

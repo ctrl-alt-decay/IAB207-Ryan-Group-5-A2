@@ -1,0 +1,56 @@
+{# Order confirmation (route main.order_confirmation, login required). Shown
+   straight after a successful booking; only the user who made it can open it. #}
+{% extends "base_epicurean.html" %}
+
+{% block title %}Order Confirmed - Epicurean{% endblock %}
+{% block description %}Your Epicurean booking confirmation{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-5 py-5">
+
+    <h1 class="page-heading">Order Confirmed</h1>
+
+    <div class="row">
+        <div class="col-12 col-lg-8 col-xl-7">
+            <div class="event-form-card">
+                <p class="mb-2">Thanks, {{ current_user.first_name }}! Your tickets are booked.
+                    Keep your order number for reference.</p>
+
+                <div class="event-form-row">
+                    <span class="event-form-label">Order Number</span>
+                    <div class="event-form-field"><strong>{{ booking.order_number }}</strong></div>
+                </div>
+                <div class="event-form-row">
+                    <span class="event-form-label">Event</span>
+                    <div class="event-form-field">{{ booking.event.title }}</div>
+                </div>
+                <div class="event-form-row">
+                    <span class="event-form-label">Date</span>
+                    <div class="event-form-field">
+                        {{ booking.event.event_date.strftime('%d/%m/%Y') }} &middot;
+                        {{ booking.event.event_time.strftime('%H:%M') }}
+                    </div>
+                </div>
+                <div class="event-form-row">
+                    <span class="event-form-label">Ticket Type</span>
+                    <div class="event-form-field">{{ booking.ticket_type.name }}</div>
+                </div>
+                <div class="event-form-row">
+                    <span class="event-form-label">Quantity</span>
+                    <div class="event-form-field">{{ booking.quantity }}</div>
+                </div>
+                <div class="event-form-row">
+                    <span class="event-form-label">Total</span>
+                    <div class="event-form-field">${{ '%.2f'|format(booking.total_price) }}</div>
+                </div>
+
+                <div class="event-form-actions mt-4">
+                    <a class="btn btn-secondary text-nowrap mx-2" href="{{ url_for('main.index') }}">Back to Home</a>
+                    <a class="btn btn-primary text-nowrap mx-2" href="{{ url_for('main.history') }}">View Booking History</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
