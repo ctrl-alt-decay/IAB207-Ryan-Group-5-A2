@@ -3,8 +3,11 @@
 # values are listed beside each column and should be enforced by the forms.
 # Each relationship(backref=...) adds an attribute on BOTH sides - e.g.
 # User.events below also creates Event.owner.
+import os
+
 from . import db
 from datetime import datetime
+from flask import current_app
 from flask_login import UserMixin
 
 
@@ -55,23 +58,60 @@ class Event(db.Model):
     # Nothing updates this automatically yet (e.g. to 'Inactive' once the date passes).
     status = db.Column(db.String(20), nullable=False, default='Open')
 
+    # How many likes the event has - the homepage and category pages sort by
+    # this, and Popular needs at least POPULAR_MIN_LIKES (views.py). Only the
+    # sample events have likes so far; the heart button doesn't save yet.
+    # server_default lets add_missing_columns() add it to older databases.
+    likes = db.Column(db.Integer, nullable=False, default=0, server_default=db.text('0'))
+
     # 'None' | 'Generic' | 'Enhanced'
-    # Acknowledgement of Country chosen by the event creator; acknowledgement_text
-    # holds the statement to display on the event page.
+    # Acknowledgement of Country chosen by the event creator (#6).
+    # acknowledgement_city is the capital city picked for an Enhanced
+    # acknowledgement ('Sydney', 'Brisbane', ...) and empty for the other types.
     acknowledgement_type = db.Column(db.String(20), default='None')
+    acknowledgement_city = db.Column(db.String(50))
+    # Not written by the Create Event form: the statement shown is worked out
+    # from acknowledgement_type and acknowledgement_city.
     acknowledgement_text = db.Column(db.Text)
 
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # deleting an Event removes its ticket types with it
+    # deleting an Event removes its ticket types with it. Ordered by id so the
+    # tiers always list in the order they were added.
     ticket_types = db.relationship('TicketType', backref='event', lazy=True,
-                                   cascade='all, delete-orphan')
+                                   cascade='all, delete-orphan',
+                                   order_by='TicketType.id')
     bookings = db.relationship('Booking', backref='event', lazy=True)
     comments = db.relationship('Comment', backref='event', lazy=True)
 
     def __repr__(self):
         return "<Event {}>".format(self.title)
+
+    # ---- Read-only helpers for the templates ----
+
+    @property
+    def image_path(self):
+        """The event image's path under static/, for url_for('static', ...).
+        Uploaded images live in uploads/events/; the seeded sample events use
+        the A1 photos in img/. Falls back to the placeholder if neither exists."""
+        if self.image_filename:
+            for folder in ('uploads/events', 'img'):
+                if os.path.exists(os.path.join(current_app.static_folder, folder,
+                                               self.image_filename)):
+                    return folder + '/' + self.image_filename
+        return 'img/image-placeholder.jpg'
+
+    @property
+    def from_price(self):
+        """The cheapest ticket price (the "From $..." figure), or None if the
+        event has no ticket types yet."""
+        prices = [t.price for t in self.ticket_types]
+        return min(prices) if prices else None
+
+    @property
+    def tickets_sold(self):
+        return sum(b.quantity for b in self.bookings)
 
 
 # One price tier of an event (e.g. Adult, $45.00, 60 available). A Booking points
@@ -91,6 +131,14 @@ class TicketType(db.Model):
 
     def __repr__(self):
         return "<TicketType {} ${}>".format(self.name, self.price)
+
+    @property
+    def tickets_sold(self):
+        return sum(b.quantity for b in self.bookings)
+
+    @property
+    def tickets_left(self):
+        return max(self.capacity - self.tickets_sold, 0)
 
 
 # One purchase: a user buying `quantity` tickets of one TicketType.

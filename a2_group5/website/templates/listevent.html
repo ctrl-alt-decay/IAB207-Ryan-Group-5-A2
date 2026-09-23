@@ -1,10 +1,14 @@
-{# Create Event page (route main.create_event). Static A1 form: it has no action or
-   method, and its Submit button just navigates home - nothing is saved yet.
-   The scripts block runs the date picker, time spinner, ticket-row buttons and
-   image preview. #}
+{# Create Event page (route main.create_event, form EventForm), also used as the
+   Edit Event page (route main.edit_event, form EditEventForm), which passes the
+   event being edited as `event`. Posts back to the same URL; errors are shown
+   under each field. Ticket rows are added and removed with CSS-only checkboxes
+   (up to EventForm.TICKET_ROWS), and the Acknowledgement of Country options are
+   radios + CSS only. The scripts block runs only the A1 date picker and time
+   spinner. #}
 {% extends "base_epicurean.html" %}
+{% set editing = event is defined %}
 
-{% block title %}Create Event - Epicurean{% endblock %}
+{% block title %}{{ 'Edit Event' if editing else 'Create Event' }} - Epicurean{% endblock %}
 {% block description %}Epicurean List Event Page{% endblock %}
 
 {% block head_extra %}
@@ -13,16 +17,37 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker3.min.css">
 {% endblock %}
 
+{# a field's error messages; d-block so they show even where Bootstrap's
+   .is-invalid sibling rule doesn't reach (file inputs, input groups) #}
+{% macro errors(f) %}
+    {% for error in f.errors %}
+    <div class="invalid-feedback d-block">{{ error }}</div>
+    {% endfor %}
+{% endmacro %}
+
+{% macro invalid(f) %}{{ " is-invalid" if f.errors else "" }}{% endmacro %}
+
 {% block content %}
-    <div class="container-fluid px-5 py-5">
+    <div class="container-fluid px-3 px-md-5 py-4 py-md-5">
+        {% if editing %}
+        <h1 class="page-heading">Edit Event</h1>
+        <p class="text-muted">
+            Change any of the details below. The status ({{ event.status }}) can't be changed here -
+            to call the event off, use Cancel Event instead.
+        </p>
+        {% else %}
         <h1 class="page-heading">Create Event</h1>
         <p class="text-muted">Fill in the details below to publish your event.</p>
+        {% endif %}
 
-        <form class="event-form-card">
+        <form class="event-form-card" method="POST" enctype="multipart/form-data" novalidate>
+            {{ form.hidden_tag() }}
 
             <h2 class="section-heading">Event Details</h2>
 
-            <div class="event-form-columns">
+            {# --xl: the two columns only sit side by side from 1200px. Any
+               narrower and the fields get squeezed beside their 220px labels. #}
+            <div class="event-form-columns event-form-columns--xl">
 
                 <!-- Left: what the event is -->
                 <div class="event-form-col">
@@ -31,81 +56,68 @@
                         <label class="event-form-label" for="enterEventTitle">Event Title<span
                                 class="event-form-required">*</span></label>
                         <div class="event-form-field">
-                            <input type="text" class="form-control" id="enterEventTitle" placeholder="Event title" required>
+                            {{ form.title(class="form-control" ~ invalid(form.title), id="enterEventTitle",
+                                placeholder="Event title") }}
+                            {{ errors(form.title) }}
                         </div>
                     </div>
 
                     <div class="event-form-row">
-                        <label class="event-form-label">Event Image</label>
+                        <label class="event-form-label" for="enterEventImage">Event Image{% if not editing %}<span
+                                class="event-form-required">*</span>{% endif %}</label>
                         <div class="event-form-field">
-                            <img src="{{ url_for('static', filename='img/image-placeholder.jpg') }}"
-                                class="img-fluid event-form-image-preview" id="eventImagePreview"
-                                alt="Event image preview">
-                            {# plain file input: the browser shows the chosen filename
-                               itself. Bootstrap's .custom-file label needs JavaScript
-                               to update, which this unit does not allow. #}
-                            <input type="file" class="form-control-file mt-2" id="enterEventImage"
-                                name="enterEventImage" accept="image/*">
+                            {% if editing %}
+                            <img src="{{ url_for('static', filename=event.image_path) }}"
+                                class="img-fluid event-form-image-preview rounded mb-2" alt="Current image">
+                            {% endif %}
+                            {# Bootstrap 5 styles the browser's own file input - it shows the
+                               chosen filename itself, no JavaScript needed #}
+                            {{ form.image(class="form-control", id="enterEventImage", accept="image/*") }}
+                            <small class="form-text text-muted">jpg, jpeg, png or gif{{
+                                ' - leave empty to keep the current image' if editing }}</small>
+                            {{ errors(form.image) }}
                         </div>
                     </div>
 
                     <div class="event-form-row">
-                        <label class="event-form-label" for="enterDescription">Description</label>
+                        <label class="event-form-label" for="enterDescription">Description<span
+                                class="event-form-required">*</span></label>
                         <div class="event-form-field">
-                            <textarea class="form-control" id="enterDescription" rows="6"
-                                placeholder="What your event is about!"></textarea>
+                            {{ form.description(class="form-control" ~ invalid(form.description),
+                                id="enterDescription", rows="6", placeholder="What your event is about!") }}
+                            {{ errors(form.description) }}
                         </div>
                     </div>
 
                 </div>
 
-                <!-- Right: filters, when/where, and capacity/price -->
+                <!-- Right: filters, when/where -->
                 <div class="event-form-col">
 
                     <div class="event-form-row">
                         <label class="event-form-label" for="selectDietary">Dietary Preference</label>
                         <div class="event-form-field">
-                            <select class="form-control" id="selectDietary">
-                                <option selected>None</option>
-                                <option>Gluten-Free</option>
-                                <option>Halal</option>
-                                <option>Keto Friendly</option>
-                                <option>Kosher</option>
-                                <option>Low Carb</option>
-                                <option>Paleo</option>
-                                <option>Vegan</option>
-                                <option>Vegetarian</option>
-                            </select>
+                            {{ form.dietary_preference(class="form-select" ~ invalid(form.dietary_preference),
+                                id="selectDietary") }}
+                            {{ errors(form.dietary_preference) }}
                         </div>
                     </div>
 
                     <div class="event-form-row">
                         <label class="event-form-label" for="selectSeasonal">Seasonal / Cultural Options</label>
                         <div class="event-form-field">
-                            <select class="form-control" id="selectSeasonal">
-                                <option selected>None</option>
-                                <option>Spring Flavours</option>
-                                <option>Summer BBQ</option>
-                                <option>Autumn Harvest</option>
-                                <option>Winter Comforts</option>
-                                <option>Cultural</option>
-                                <option>Holidays</option>
-                            </select>
+                            {{ form.seasonal_cultural(class="form-select" ~ invalid(form.seasonal_cultural),
+                                id="selectSeasonal") }}
+                            {{ errors(form.seasonal_cultural) }}
                         </div>
                     </div>
 
                     <div class="event-form-row">
                         <label class="event-form-label" for="selectProficiency">Proficiency</label>
                         <div class="event-form-field">
-                            <select class="form-control" id="selectProficiency">
-                                <option selected>None</option>
-                                <option>Beginner</option>
-                                <option>Intermediate</option>
-                                <option>Expert</option>
-                                <option>Foodie</option>
-                                <option>Chef</option>
-                                <option>Family Friendly</option>
-                            </select>
+                            {{ form.proficiency(class="form-select" ~ invalid(form.proficiency),
+                                id="selectProficiency") }}
+                            {{ errors(form.proficiency) }}
                         </div>
                     </div>
 
@@ -113,8 +125,9 @@
                         <label class="event-form-label" for="enterVenue">Venue / Address<span
                                 class="event-form-required">*</span></label>
                         <div class="event-form-field">
-                            <input type="text" class="form-control" id="enterVenue"
-                                placeholder="Please enter the venue address" required>
+                            {{ form.venue(class="form-control" ~ invalid(form.venue), id="enterVenue",
+                                placeholder="Please enter the venue address") }}
+                            {{ errors(form.venue) }}
                         </div>
                     </div>
 
@@ -123,22 +136,25 @@
                             <label class="event-filter-label" for="enterEventDate">Event Date<span
                                     class="event-form-required">*</span></label>
                             <div class="input-group">
-                                <input type="text" class="form-control event-form-picker-input" id="enterEventDate"
-                                    placeholder="dd/mm/yyyy" autocomplete="off" readonly required>
-                                <div class="input-group-append">
-                                    <span class="input-group-text event-form-date-addon" id="enterEventDateAddon"
-                                        title="Choose a date">
-                                        <i class="fa fa-calendar"></i>
-                                    </span>
-                                </div>
+                                {# type="text" overrides WTForms' native date input so the
+                                   A1 date picker can fill it in dd/mm/yyyy #}
+                                {{ form.event_date(type="text", class="form-control event-form-picker-input"
+                                    ~ invalid(form.event_date), id="enterEventDate", placeholder="dd/mm/yyyy",
+                                    autocomplete="off", readonly=True) }}
+                                <span class="input-group-text event-form-date-addon" id="enterEventDateAddon"
+                                    title="Choose a date">
+                                    <i class="fa fa-calendar"></i>
+                                </span>
                             </div>
+                            {{ errors(form.event_date) }}
                         </div>
 
                         <div class="event-form-subfield event-time-picker" id="eventTimePicker">
                             <label class="event-filter-label" for="enterEventTime">Event Time<span
                                     class="event-form-required">*</span></label>
-                            <input type="text" class="form-control event-form-picker-input"
-                                id="enterEventTime" placeholder="hh:mm" autocomplete="off" readonly required>
+                            {{ form.event_time(type="text", class="form-control event-form-picker-input"
+                                ~ invalid(form.event_time), id="enterEventTime", placeholder="hh:mm",
+                                autocomplete="off", readonly=True) }}
                             <div class="event-time-popover" id="eventTimePopover">
                                 <div class="event-time-popover-title">Select Time</div>
                                 <div class="event-time-popover-body">
@@ -157,62 +173,182 @@
                                         <button type="button" class="event-time-spin-btn" data-unit="minute"
                                             data-dir="down" title="Decrease minute"><i class="fa fa-chevron-down"></i></button>
                                     </div>
+                                    <button type="button" class="event-time-confirm" id="eventTimeConfirm"
+                                        title="Use this time" aria-label="Use this time">
+                                        <i class="fa fa-check" aria-hidden="true"></i>
+                                    </button>
                                 </div>
                             </div>
+                            {{ errors(form.event_time) }}
                         </div>
                     </div>
-
 
                 </div>
 
             </div>
 
-            <!-- ==== Ticket Types ============================== -->
-            <h2 class="section-heading mt-2">Ticket Types<span class="event-form-required">*</span></h2>
-
-            <div class="table-responsive">
-                <table class="table ticket-type-table mb-2">
-                    <thead>
-                        <tr>
-                            <th>Ticket Type</th>
-                            <th>Price ($)</th>
-                            <th>Capacity</th>
-                            <th>Ticket Description</th>
-                            <th class="ticket-remove-cell"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="ticketTypeTableBody">
-                        <tr>
-                            <td><input type="text" class="form-control" placeholder="e.g. General Admission"
-                                    aria-label="Ticket type" required></td>
-                            <td><input type="number" class="form-control" min="0" step="0.01" placeholder="0.00"
-                                    aria-label="Price" required></td>
-                            <td><input type="number" class="form-control" min="1" placeholder="0"
-                                    aria-label="Capacity" required></td>
-                            <td><input type="text" class="form-control" placeholder="Optional details"
-                                    aria-label="Ticket description"></td>
-                            <td class="ticket-remove-cell">
-                                <button type="button" class="btn btn-danger btn-sm ticket-remove-btn d-none"
-                                    title="Remove ticket type">
-                                    <i class="fa fa-times"></i> Remove
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- ==== Acknowledgement of Country ============================== -->
+            {# No JavaScript: the info tooltip opens on hover/focus, and the previews
+               and city list are revealed by CSS sibling selectors on the checked
+               radio (see "Acknowledgement of Country" in style.css). That only
+               works because each radio input sits directly before its label and
+               the blocks it controls - don't wrap the inputs in other elements. #}
+            <div class="ack-heading">
+                <h2 class="section-heading mb-0" id="ackHeading">Acknowledgement of Country</h2>
+                <div class="info-icon" tabindex="0" role="button"
+                    aria-label="About Acknowledgement of Country" aria-describedby="ackInfo">
+                    <i class="fa fa-info-circle" aria-hidden="true"></i>
+                    <div class="info-tooltip" id="ackInfo" role="tooltip">
+                        <p><strong>What is it?</strong> A statement of respect for the Traditional
+                            Custodians of the land where an event is held, recognising the continuing
+                            connection of Aboriginal and Torres Strait Islander peoples to Country.</p>
+                        <p><strong>Why it matters</strong> Recognising First Peoples and their histories
+                            builds the respect and understanding between Indigenous and non-Indigenous
+                            Australians that reconciliation depends on.</p>
+                        <p class="mb-0"><strong>Not a Welcome to Country</strong> Anyone, of any
+                            background, can give an Acknowledgement of Country. A Welcome to Country can
+                            only be delivered by a Traditional Owner or Elder of that specific Country,
+                            formally welcoming visitors onto their land.</p>
+                    </div>
+                </div>
             </div>
-            <button type="button" class="btn btn-primary btn-sm" id="addTicketTypeBtn">
-                <i class="fa fa-plus"></i> Add Ticket Type
-            </button>
+            <p class="text-muted">Choose whether your event page includes an Acknowledgement of
+                Country. Enhanced is tailored to the capital city you pick.</p>
 
-            <!-- Nothing is saved yet: Cancel and Submit both return to the home page -->
+            <div class="ack-picker" role="group" aria-labelledby="ackHeading">
+                {% for choice in form.acknowledgement_type %}
+                {{ choice(class="ack-radio") }}
+                {{ choice.label(class="ack-pill") }}
+                {% endfor %}
+
+                {# shown when Generic is checked #}
+                <div class="ack-preview ack-generic">
+                    <span class="event-filter-label">Preview</span>
+                    {{ form.GENERIC_ACK_PREVIEW }}
+                </div>
+
+                {# shown when Enhanced is checked. Every city has its own preview,
+                   shown only while that city is checked. #}
+                <fieldset class="ack-enhanced">
+                    <legend class="event-filter-label">{{ form.acknowledgement_city.label.text }}<span
+                            class="event-form-required">*</span></legend>
+                    <div class="ack-picker">
+                        {% for choice in form.acknowledgement_city %}
+                        {{ choice(class="ack-radio") }}
+                        {{ choice.label(class="ack-pill") }}
+                        <div class="ack-preview ack-city-preview">
+                            <span class="event-filter-label">Preview</span>
+                            {{ form.ENHANCED_ACK_PREVIEW.format(choice.data) }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {{ errors(form.acknowledgement_city) }}
+                </fieldset>
+            </div>
+            {{ errors(form.acknowledgement_type) }}
+
+            <!-- ==== Ticket Types ============================== -->
+            <h2 class="section-heading mt-4">Ticket Types<span class="event-form-required">*</span></h2>
+            <p class="text-muted">Add a row for each type of ticket, up to {{ form.TICKET_ROWS }}.</p>
+
+            {# FieldList errors mix per-row dicts with messages from
+               validate_ticket_types; only the messages belong here #}
+            {% for error in form.ticket_types.errors if error is string %}
+            <div class="invalid-feedback d-block mb-2">{{ error }}</div>
+            {% endfor %}
+
+            {# Add/remove rows without JavaScript. Every row is rendered; rows 2+ are
+               hidden until their "included" checkbox (in .ticket-add below the
+               rows) is ticked. "Add Ticket Type" is the label of the first
+               unticked checkbox, and each row's Remove button is the label of
+               that row's checkbox. The show/hide rules are in style.css
+               (Ticket Types section).
+
+               Layout (Bootstrap grid): from 992px (lg) each ticket is one line
+               under a row of column headings. Below that each ticket becomes
+               its own bordered card with a visible label on every field - name
+               and price/capacity share a line from 576px (sm), and on phones
+               only price and capacity share one. #}
+            {% set examples = ['e.g. Adult', 'e.g. Child', 'e.g. Senior', 'e.g. Student',
+                               'e.g. Concession', 'e.g. VIP'] %}
+            <div class="ticket-types">
+                {# visual only - every field below has its own label #}
+                <div class="row gx-2 ticket-editor-head d-none d-lg-flex" aria-hidden="true">
+                    <div class="col-lg-3">Ticket Type</div>
+                    <div class="col-lg-2">Price ($)</div>
+                    <div class="col-lg-2">Capacity</div>
+                    <div class="col-lg">Ticket Description</div>
+                    <div class="col-lg-auto ticket-remove-col"></div>
+                </div>
+
+                {% for entry in form.ticket_types %}
+                {% set row = entry.form %}
+                {% set n = loop.index %}
+                <div class="row gx-2 ticket-row ticket-row-{{ n }}{{ ' ticket-row-extra' if not loop.first }}">
+                    <div class="col-12 col-sm-6 col-lg-3 ticket-field">
+                        <label class="ticket-field-label" for="{{ row.name.id }}">Ticket Type<span
+                                class="visually-hidden"> {{ n }}</span></label>
+                        {{ row.name(class="form-control" ~ invalid(row.name), placeholder=examples[loop.index0]) }}
+                        {# Edit only: which existing ticket type this row is (empty for new rows) #}
+                        {{ row.ticket_id() }}
+                        {{ errors(row.name) }}
+                    </div>
+                    <div class="col-6 col-sm-3 col-lg-2 ticket-field">
+                        <label class="ticket-field-label" for="{{ row.price.id }}">Price ($)<span
+                                class="visually-hidden"> for ticket type {{ n }}</span></label>
+                        {{ row.price(type="number", min="0", step="0.01", class="form-control" ~ invalid(row.price),
+                            placeholder="0.00") }}
+                        {{ errors(row.price) }}
+                    </div>
+                    <div class="col-6 col-sm-3 col-lg-2 ticket-field">
+                        <label class="ticket-field-label" for="{{ row.capacity.id }}">Capacity<span
+                                class="visually-hidden"> for ticket type {{ n }}</span></label>
+                        {{ row.capacity(type="number", min="1", class="form-control" ~ invalid(row.capacity),
+                            placeholder="0") }}
+                        {{ errors(row.capacity) }}
+                    </div>
+                    <div class="col-12 col-lg ticket-field">
+                        <label class="ticket-field-label" for="{{ row.description.id }}">Ticket Description<span
+                                class="visually-hidden"> {{ n }}</span></label>
+                        {{ row.description(class="form-control" ~ invalid(row.description),
+                            placeholder="Optional details") }}
+                        {{ errors(row.description) }}
+                    </div>
+                    {% if loop.first %}
+                    {# the first row is always included. The column stays at lg so
+                       its fields line up with the rows below, which have Remove. #}
+                    <div class="col-lg-auto ticket-remove-col d-none d-lg-block">
+                        <input type="hidden" name="{{ row.included.name }}" value="y">
+                    </div>
+                    {% else %}
+                    <div class="col-12 col-lg-auto ticket-field ticket-remove-col">
+                        <label class="btn btn-danger btn-sm ticket-remove-btn mb-0"
+                            for="{{ row.included.id }}" title="Remove ticket type {{ n }}">
+                            <i class="fa fa-times" aria-hidden="true"></i> Remove
+                        </label>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                {# One checkbox + Add label per extra row, as siblings so the CSS
+                   can show only the first unticked one's label #}
+                <div class="ticket-add">
+                    {% for entry in form.ticket_types.entries[1:] %}
+                    {{ entry.form.included(class="ticket-row-toggle ticket-toggle-" ~ (loop.index + 1),
+                        aria_label="Ticket type row " ~ (loop.index + 1)) }}
+                    <label class="btn btn-primary btn-sm ticket-add-btn mb-0" for="{{ entry.form.included.id }}">
+                        <i class="fa fa-plus" aria-hidden="true"></i> Add Ticket Type
+                    </label>
+                    {% endfor %}
+                    <p class="text-muted ticket-add-limit mb-0">Maximum ticket types reached.</p>
+                </div>
+            </div>
+
             <div class="event-form-actions mt-4">
-                <button class="btn btn-secondary text-nowrap mx-2" type="button"
-                    onclick="window.location.href='{{ url_for('main.index') }}'">Cancel</button>
-                <button class="btn btn-secondary text-nowrap mx-2" type="button"
-                    title="Save as draft (coming soon)">Draft</button>
-                <button class="btn btn-primary text-nowrap mx-2" type="button"
-                    onclick="window.location.href='{{ url_for('main.index') }}'">Submit</button>
+                <a class="btn btn-secondary text-nowrap mx-2"
+                    href="{{ url_for('main.event_details', event_id=event.id) if editing else url_for('main.index') }}">Cancel</a>
+                {{ form.submit(class="btn btn-primary text-nowrap mx-2") }}
             </div>
 
         </form>
@@ -226,7 +362,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js"></script>
 
     <!-- ====Page scripts ============================== -->
-    <!-- date picker, time spinner, add/remove buttons on Ticket Types table -->
+    <!-- date picker and time spinner -->
     <script>
         $(function () {
 
@@ -292,7 +428,19 @@
                 showTime();
 
                 // The field stays empty until the user picks a time
+                fillTimeField();
+            });
+
+            // Copies the popover's time into the Event Time field
+            function fillTimeField() {
                 $('#enterEventTime').val(twoDigits(hour) + ':' + twoDigits(minute));
+            }
+
+            // The tick locks in the time shown - including the starting 09:00,
+            // which the arrows alone never fill in - and closes the popover
+            $('#eventTimeConfirm').on('click', function () {
+                fillTimeField();
+                $('#eventTimePopover').removeClass('show');
             });
 
             // Clicking anywhere outside picker closes popover
@@ -300,37 +448,6 @@
                 if ($(event.target).closest('#eventTimePicker').length === 0) {
                     $('#eventTimePopover').removeClass('show');
                 }
-            });
-
-
-            /* ----Ticket Types: add and remove rows -------------------- */
-
-            var $tableBody = $('#ticketTypeTableBody');
-
-            $('#addTicketTypeBtn').on('click', function () {
-                var $newRow = $tableBody.find('tr').first().clone();
-                $newRow.find('input').val('');
-                $newRow.find('.ticket-remove-btn').removeClass('d-none');
-                $tableBody.append($newRow);
-            });
-
-            $tableBody.on('click', '.ticket-remove-btn', function () {
-                $(this).closest('tr').remove();
-            });
-
-            /* ---- Event Image: show the chosen file in place of the placeholder ---- */
-
-            $('#enterEventImage').on('change', function () {
-                var file = this.files && this.files[0];
-                if (!file) { return; }
-                var $preview = $('#eventImagePreview');
-
-                // release the previous preview so the browser can free it
-                var previous = $preview.data('objectUrl');
-                if (previous) { URL.revokeObjectURL(previous); }
-
-                var url = URL.createObjectURL(file);
-                $preview.attr('src', url).data('objectUrl', url);
             });
 
         });

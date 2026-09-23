@@ -1,0 +1,47 @@
+{# One category's events (route main.category: /events/popular,
+   /events/this-weekend, /events/kid-friendly), most liked first,
+   EVENTS_PER_PAGE to a page. Reached from each homepage section's "Explore
+   more events" link. The page links come from Bootstrap-Flask's
+   render_pagination macro (Bootstrap 5 version). #}
+{% extends "base_epicurean.html" %}
+{% from "_event_macros.html" import event_grid %}
+{% from "bootstrap5/pagination.html" import render_pagination %}
+{% from "bootstrap5/nav.html" import render_breadcrumb_item %}
+
+{% block title %}{{ heading }} Events - Epicurean{% endblock %}
+{% block description %}{{ heading }} events on Epicurean{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 py-md-5">
+
+    <div class="event-section-px">
+        {# Bootstrap-Flask's breadcrumb macro: Home / <this category> #}
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+                {{ render_breadcrumb_item('main.index', 'Home') }}
+                {{ render_breadcrumb_item('main.category', heading, slug=slug) }}
+            </ol>
+        </nav>
+        <h1 class="page-heading mb-1">{{ heading }}</h1>
+        <p class="text-muted mb-0">
+            {% if events.total %}
+            {{ events.total }} event{{ 's' if events.total != 1 }}, most liked first
+            {%- if events.pages > 1 %} - page {{ events.page }} of {{ events.pages }}{% endif %}
+            {% else %}
+            No events here yet.
+            {% endif %}
+        </p>
+    </div>
+
+    {% if events.items %}
+    {{ event_grid(events.items, prefix=slug) }}
+    {% endif %}
+
+    {% if events.pages > 1 %}
+    <div class="event-section-px">
+        {{ render_pagination(events, align='center') }}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

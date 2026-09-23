@@ -40,10 +40,9 @@
                     <div class="event-form-row">
                         <label class="event-form-label" for="profilePicture">Upload New</label>
                         <div class="event-form-field">
-                            {# plain file input: the browser shows the chosen filename
-                               itself. Bootstrap's .custom-file label needs JavaScript
-                               to update, which this unit does not allow. #}
-                            {{ picture_form.picture(class="form-control-file", id="profilePicture") }}
+                            {# Bootstrap 5 styles the browser's own file input - it shows the
+                               chosen filename itself, no JavaScript needed #}
+                            {{ picture_form.picture(class="form-control", id="profilePicture") }}
                             <div class="text-muted mt-2"><small>jpg, jpeg, png or gif.</small></div>
                         </div>
                     </div>

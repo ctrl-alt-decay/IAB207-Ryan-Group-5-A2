@@ -8,6 +8,29 @@ from flask_login import LoginManager
 # app existing yet; create_app() binds it with db.init_app(app).
 db = SQLAlchemy()
 
+def add_missing_columns():
+    """db.create_all() only creates missing *tables*, so a model column added
+    after someone's database was made (e.g. Event.likes) would crash the app
+    with "no such column". This adds each missing column to the existing table.
+    Additive only - it never drops or changes anything. A NOT NULL column needs
+    a server_default on the model so existing rows get a value."""
+    inspector = db.inspect(db.engine)
+    for table in db.metadata.sorted_tables:
+        if not inspector.has_table(table.name):
+            continue
+        existing = {column['name'] for column in inspector.get_columns(table.name)}
+        for column in table.columns:
+            if column.name in existing:
+                continue
+            ddl = 'ALTER TABLE {} ADD COLUMN {} {}'.format(
+                table.name, column.name, column.type.compile(dialect=db.engine.dialect))
+            if column.server_default is not None:
+                ddl += ' NOT NULL DEFAULT {}'.format(column.server_default.arg)
+            db.session.execute(db.text(ddl))
+            print(' * Added missing column {}.{}'.format(table.name, column.name))
+    db.session.commit()
+
+
 # create a function that creates a web application
 # a web server will run this web application
 def create_app():
@@ -25,9 +48,9 @@ def create_app():
     # initialise db with flask app
     db.init_app(app)
 
-    # bootstrap-flask's Bootstrap 5 helpers. Only the starter templates (base.html,
-    # user.html) would use these; the Epicurean pages load Bootstrap 4 from a CDN
-    # in base_epicurean.html, and no route renders the starter templates.
+    # Bootstrap-Flask (Bootstrap 5): base_epicurean.html loads Bootstrap's CSS
+    # with bootstrap.load_css() and builds the nav links with render_nav_item;
+    # the category pages use render_pagination and render_breadcrumb_item.
     Bootstrap5(app)
     
     # initialise the login manager
@@ -71,8 +94,10 @@ def create_app():
         return render_template('500.html'), 500
 
     # Create any tables that don't exist yet, so a fresh clone works with just
-    # `python main.py`. Never drops or alters existing tables or data.
+    # `python main.py`, then add any columns an older database is missing.
+    # Never drops or changes existing tables, columns or data.
     with app.app_context():
         db.create_all()
+        add_missing_columns()
 
     return app

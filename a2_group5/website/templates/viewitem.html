@@ -1,102 +1,137 @@
-{# Event details page (route main.view_event). Static A1 content - the same
-   example event is shown whichever card was clicked. Get Tickets, Purchase and
-   the comment box are not wired to anything yet. #}
+{# Event details page (route main.event_details, #20). One template for every
+   event, filled from its database row by the view. Still to come: Purchase
+   is the static A1 button until booking is wired up (#21), and the comment box
+   doesn't post yet (#23). #}
 {% extends "base_epicurean.html" %}
+{% from "_event_macros.html" import status_badge %}
 
-{% block title %}Event Details - Epicurean{% endblock %}
-{% block description %}Epicurean Event Details Page{% endblock %}
+{% block title %}{{ event.title }} - Epicurean{% endblock %}
+{% block description %}{{ event.title }} at {{ event.venue }}{% endblock %}
+
+{# a user's profile picture, or the default avatar #}
+{% macro avatar(user, alt) -%}
+<img src="{{ url_for('static', filename=('uploads/profile/' ~ user.profile_image) if user.profile_image else 'img/user_account.png') }}"
+    class="img-fluid avatar-icon rounded-circle" alt="{{ alt }}">
+{%- endmacro %}
 
 {% block content %}
-    <div class="container-fluid px-5 py-5">
+    <div class="container-fluid px-3 px-md-5 py-4 py-md-5">
+    {# capped width, so a wide screen doesn't stretch the title/overview column
+       into a mostly empty band between it and the info card #}
+    <div class="event-page">
         <!-- ==== Event banner ============================== -->
         <!-- Full-width photo with the status badge underneath -->
         <div class="row">
             <div class="col-12">
-                <img src="{{ url_for('static', filename='img/cinco-de-mayo_event.jpg') }}" class="img-fluid event-banner-img rounded" alt="Cinco De Mayo Fiesta">
+                <img src="{{ url_for('static', filename=event.image_path) }}" class="img-fluid event-banner-img rounded" alt="{{ event.title }}">
             </div>
         </div>
         <div class="row py-2">
             <div class="col-12">
                 <!-- Same badge styles as the event cards on the home page -->
-                <span class="event-status event-status--available">Open</span>
+                {{ status_badge(event.status) }}
             </div>
         </div>
 
-        <div class="row">
-            <!-- Main content column -->
-            <div class="col-12 col-md-8">
-                <h1 class="page-heading">Cinco De Mayo Fiesta</h1>
+        {% if event.status == 'Cancelled' %}
+        <div class="alert alert-danger" role="alert">This event has been cancelled.</div>
+        {% endif %}
+
+        {# Header, info card and overview in a CSS grid (see "Event details layout"
+           in style.css). Wide screens: title + overview on the left, info card
+           on the right spanning both. Narrower: one column, with the info card
+           between the title and the overview so it's seen before the long text. #}
+        <div class="event-detail-layout">
+            <div class="event-detail-header">
+                <h1 class="page-heading">{{ event.title }}</h1>
 
                 <!-- Event publisher -->
                 <div class="row align-items-center py-2">
                     <div class="col-auto">
-                        <img src="{{ url_for('static', filename='img/user_account.png') }}" class="img-fluid avatar-icon" alt="Event publisher avatar">
+                        {{ avatar(event.owner, 'Event publisher avatar') }}
                     </div>
                     <div class="col">
-                        <small><strong>Listed by: Anonymous</strong></small>
+                        <small><strong>Listed by: {{ event.owner.first_name }} {{ event.owner.last_name }}</strong></small>
                     </div>
                 </div>
-
-                <!-- The date/time -->
-                <div class="event-meta-line py-1">
-                    <i class="fa fa-map-marker event-meta-icon"></i>
-                    <span>Fiesta Square, Riverside Markets</span>
-                </div>
-                <div class="event-meta-line py-1">
-                    <i class="fa fa-calendar event-meta-icon"></i>
-                    <span>02/05/2026 &middot; 12:00</span>
-                </div>
-
-                <h3 class="section-heading pt-3">Overview</h3>
-                <p>
-                    Wander the plaza between food stalls serving fresh ceviche, elote, and slow-cooked birria
-                    while a live mariachi trio plays through the square. Try your hand at piñata breaking or
-                    the chilli tasting challenge, then cool off at the tequila and mezcal sampling bar as the
-                    afternoon heats up. Once the sun sets, the plaza turns into an open-air dance floor with a
-                    folklórico performance followed by a DJ set. Come hungry, come ready to dance, and stay for
-                    the fireworks that close out the night.
-                </p>
             </div>
 
-            <!-- Sticky -->
-            <div class="col-12 col-md-4">
+            <!-- Everything needed to decide on tickets, in one card -->
+            <div class="event-detail-info">
                 <div class="event-sidebar-sticky">
-                    <div class="event-form-card mb-3">
-                        <div class="price-heading" id="sidebarFromPrice">From $0.00</div>
-                        <div class="event-meta-line pb-3">
-                            <i class="fa fa-calendar event-meta-icon"></i>
-                            <span>02/05/2026 &middot; 12:00</span>
-                        </div>
-                        <!-- Scrolls down to the Tickets table -->
-                        <button class="btn btn-primary btn-block" type="button" id="getTicketsBtn">Get Tickets</button>
-                    </div>
-
                     <div class="event-form-card">
-                        <table class="table table-sm table-striped mb-0">
-                            <tbody>
-                                <tr>
-                                    <th scope="row">Dietary Preference</th>
-                                    <td>All</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">Seasonal / Cultural Options</th>
-                                    <td>Mexican - Latin</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">Proficiency</th>
-                                    <td>Family Friendly</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="price-heading" id="sidebarFromPrice">
+                            {% if event.from_price is not none %}From ${{ '%.2f'|format(event.from_price) }}
+                            {% else %}Tickets coming soon{% endif %}
+                        </div>
+                        <dl class="event-info-list">
+                            <div class="event-info-item">
+                                <dt><i class="fa fa-map-marker event-meta-icon" aria-hidden="true"></i> Venue</dt>
+                                <dd>{{ event.venue }}</dd>
+                            </div>
+                            <div class="event-info-item">
+                                <dt><i class="fa fa-calendar event-meta-icon" aria-hidden="true"></i> Date</dt>
+                                <dd>{{ event.event_date.strftime('%d/%m/%Y') }}</dd>
+                            </div>
+                            <div class="event-info-item">
+                                <dt><i class="fa fa-clock-o event-meta-icon" aria-hidden="true"></i> Time</dt>
+                                <dd>{{ event.event_time.strftime('%H:%M') }}</dd>
+                            </div>
+                            <div class="event-info-item">
+                                <dt><i class="fa fa-leaf event-meta-icon" aria-hidden="true"></i> Dietary</dt>
+                                <dd>{{ event.dietary_preference or 'Any' }}</dd>
+                            </div>
+                            <div class="event-info-item">
+                                <dt><i class="fa fa-globe event-meta-icon" aria-hidden="true"></i> Seasonal / Cultural</dt>
+                                <dd>{{ event.seasonal_cultural or 'Any' }}</dd>
+                            </div>
+                            <div class="event-info-item">
+                                <dt><i class="fa fa-graduation-cap event-meta-icon" aria-hidden="true"></i> Proficiency</dt>
+                                <dd>{{ event.proficiency or 'Any' }}</dd>
+                            </div>
+                            {% if event.ticket_types %}
+                            {% set capacity = event.ticket_types|sum(attribute='capacity') %}
+                            <div class="event-info-item">
+                                <dt><i class="fa fa-ticket event-meta-icon" aria-hidden="true"></i> Tickets left</dt>
+                                <dd>{{ capacity - event.tickets_sold }} of {{ capacity }}</dd>
+                            </div>
+                            {% endif %}
+                        </dl>
+                        <!-- Jumps to the Tickets table (a plain link - the smooth
+                             scroll is CSS scroll-behavior, no JavaScript) -->
+                        <a class="btn btn-primary w-100" href="#ticketsSection" id="getTicketsBtn">Get Tickets</a>
+
+                        {# Only the owner sees these - and main.edit_event and
+                           main.cancel_event check ownership again on the server #}
+                        {% if is_owner and event.status != 'Cancelled' %}
+                        <div class="event-owner-actions">
+                            <a class="btn btn-outline-secondary btn-sm"
+                                href="{{ url_for('main.edit_event', event_id=event.id) }}">Edit Event</a>
+                            <a class="btn btn-outline-danger btn-sm"
+                                href="{{ url_for('main.cancel_event', event_id=event.id) }}">Cancel Event</a>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
+            </div>
+
+            <div class="event-detail-body">
+                <h2 class="section-heading pt-3">Overview</h2>
+                <p class="event-description">{{ event.description }}</p>
+
+                {% if acknowledgement %}
+                <h2 class="section-heading pt-2">Acknowledgement of Country</h2>
+                {# placeholder wording until the real copy is written (#6) #}
+                <p class="ack-preview d-block">{{ acknowledgement }}</p>
+                {% endif %}
             </div>
         </div>
 
         <!-- ==== Tickets ============================== -->
-        <h1 class="section-heading scroll-target pt-3" id="ticketsSection">Tickets</h1>
+        <h2 class="section-heading scroll-target pt-3" id="ticketsSection">Tickets</h2>
         <div class="row py-1">
             <div class="col-12 col-lg-8 mx-auto">
+                {% if event.ticket_types %}
                 <div class="table-responsive">
                     <table class="table ticket-type-table" id="purchaseTicketTable">
                         <thead>
@@ -104,76 +139,45 @@
                                 <th>Ticket Type</th>
                                 <th>Price</th>
                                 <th>Description</th>
+                                <th>Available</th>
                                 <th>Quantity</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr data-ticket-category="child" data-price="15.00">
-                                <td>Child</td>
-                                <td>$15.00</td>
-                                <td>Ages 3-12. Under 3s enter free and don't need a ticket.</td>
+                            {# Quantity is the browser's own number box (its arrows are the
+                               stepper - no JavaScript). max stops it at the tickets left;
+                               the server will check again when booking is wired up (#21). #}
+                            {% for ticket in event.ticket_types %}
+                            <tr>
+                                <td>{{ ticket.name }}</td>
+                                <td>${{ '%.2f'|format(ticket.price) }}</td>
+                                <td>{{ ticket.description or '' }}</td>
+                                <td class="text-nowrap">
+                                    {% if ticket.tickets_left %}{{ ticket.tickets_left }} of {{ ticket.capacity }} left
+                                    {% else %}<span class="text-muted">Sold out</span>{% endif %}
+                                </td>
                                 <td>
-                                    <div class="ticket-purchase-stepper">
-                                        <button type="button" class="ticket-stepper-btn" data-dir="down"
-                                            aria-label="Decrease Child tickets"><i class="fa fa-minus"></i></button>
-                                        <span class="ticket-stepper-value">0</span>
-                                        <button type="button" class="ticket-stepper-btn ticket-stepper-btn--add" data-dir="up"
-                                            aria-label="Increase Child tickets"><i class="fa fa-plus"></i></button>
-                                    </div>
+                                    <input type="number" class="form-control ticket-quantity-input" value="0"
+                                        min="0" max="{{ ticket.tickets_left }}" step="1"
+                                        aria-label="Number of {{ ticket.name }} tickets"
+                                        {{ 'disabled' if not ticket.tickets_left or event.status == 'Cancelled' }}>
                                 </td>
                             </tr>
-                            <tr data-ticket-category="adult" data-price="35.00">
-                                <td>Adult</td>
-                                <td>$35.00</td>
-                                <td>General admission for guests aged 18 and over.</td>
-                                <td>
-                                    <div class="ticket-purchase-stepper">
-                                        <button type="button" class="ticket-stepper-btn" data-dir="down"
-                                            aria-label="Decrease Adult tickets"><i class="fa fa-minus"></i></button>
-                                        <span class="ticket-stepper-value">0</span>
-                                        <button type="button" class="ticket-stepper-btn ticket-stepper-btn--add" data-dir="up"
-                                            aria-label="Increase Adult tickets"><i class="fa fa-plus"></i></button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr data-ticket-category="senior" data-price="28.00">
-                                <td>Senior</td>
-                                <td>$28.00</td>
-                                <td>Ages 65+. ID may be requested at entry.</td>
-                                <td>
-                                    <div class="ticket-purchase-stepper">
-                                        <button type="button" class="ticket-stepper-btn" data-dir="down"
-                                            aria-label="Decrease Senior tickets"><i class="fa fa-minus"></i></button>
-                                        <span class="ticket-stepper-value">0</span>
-                                        <button type="button" class="ticket-stepper-btn ticket-stepper-btn--add" data-dir="up"
-                                            aria-label="Increase Senior tickets"><i class="fa fa-plus"></i></button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr data-ticket-category="student" data-price="25.00">
-                                <td>Student</td>
-                                <td>$25.00</td>
-                                <td>Valid student ID required at entry.</td>
-                                <td>
-                                    <div class="ticket-purchase-stepper">
-                                        <button type="button" class="ticket-stepper-btn" data-dir="down"
-                                            aria-label="Decrease Student tickets"><i class="fa fa-minus"></i></button>
-                                        <span class="ticket-stepper-value">0</span>
-                                        <button type="button" class="ticket-stepper-btn ticket-stepper-btn--add" data-dir="up"
-                                            aria-label="Increase Student tickets"><i class="fa fa-plus"></i></button>
-                                    </div>
-                                </td>
-                            </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
+                {% else %}
+                <p class="text-muted text-center">No tickets are on sale for this event yet.</p>
+                {% endif %}
                 <div class="text-center">
                     {# Buying needs an account (#5). The real check is on the server
                        (main.book_tickets); this just shows logged-out visitors the way in.
-                       Purchase is still the static A1 button until #20/#21 wire it up. #}
-                    {% if current_user.is_authenticated %}
-                    <button class="btn btn-primary text-nowrap" type="button"
-                        onclick="window.location.href='{{ url_for('main.index') }}'">Purchase</button>
+                       Purchase is still the static A1 button until #21 wires it up. #}
+                    {% if event.status == 'Cancelled' %}
+                    <p class="text-muted mb-0">Tickets are no longer on sale.</p>
+                    {% elif current_user.is_authenticated %}
+                    <a class="btn btn-primary text-nowrap" href="{{ url_for('main.index') }}">Purchase</a>
                     {% else %}
                     <a class="btn btn-primary text-nowrap"
                         href="{{ url_for('auth.login', next=request.path) }}">Log in to buy tickets</a>
@@ -183,102 +187,44 @@
         </div>
 
         <!-- ==== Comments ============================== -->
-        <h1 class="section-heading pt-3">Comments</h1>
+        <h2 class="section-heading pt-3">Comments</h2>
+        {# The box below is still the static A1 one - posting is #23 #}
         <div class="row py-1">
             <div class="col-auto">
                 <img src="{{ url_for('static', filename='img/user_account.png') }}" class="img-fluid avatar-icon" alt="User avatar">
             </div>
             <div class="col">
-                <div class="row py-1">
+                {# plain divs, not .row - Bootstrap 5 stretches anything placed
+                   directly in a .row to full width #}
+                <div class="py-1">
                     <input class="form-control" id="enterComment" placeholder="Write a comment...">
                 </div>
-                <div class="row py-1">
-                    <button class="btn btn-primary text-nowrap mx-2" type="button">Post</button>
+                <div class="py-1">
+                    <button class="btn btn-primary text-nowrap" type="button">Post</button>
                 </div>
             </div>
         </div>
+        {% for comment in comments %}
         <div class="row py-1">
             <div class="col-auto">
-                <img src="{{ url_for('static', filename='img/user_account.png') }}" class="img-fluid avatar-icon" alt="User avatar">
+                {{ avatar(comment.user, 'User avatar') }}
             </div>
             <div class="col">
-                <div class="row">
-                    <strong>Posted By: User2 - dd/mm/yyyy</strong>
+                <div>
+                    <strong>Posted By: {{ comment.user.first_name }} {{ comment.user.last_name }}
+                        - {{ comment.posted_at.strftime('%d/%m/%Y') }}</strong>
                 </div>
-                <div class="row">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse eu est justo.
+                <div>
+                    {{ comment.body }}
                 </div>
             </div>
         </div>
-        <div class="row py-1">
-            <div class="col-auto">
-                <img src="{{ url_for('static', filename='img/user_account.png') }}" class="img-fluid avatar-icon" alt="User avatar">
-            </div>
-            <div class="col">
-                <div class="row">
-                    <strong>Posted By: User3 - dd/mm/yyyy</strong>
-                </div>
-                <div class="row">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse eu est justo.
-                </div>
-            </div>
-        </div>
+        {% else %}
+        <p class="text-muted">No comments yet.</p>
+        {% endfor %}
+    </div>
     </div>
 
 
     <!-- ==== Footer ============================== -->
-{% endblock %}
-
-{% block scripts %}
-    <!-- ==== Page scripts ============================== -->
-    <!-- sidebar's "From $" price,  the ticket quantity steppers -->
-    <script>
-        $(function () {
-
-            /* ---- Sidebar "From $" price -------------------- */
-
-            // The sidebar shows the cheapest ticket, not counting Child tickets.
-            var lowestPrice = null;
-
-            $('#purchaseTicketTable tbody tr').each(function () {
-                var category = $(this).data('ticket-category');
-                var price = Number($(this).data('price'));
-
-                if (category !== 'child') {
-                    if (lowestPrice === null || price < lowestPrice) {
-                        lowestPrice = price;
-                    }
-                }
-            });
-
-            if (lowestPrice !== null) {
-                $('#sidebarFromPrice').text('From $' + lowestPrice.toFixed(2));
-            }
-
-
-            /* ----Ticket quantity steppers -------------------- */
-
-            // The + and - buttons 
-            $('#purchaseTicketTable').on('click', '.ticket-stepper-btn', function () {
-                var $number = $(this).closest('.ticket-purchase-stepper').find('.ticket-stepper-value');
-                var quantity = Number($number.text());
-
-                if ($(this).data('dir') === 'up') {
-                    quantity = quantity + 1;
-                } else if (quantity > 0) {
-                    quantity = quantity - 1;
-                }
-
-                $number.text(quantity);
-            });
-
-
-            /* ----Get Tickets scroll -------------------- */
-            // Scrolls down to the Tickets table. 
-            $('#getTicketsBtn').on('click', function () {
-                document.getElementById('ticketsSection').scrollIntoView({ behavior: 'smooth' });
-            });
-
-        });
-    </script>
 {% endblock %}

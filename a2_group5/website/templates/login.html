@@ -32,15 +32,13 @@
                     <label class="event-form-label" for="loginPassword">Password<span
                             class="event-form-required">*</span></label>
                     <div class="event-form-field">
-                        <div class="input-group">
+                        <div class="input-group has-validation">
                             {{ form.password(class="form-control" ~ (" is-invalid" if form.password.errors else ""),
                                              id="loginPassword", placeholder="Your password") }}
-                            <div class="input-group-append">
-                                <button class="btn btn-outline-secondary" type="button" data-password-toggle="loginPassword"
-                                    aria-label="Show password" aria-pressed="false" title="Show password">
-                                    <i class="fa fa-eye" aria-hidden="true"></i>
-                                </button>
-                            </div>
+                            <button class="btn btn-outline-secondary" type="button" data-password-toggle="loginPassword"
+                                aria-label="Show password" aria-pressed="false" title="Show password">
+                                <i class="fa fa-eye" aria-hidden="true"></i>
+                            </button>
                             {% for error in form.password.errors %}
                             <div class="invalid-feedback">{{ error }}</div>
                             {% endfor %}
@@ -49,8 +47,7 @@
                 </div>
 
                 <div class="event-form-actions mt-4">
-                    <button class="btn btn-secondary text-nowrap mx-2" type="button"
-                        onclick="window.location.href='{{ url_for('main.index') }}'">Cancel</button>
+                    <a class="btn btn-secondary text-nowrap mx-2" href="{{ url_for('main.index') }}">Cancel</a>
                     {{ form.submit(class="btn btn-primary text-nowrap mx-2") }}
                 </div>
             </form>

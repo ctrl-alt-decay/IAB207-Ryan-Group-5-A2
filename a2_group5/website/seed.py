@@ -5,6 +5,9 @@ Run from the projectfile directory (the one containing main.py):
     python -m website.seed
 
 This DROPS and recreates every table, so only run it against the dev database.
+After its own data it adds the 24 sample events from sample_events.py. To add
+just those to an existing database WITHOUT dropping anything, run
+`python -m website.sample_events` instead.
 Uses nothing beyond what is already in requirements.txt.
 """
 
@@ -15,6 +18,7 @@ from flask_bcrypt import generate_password_hash
 
 from . import create_app, db
 from .models import User, Event, TicketType, Booking, Comment
+from .sample_events import add_sample_events
 
 
 def _hash(password):
@@ -59,15 +63,12 @@ def seed():
         venue='Rooftop Terrace, 45 Edward St, Brisbane QLD 4000',
         event_date=date(2026, 12, 5),
         event_time=time(17, 30),
-        image_filename='summer_bbq.jpg',
+        image_filename='bbq-seminar_event.jpg',   # an A1 photo in static/img/
         dietary_preference='Halal',
         seasonal_cultural='Summer BBQ',
         proficiency='Family Friendly',
         status='Open',
         acknowledgement_type='Generic',
-        acknowledgement_text=(
-            'We acknowledge the Traditional Owners of the land on which we gather.'
-        ),
         owner=amity,
     )
     pasta = Event(
@@ -76,7 +77,7 @@ def seed():
         venue='The Kitchen Studio, 7 Boundary St, West End QLD 4101',
         event_date=date(2026, 11, 21),
         event_time=time(10, 0),
-        image_filename='pasta_workshop.jpg',
+        image_filename='gnocchi_workshop.jpg',    # an A1 photo in static/img/
         dietary_preference='Vegan',
         seasonal_cultural='Cultural',
         proficiency='Beginner',
@@ -164,6 +165,7 @@ def main():
         db.create_all()
         booking = seed()
         report(booking)
+        print('\nsample events added:', add_sample_events())
     print('\nDone. Database seeded.')
 
 

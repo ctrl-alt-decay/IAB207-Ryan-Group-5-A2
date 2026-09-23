@@ -10,15 +10,13 @@
     <label class="event-form-label" for="{{ id }}">{{ f.label.text }}{% if required %}<span
             class="event-form-required">*</span>{% endif %}</label>
     <div class="event-form-field">
-        {% if toggle %}<div class="input-group">{% endif %}
+        {% if toggle %}<div class="input-group has-validation">{% endif %}
         {{ f(class="form-control" ~ (" is-invalid" if f.errors else ""), id=id, placeholder=placeholder) }}
         {% if toggle %}
-        <div class="input-group-append">
-            <button class="btn btn-outline-secondary" type="button" data-password-toggle="{{ id }}"
-                aria-label="Show password" aria-pressed="false" title="Show password">
-                <i class="fa fa-eye" aria-hidden="true"></i>
-            </button>
-        </div>
+        <button class="btn btn-outline-secondary" type="button" data-password-toggle="{{ id }}"
+            aria-label="Show password" aria-pressed="false" title="Show password">
+            <i class="fa fa-eye" aria-hidden="true"></i>
+        </button>
         {% endif %}
         {% for error in f.errors %}
         <div class="invalid-feedback">{{ error }}</div>
@@ -58,8 +56,7 @@
         </div>
 
         <div class="event-form-actions mt-4">
-            <button class="btn btn-secondary text-nowrap mx-2" type="button"
-                onclick="window.location.href='{{ url_for('main.index') }}'">Cancel</button>
+            <a class="btn btn-secondary text-nowrap mx-2" href="{{ url_for('main.index') }}">Cancel</a>
             {{ form.submit(class="btn btn-primary text-nowrap mx-2") }}
         </div>
     </form>

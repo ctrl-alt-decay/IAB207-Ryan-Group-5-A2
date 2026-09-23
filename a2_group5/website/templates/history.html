@@ -1,16 +1,26 @@
-{# Booking history page (route main.history). Static A1 rows - not the logged-in
-   user's real bookings yet. #}
+{# History page (route main.history, login required). Two sections:
+     - Bookings: still the static A1 rows, not the user's real bookings (#22).
+     - My Events: the events the logged-in user created, with Edit and Cancel
+       (#24). Those buttons only appear here for the owner, and main.edit_event
+       and main.cancel_event check ownership again on the server. #}
 {% extends "base_epicurean.html" %}
+{% from "_event_macros.html" import status_badge %}
 
-{% block title %}Booking History - Epicurean{% endblock %}
+{% block title %}History - Epicurean{% endblock %}
 {% block description %}Epicurean Booking History Page{% endblock %}
 
 {% block content %}
-    <div class="container-fluid px-5 py-5">
-        <h1 class="page-heading">Booking History</h1>
+    <div class="container-fluid px-3 px-md-5 py-4 py-md-5">
+        <h1 class="page-heading">History</h1>
+        <h2 class="section-heading">My Bookings</h2>
 
-        <!-- ==== Booking table ============================== -->
-        <div class="row">
+        {# Two views of the same bookings: the table from 992px (lg) up, and one
+           stacked card per booking below that, so phones and tablets never have
+           to scroll a table sideways (it doesn't fit below 992px). Bootstrap's
+           d-* classes show one and hide the other. #}
+
+        <!-- ==== Booking table (lg and up) ============================== -->
+        <div class="row d-none d-lg-flex">
             <div class="col-12">
                 <div class="table-responsive">
                     <table class="table ticket-type-table" id="bookingHistoryTable">
@@ -21,14 +31,14 @@
                                 <th>Total</th>
                                 <th>Status</th>
                                 <th>Date : Time Booked</th>
-                                <th class="sr-only">View</th>
+                                <th class="visually-hidden">View</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <img src="{{ url_for('static', filename='img/chef-table_event.jpg') }}" class="history-table-thumb mr-3" alt="Chef's Table Tasting Menu">
+                                        <img src="{{ url_for('static', filename='img/chef-table_event.jpg') }}" class="history-table-thumb me-3" alt="Chef's Table Tasting Menu">
                                         <span class="entry-title">Chef's Table Tasting Menu</span>
                                     </div>
                                 </td>
@@ -36,12 +46,12 @@
                                 <td>$210.00</td>
                                 <td><span class="event-status event-status--available">Open</span></td>
                                 <td>15/08/2026, 19:10</td>
-                                <td class="text-right"><a href="{{ url_for('main.view_event') }}" class="btn btn-primary btn-sm">View</a></td>
+                                <td class="text-end"><a href="{{ url_for('main.index') }}" class="btn btn-primary btn-sm">View</a></td>
                             </tr>
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <img src="{{ url_for('static', filename='img/truffle-hunt_event.jpg') }}" class="history-table-thumb mr-3" alt="Truffle Hunting &amp; Feast">
+                                        <img src="{{ url_for('static', filename='img/truffle-hunt_event.jpg') }}" class="history-table-thumb me-3" alt="Truffle Hunting &amp; Feast">
                                         <span class="entry-title">Truffle Hunting &amp; Feast</span>
                                     </div>
                                 </td>
@@ -49,12 +59,12 @@
                                 <td>$145.00</td>
                                 <td><span class="event-status event-status--available">Open</span></td>
                                 <td>02/07/2026, 11:05</td>
-                                <td class="text-right"><a href="{{ url_for('main.view_event') }}" class="btn btn-primary btn-sm">View</a></td>
+                                <td class="text-end"><a href="{{ url_for('main.index') }}" class="btn btn-primary btn-sm">View</a></td>
                             </tr>
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <img src="{{ url_for('static', filename='img/bbq-seminar_event.jpg') }}" class="history-table-thumb mr-3" alt="Smoked BBQ Masterclass">
+                                        <img src="{{ url_for('static', filename='img/bbq-seminar_event.jpg') }}" class="history-table-thumb me-3" alt="Smoked BBQ Masterclass">
                                         <span class="entry-title">Smoked BBQ Masterclass</span>
                                     </div>
                                 </td>
@@ -62,12 +72,12 @@
                                 <td>$89.50</td>
                                 <td><span class="event-status event-status--cancelled">Cancelled</span></td>
                                 <td>20/05/2026, 14:30</td>
-                                <td class="text-right"><a href="{{ url_for('main.view_event') }}" class="btn btn-primary btn-sm">View</a></td>
+                                <td class="text-end"><a href="{{ url_for('main.index') }}" class="btn btn-primary btn-sm">View</a></td>
                             </tr>
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <img src="{{ url_for('static', filename='img/vegan-vinyard_event.jpg') }}" class="history-table-thumb mr-3" alt="Vineyard Vegan Picnic">
+                                        <img src="{{ url_for('static', filename='img/vegan-vinyard_event.jpg') }}" class="history-table-thumb me-3" alt="Vineyard Vegan Picnic">
                                         <span class="entry-title">Vineyard Vegan Picnic</span>
                                     </div>
                                 </td>
@@ -75,12 +85,12 @@
                                 <td>$65.00</td>
                                 <td><span class="event-status event-status--inactive">Inactive</span></td>
                                 <td>14/03/2026, 09:45</td>
-                                <td class="text-right"><a href="{{ url_for('main.view_event') }}" class="btn btn-primary btn-sm">View</a></td>
+                                <td class="text-end"><a href="{{ url_for('main.index') }}" class="btn btn-primary btn-sm">View</a></td>
                             </tr>
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <img src="{{ url_for('static', filename='img/dumpling-dongzhi-festival_event.jpg') }}" class="history-table-thumb mr-3" alt="Dongzhi Festival Dumpling Class">
+                                        <img src="{{ url_for('static', filename='img/dumpling-dongzhi-festival_event.jpg') }}" class="history-table-thumb me-3" alt="Dongzhi Festival Dumpling Class">
                                         <span class="entry-title">Dongzhi Festival Dumpling Class</span>
                                     </div>
                                 </td>
@@ -88,18 +98,139 @@
                                 <td>$52.00</td>
                                 <td><span class="event-status event-status--inactive">Inactive</span></td>
                                 <td>08/01/2026, 16:20</td>
-                                <td class="text-right"><a href="{{ url_for('main.view_event') }}" class="btn btn-primary btn-sm">View</a></td>
+                                <td class="text-end"><a href="{{ url_for('main.index') }}" class="btn btn-primary btn-sm">View</a></td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
+
+        <!-- ==== Booking cards (below lg) ============================== -->
+        {% macro booking_card(image, product, order_number, total, status, status_class, booked) %}
+        <li class="event-form-card booking-card">
+            <div class="d-flex align-items-center mb-3">
+                <img src="{{ url_for('static', filename='img/' ~ image) }}" class="history-table-thumb me-3" alt="{{ product }}">
+                <h3 class="entry-title mb-0">{{ product }}</h3>
+            </div>
+            <dl class="booking-card-details">
+                <div class="booking-card-item">
+                    <dt>Order Number</dt>
+                    <dd>{{ order_number }}</dd>
+                </div>
+                <div class="booking-card-item">
+                    <dt>Total</dt>
+                    <dd>{{ total }}</dd>
+                </div>
+                <div class="booking-card-item">
+                    <dt>Status</dt>
+                    <dd><span class="event-status {{ status_class }}">{{ status }}</span></dd>
+                </div>
+                <div class="booking-card-item">
+                    <dt>Date : Time Booked</dt>
+                    <dd>{{ booked }}</dd>
+                </div>
+            </dl>
+            <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-sm w-100">View</a>
+        </li>
+        {% endmacro %}
+
+        <ul class="list-unstyled d-lg-none mb-0">
+            {{ booking_card('chef-table_event.jpg', "Chef's Table Tasting Menu", '#EPI-64118', '$210.00',
+                            'Open', 'event-status--available', '15/08/2026, 19:10') }}
+            {{ booking_card('truffle-hunt_event.jpg', 'Truffle Hunting & Feast', '#EPI-63042', '$145.00',
+                            'Open', 'event-status--available', '02/07/2026, 11:05') }}
+            {{ booking_card('bbq-seminar_event.jpg', 'Smoked BBQ Masterclass', '#EPI-61870', '$89.50',
+                            'Cancelled', 'event-status--cancelled', '20/05/2026, 14:30') }}
+            {{ booking_card('vegan-vinyard_event.jpg', 'Vineyard Vegan Picnic', '#EPI-59561', '$65.00',
+                            'Inactive', 'event-status--inactive', '14/03/2026, 09:45') }}
+            {{ booking_card('dumpling-dongzhi-festival_event.jpg', 'Dongzhi Festival Dumpling Class', '#EPI-57289', '$52.00',
+                            'Inactive', 'event-status--inactive', '08/01/2026, 16:20') }}
+        </ul>
+
+        <!-- ==== My Events (#24) ============================== -->
+        <h2 class="section-heading mt-5" id="myEvents">My Events</h2>
+
+        {# Edit/Cancel, or nothing once an event is cancelled #}
+        {% macro owner_actions(event) %}
+        <a href="{{ url_for('main.event_details', event_id=event.id) }}" class="btn btn-primary btn-sm">View</a>
+        {% if event.status != 'Cancelled' %}
+        <a href="{{ url_for('main.edit_event', event_id=event.id) }}" class="btn btn-outline-secondary btn-sm">Edit</a>
+        <a href="{{ url_for('main.cancel_event', event_id=event.id) }}" class="btn btn-outline-danger btn-sm">Cancel</a>
+        {% endif %}
+        {% endmacro %}
+
+        {% macro tickets_summary(event) -%}
+        {{ event.tickets_sold }} / {{ event.ticket_types|sum(attribute='capacity') }}
+        {%- endmacro %}
+
+        {% if my_events %}
+        <!-- table from lg, cards below - the same pattern as the bookings above -->
+        <div class="row d-none d-lg-flex">
+            <div class="col-12">
+                <div class="table-responsive">
+                    <table class="table ticket-type-table" id="myEventsTable">
+                        <thead>
+                            <tr>
+                                <th>Event</th>
+                                <th>Date : Time</th>
+                                <th>Tickets Sold</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for event in my_events %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ url_for('static', filename=event.image_path) }}" class="history-table-thumb me-3" alt="{{ event.title }}">
+                                        <span class="entry-title">{{ event.title }}</span>
+                                    </div>
+                                </td>
+                                <td>{{ event.event_date.strftime('%d/%m/%Y') }}, {{ event.event_time.strftime('%H:%M') }}</td>
+                                <td>{{ tickets_summary(event) }}</td>
+                                <td>{{ status_badge(event.status) }}</td>
+                                <td class="text-end text-nowrap owner-actions">{{ owner_actions(event) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <ul class="list-unstyled d-lg-none mb-0">
+            {% for event in my_events %}
+            <li class="event-form-card booking-card">
+                <div class="d-flex align-items-center mb-3">
+                    <img src="{{ url_for('static', filename=event.image_path) }}" class="history-table-thumb me-3" alt="{{ event.title }}">
+                    <h3 class="entry-title mb-0">{{ event.title }}</h3>
+                </div>
+                <dl class="booking-card-details">
+                    <div class="booking-card-item">
+                        <dt>Date : Time</dt>
+                        <dd>{{ event.event_date.strftime('%d/%m/%Y') }}, {{ event.event_time.strftime('%H:%M') }}</dd>
+                    </div>
+                    <div class="booking-card-item">
+                        <dt>Tickets Sold</dt>
+                        <dd>{{ tickets_summary(event) }}</dd>
+                    </div>
+                    <div class="booking-card-item">
+                        <dt>Status</dt>
+                        <dd>{{ status_badge(event.status) }}</dd>
+                    </div>
+                </dl>
+                <div class="owner-actions owner-actions--card">{{ owner_actions(event) }}</div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted">
+            You haven't listed any events yet. <a href="{{ url_for('main.create_event') }}">Create one</a>.
+        </p>
+        {% endif %}
     </div>
 
     <!-- ==== Footer ============================== -->
-{% endblock %}
-
-{% block scripts %}
-        crossorigin="anonymous"></script>
 {% endblock %}
