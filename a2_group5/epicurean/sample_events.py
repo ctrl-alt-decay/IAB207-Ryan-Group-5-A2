@@ -4,7 +4,7 @@ date and kids' tickets (CATEGORIES in views.py).
 
 Run from the projectfile directory (the one containing main.py):
 
-    python -m website.sample_events
+    python -m epicurean.sample_events
 
 Safe to run on a database that matters - nothing is dropped:
   - add_sample_events() adds any sample event whose title isn't there yet

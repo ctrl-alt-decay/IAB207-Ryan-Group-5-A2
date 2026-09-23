@@ -2,12 +2,12 @@
 
 Run from the projectfile directory (the one containing main.py):
 
-    python -m website.seed
+    python -m epicurean.seed
 
 This DROPS and recreates every table, so only run it against the dev database.
 After its own data it adds the 24 sample events from sample_events.py. To add
 just those to an existing database WITHOUT dropping anything, run
-`python -m website.sample_events` instead.
+`python -m epicurean.sample_events` instead.
 Uses nothing beyond what is already in requirements.txt.
 """
 

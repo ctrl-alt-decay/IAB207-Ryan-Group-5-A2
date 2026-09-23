@@ -3,7 +3,7 @@
 instance/
 
 # User-uploaded files such as profile pictures (the app recreates the folder)
-website/static/uploads/
+epicurean/static/uploads/
 
 # Python bytecode caches
 __pycache__/
