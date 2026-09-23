@@ -1,0 +1,44 @@
+{# Confirm cancelling an event (route main.cancel_event, #24). Owner only - the
+   route sends anyone else back to the event page. Cancelling is a soft delete: the status
+   becomes Cancelled and the event stays in the database with its bookings. #}
+{% extends "base_epicurean.html" %}
+
+{% block title %}Cancel Event - Epicurean{% endblock %}
+{% block description %}Cancel {{ event.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 px-md-5 py-4 py-md-5">
+
+    <h1 class="page-heading">Cancel Event</h1>
+
+    <div class="row">
+        <div class="col-12 col-lg-8 col-xl-7">
+            <form class="event-form-card" method="POST" novalidate>
+                {{ form.hidden_tag() }}
+
+                <div class="d-flex align-items-center mb-3">
+                    <img src="{{ url_for('static', filename=event.image_path) }}" class="history-table-thumb me-3"
+                        alt="{{ event.title }}">
+                    <h2 class="entry-title mb-0">{{ event.title }}</h2>
+                </div>
+
+                <p>
+                    Cancel this event on {{ event.event_date.strftime('%d/%m/%Y') }} at
+                    {{ event.event_time.strftime('%H:%M') }}? It will show as Cancelled everywhere,
+                    tickets will no longer be on sale, and it can't be edited or re-opened afterwards.
+                </p>
+                {% if event.tickets_sold %}
+                <p class="mb-0"><strong>{{ event.tickets_sold }} tickets have already been sold.</strong>
+                    Their bookings are kept.</p>
+                {% endif %}
+
+                <div class="event-form-actions mt-4">
+                    <a class="btn btn-secondary text-nowrap mx-2" href="{{ url_for('main.history') }}">Keep Event</a>
+                    {{ form.submit(class="btn btn-danger text-nowrap mx-2") }}
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

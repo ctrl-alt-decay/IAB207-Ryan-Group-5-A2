@@ -1,0 +1,69 @@
+{# Sign-up page (route auth.register). The field() macro below renders one
+   labelled input plus its validation errors in the A1 .event-form-row layout. #}
+{% extends "base_epicurean.html" %}
+
+{% block title %}Sign Up - Epicurean{% endblock %}
+{% block description %}Create an Epicurean account{% endblock %}
+
+{% macro field(f, id, placeholder='', required=False, toggle=False) %}
+<div class="event-form-row">
+    <label class="event-form-label" for="{{ id }}">{{ f.label.text }}{% if required %}<span
+            class="event-form-required">*</span>{% endif %}</label>
+    <div class="event-form-field">
+        {% if toggle %}<div class="input-group has-validation">{% endif %}
+        {{ f(class="form-control" ~ (" is-invalid" if f.errors else ""), id=id, placeholder=placeholder) }}
+        {% if toggle %}
+        <button class="btn btn-outline-secondary" type="button" data-password-toggle="{{ id }}"
+            aria-label="Show password" aria-pressed="false" title="Show password">
+            <i class="fa fa-eye" aria-hidden="true"></i>
+        </button>
+        {% endif %}
+        {% for error in f.errors %}
+        <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %}
+        {% if toggle %}</div>{% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+{% block content %}
+<div class="container-fluid px-5 py-5">
+
+    <h1 class="page-heading">Sign Up</h1>
+
+    <form class="event-form-card" method="POST" novalidate>
+        {{ form.hidden_tag() }}
+
+        <div class="event-form-columns">
+
+            <!-- Left: who you are -->
+            <div class="event-form-col">
+                <h2 class="section-heading">Your Details</h2>
+                {{ field(form.first_name, 'registerFirstName', 'First name', True) }}
+                {{ field(form.last_name, 'registerLastName', 'Last name', True) }}
+                {{ field(form.email, 'registerEmail', 'you@example.com', True) }}
+            </div>
+
+            <!-- Right: account security -->
+            <div class="event-form-col">
+                <h2 class="section-heading">Contact &amp; Password</h2>
+                {{ field(form.contact_number, 'registerContact', 'e.g. 0400 123 456', True) }}
+                {{ field(form.street_address, 'registerAddress', 'Street, suburb, state, postcode', True) }}
+                {{ field(form.password, 'registerPassword', 'At least 8 characters', True, toggle=True) }}
+                {{ field(form.confirm, 'registerConfirm', 'Repeat your password', True, toggle=True) }}
+            </div>
+
+        </div>
+
+        <div class="event-form-actions mt-4">
+            <a class="btn btn-secondary text-nowrap mx-2" href="{{ url_for('main.index') }}">Cancel</a>
+            {{ form.submit(class="btn btn-primary text-nowrap mx-2") }}
+        </div>
+    </form>
+
+    <p class="text-muted mt-3 mb-0">
+        Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a>.
+    </p>
+
+</div>
+{% endblock %}

@@ -1,0 +1,455 @@
+{# Create Event page (route main.create_event, form EventForm), also used as the
+   Edit Event page (route main.edit_event, form EditEventForm), which passes the
+   event being edited as `event`. Posts back to the same URL; errors are shown
+   under each field. Ticket rows are added and removed with CSS-only checkboxes
+   (up to EventForm.TICKET_ROWS), and the Acknowledgement of Country options are
+   radios + CSS only. The scripts block runs only the A1 date picker and time
+   spinner. #}
+{% extends "base_epicurean.html" %}
+{% set editing = event is defined %}
+
+{% block title %}{{ 'Edit Event' if editing else 'Create Event' }} - Epicurean{% endblock %}
+{% block description %}Epicurean List Event Page{% endblock %}
+
+{% block head_extra %}
+    <!-- bootstrap-datepicker (date field only - no time support) -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker3.min.css">
+{% endblock %}
+
+{# a field's error messages; d-block so they show even where Bootstrap's
+   .is-invalid sibling rule doesn't reach (file inputs, input groups) #}
+{% macro errors(f) %}
+    {% for error in f.errors %}
+    <div class="invalid-feedback d-block">{{ error }}</div>
+    {% endfor %}
+{% endmacro %}
+
+{% macro invalid(f) %}{{ " is-invalid" if f.errors else "" }}{% endmacro %}
+
+{% block content %}
+    <div class="container-fluid px-3 px-md-5 py-4 py-md-5">
+        {% if editing %}
+        <h1 class="page-heading">Edit Event</h1>
+        <p class="text-muted">
+            Change any of the details below. The status ({{ event.status }}) can't be changed here -
+            to call the event off, use Cancel Event instead.
+        </p>
+        {% else %}
+        <h1 class="page-heading">Create Event</h1>
+        <p class="text-muted">Fill in the details below to publish your event.</p>
+        {% endif %}
+
+        <form class="event-form-card" method="POST" enctype="multipart/form-data" novalidate>
+            {{ form.hidden_tag() }}
+
+            <h2 class="section-heading">Event Details</h2>
+
+            {# --xl: the two columns only sit side by side from 1200px. Any
+               narrower and the fields get squeezed beside their 220px labels. #}
+            <div class="event-form-columns event-form-columns--xl">
+
+                <!-- Left: what the event is -->
+                <div class="event-form-col">
+
+                    <div class="event-form-row">
+                        <label class="event-form-label" for="enterEventTitle">Event Title<span
+                                class="event-form-required">*</span></label>
+                        <div class="event-form-field">
+                            {{ form.title(class="form-control" ~ invalid(form.title), id="enterEventTitle",
+                                placeholder="Event title") }}
+                            {{ errors(form.title) }}
+                        </div>
+                    </div>
+
+                    <div class="event-form-row">
+                        <label class="event-form-label" for="enterEventImage">Event Image{% if not editing %}<span
+                                class="event-form-required">*</span>{% endif %}</label>
+                        <div class="event-form-field">
+                            {% if editing %}
+                            <img src="{{ url_for('static', filename=event.image_path) }}"
+                                class="img-fluid event-form-image-preview rounded mb-2" alt="Current image">
+                            {% endif %}
+                            {# Bootstrap 5 styles the browser's own file input - it shows the
+                               chosen filename itself, no JavaScript needed #}
+                            {{ form.image(class="form-control", id="enterEventImage", accept="image/*") }}
+                            <small class="form-text text-muted">jpg, jpeg, png or gif{{
+                                ' - leave empty to keep the current image' if editing }}</small>
+                            {{ errors(form.image) }}
+                        </div>
+                    </div>
+
+                    <div class="event-form-row">
+                        <label class="event-form-label" for="enterDescription">Description<span
+                                class="event-form-required">*</span></label>
+                        <div class="event-form-field">
+                            {{ form.description(class="form-control" ~ invalid(form.description),
+                                id="enterDescription", rows="6", placeholder="What your event is about!") }}
+                            {{ errors(form.description) }}
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right: filters, when/where -->
+                <div class="event-form-col">
+
+                    <div class="event-form-row">
+                        <label class="event-form-label" for="selectDietary">Dietary Preference</label>
+                        <div class="event-form-field">
+                            {{ form.dietary_preference(class="form-select" ~ invalid(form.dietary_preference),
+                                id="selectDietary") }}
+                            {{ errors(form.dietary_preference) }}
+                        </div>
+                    </div>
+
+                    <div class="event-form-row">
+                        <label class="event-form-label" for="selectSeasonal">Seasonal / Cultural Options</label>
+                        <div class="event-form-field">
+                            {{ form.seasonal_cultural(class="form-select" ~ invalid(form.seasonal_cultural),
+                                id="selectSeasonal") }}
+                            {{ errors(form.seasonal_cultural) }}
+                        </div>
+                    </div>
+
+                    <div class="event-form-row">
+                        <label class="event-form-label" for="selectProficiency">Proficiency</label>
+                        <div class="event-form-field">
+                            {{ form.proficiency(class="form-select" ~ invalid(form.proficiency),
+                                id="selectProficiency") }}
+                            {{ errors(form.proficiency) }}
+                        </div>
+                    </div>
+
+                    <div class="event-form-row">
+                        <label class="event-form-label" for="enterVenue">Venue / Address<span
+                                class="event-form-required">*</span></label>
+                        <div class="event-form-field">
+                            {{ form.venue(class="form-control" ~ invalid(form.venue), id="enterVenue",
+                                placeholder="Please enter the venue address") }}
+                            {{ errors(form.venue) }}
+                        </div>
+                    </div>
+
+                    <div class="event-form-row event-form-row--split">
+                        <div class="event-form-subfield">
+                            <label class="event-filter-label" for="enterEventDate">Event Date<span
+                                    class="event-form-required">*</span></label>
+                            <div class="input-group">
+                                {# type="text" overrides WTForms' native date input so the
+                                   A1 date picker can fill it in dd/mm/yyyy #}
+                                {{ form.event_date(type="text", class="form-control event-form-picker-input"
+                                    ~ invalid(form.event_date), id="enterEventDate", placeholder="dd/mm/yyyy",
+                                    autocomplete="off", readonly=True) }}
+                                <span class="input-group-text event-form-date-addon" id="enterEventDateAddon"
+                                    title="Choose a date">
+                                    <i class="fa fa-calendar"></i>
+                                </span>
+                            </div>
+                            {{ errors(form.event_date) }}
+                        </div>
+
+                        <div class="event-form-subfield event-time-picker" id="eventTimePicker">
+                            <label class="event-filter-label" for="enterEventTime">Event Time<span
+                                    class="event-form-required">*</span></label>
+                            {{ form.event_time(type="text", class="form-control event-form-picker-input"
+                                ~ invalid(form.event_time), id="enterEventTime", placeholder="hh:mm",
+                                autocomplete="off", readonly=True) }}
+                            <div class="event-time-popover" id="eventTimePopover">
+                                <div class="event-time-popover-title">Select Time</div>
+                                <div class="event-time-popover-body">
+                                    <div class="event-time-spinner">
+                                        <button type="button" class="event-time-spin-btn" data-unit="hour"
+                                            data-dir="up" title="Increase hour"><i class="fa fa-chevron-up"></i></button>
+                                        <div class="event-time-spin-value" id="eventTimeHourValue">09</div>
+                                        <button type="button" class="event-time-spin-btn" data-unit="hour"
+                                            data-dir="down" title="Decrease hour"><i class="fa fa-chevron-down"></i></button>
+                                    </div>
+                                    <div class="event-time-colon">:</div>
+                                    <div class="event-time-spinner">
+                                        <button type="button" class="event-time-spin-btn" data-unit="minute"
+                                            data-dir="up" title="Increase minute"><i class="fa fa-chevron-up"></i></button>
+                                        <div class="event-time-spin-value" id="eventTimeMinuteValue">00</div>
+                                        <button type="button" class="event-time-spin-btn" data-unit="minute"
+                                            data-dir="down" title="Decrease minute"><i class="fa fa-chevron-down"></i></button>
+                                    </div>
+                                    <button type="button" class="event-time-confirm" id="eventTimeConfirm"
+                                        title="Use this time" aria-label="Use this time">
+                                        <i class="fa fa-check" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {{ errors(form.event_time) }}
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- ==== Acknowledgement of Country ============================== -->
+            {# No JavaScript: the info tooltip opens on hover/focus, and the previews
+               and city list are revealed by CSS sibling selectors on the checked
+               radio (see "Acknowledgement of Country" in style.css). That only
+               works because each radio input sits directly before its label and
+               the blocks it controls - don't wrap the inputs in other elements. #}
+            <div class="ack-heading">
+                <h2 class="section-heading mb-0" id="ackHeading">Acknowledgement of Country</h2>
+                <div class="info-icon" tabindex="0" role="button"
+                    aria-label="About Acknowledgement of Country" aria-describedby="ackInfo">
+                    <i class="fa fa-info-circle" aria-hidden="true"></i>
+                    <div class="info-tooltip" id="ackInfo" role="tooltip">
+                        <p><strong>What is it?</strong> A statement of respect for the Traditional
+                            Custodians of the land where an event is held, recognising the continuing
+                            connection of Aboriginal and Torres Strait Islander peoples to Country.</p>
+                        <p><strong>Why it matters</strong> Recognising First Peoples and their histories
+                            builds the respect and understanding between Indigenous and non-Indigenous
+                            Australians that reconciliation depends on.</p>
+                        <p class="mb-0"><strong>Not a Welcome to Country</strong> Anyone, of any
+                            background, can give an Acknowledgement of Country. A Welcome to Country can
+                            only be delivered by a Traditional Owner or Elder of that specific Country,
+                            formally welcoming visitors onto their land.</p>
+                    </div>
+                </div>
+            </div>
+            <p class="text-muted">Choose whether your event page includes an Acknowledgement of
+                Country. Enhanced is tailored to the capital city you pick.</p>
+
+            <div class="ack-picker" role="group" aria-labelledby="ackHeading">
+                {% for choice in form.acknowledgement_type %}
+                {{ choice(class="ack-radio") }}
+                {{ choice.label(class="ack-pill") }}
+                {% endfor %}
+
+                {# shown when Generic is checked #}
+                <div class="ack-preview ack-generic">
+                    <span class="event-filter-label">Preview</span>
+                    {{ form.GENERIC_ACK_PREVIEW }}
+                </div>
+
+                {# shown when Enhanced is checked. Every city has its own preview,
+                   shown only while that city is checked. #}
+                <fieldset class="ack-enhanced">
+                    <legend class="event-filter-label">{{ form.acknowledgement_city.label.text }}<span
+                            class="event-form-required">*</span></legend>
+                    <div class="ack-picker">
+                        {% for choice in form.acknowledgement_city %}
+                        {{ choice(class="ack-radio") }}
+                        {{ choice.label(class="ack-pill") }}
+                        <div class="ack-preview ack-city-preview">
+                            <span class="event-filter-label">Preview</span>
+                            {{ form.ENHANCED_ACK_PREVIEW.format(choice.data) }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {{ errors(form.acknowledgement_city) }}
+                </fieldset>
+            </div>
+            {{ errors(form.acknowledgement_type) }}
+
+            <!-- ==== Ticket Types ============================== -->
+            <h2 class="section-heading mt-4">Ticket Types<span class="event-form-required">*</span></h2>
+            <p class="text-muted">Add a row for each type of ticket, up to {{ form.TICKET_ROWS }}.</p>
+
+            {# FieldList errors mix per-row dicts with messages from
+               validate_ticket_types; only the messages belong here #}
+            {% for error in form.ticket_types.errors if error is string %}
+            <div class="invalid-feedback d-block mb-2">{{ error }}</div>
+            {% endfor %}
+
+            {# Add/remove rows without JavaScript. Every row is rendered; rows 2+ are
+               hidden until their "included" checkbox (in .ticket-add below the
+               rows) is ticked. "Add Ticket Type" is the label of the first
+               unticked checkbox, and each row's Remove button is the label of
+               that row's checkbox. The show/hide rules are in style.css
+               (Ticket Types section).
+
+               Layout (Bootstrap grid): from 992px (lg) each ticket is one line
+               under a row of column headings. Below that each ticket becomes
+               its own bordered card with a visible label on every field - name
+               and price/capacity share a line from 576px (sm), and on phones
+               only price and capacity share one. #}
+            {% set examples = ['e.g. Adult', 'e.g. Child', 'e.g. Senior', 'e.g. Student',
+                               'e.g. Concession', 'e.g. VIP'] %}
+            <div class="ticket-types">
+                {# visual only - every field below has its own label #}
+                <div class="row gx-2 ticket-editor-head d-none d-lg-flex" aria-hidden="true">
+                    <div class="col-lg-3">Ticket Type</div>
+                    <div class="col-lg-2">Price ($)</div>
+                    <div class="col-lg-2">Capacity</div>
+                    <div class="col-lg">Ticket Description</div>
+                    <div class="col-lg-auto ticket-remove-col"></div>
+                </div>
+
+                {% for entry in form.ticket_types %}
+                {% set row = entry.form %}
+                {% set n = loop.index %}
+                <div class="row gx-2 ticket-row ticket-row-{{ n }}{{ ' ticket-row-extra' if not loop.first }}">
+                    <div class="col-12 col-sm-6 col-lg-3 ticket-field">
+                        <label class="ticket-field-label" for="{{ row.name.id }}">Ticket Type<span
+                                class="visually-hidden"> {{ n }}</span></label>
+                        {{ row.name(class="form-control" ~ invalid(row.name), placeholder=examples[loop.index0]) }}
+                        {# Edit only: which existing ticket type this row is (empty for new rows) #}
+                        {{ row.ticket_id() }}
+                        {{ errors(row.name) }}
+                    </div>
+                    <div class="col-6 col-sm-3 col-lg-2 ticket-field">
+                        <label class="ticket-field-label" for="{{ row.price.id }}">Price ($)<span
+                                class="visually-hidden"> for ticket type {{ n }}</span></label>
+                        {{ row.price(type="number", min="0", step="0.01", class="form-control" ~ invalid(row.price),
+                            placeholder="0.00") }}
+                        {{ errors(row.price) }}
+                    </div>
+                    <div class="col-6 col-sm-3 col-lg-2 ticket-field">
+                        <label class="ticket-field-label" for="{{ row.capacity.id }}">Capacity<span
+                                class="visually-hidden"> for ticket type {{ n }}</span></label>
+                        {{ row.capacity(type="number", min="1", class="form-control" ~ invalid(row.capacity),
+                            placeholder="0") }}
+                        {{ errors(row.capacity) }}
+                    </div>
+                    <div class="col-12 col-lg ticket-field">
+                        <label class="ticket-field-label" for="{{ row.description.id }}">Ticket Description<span
+                                class="visually-hidden"> {{ n }}</span></label>
+                        {{ row.description(class="form-control" ~ invalid(row.description),
+                            placeholder="Optional details") }}
+                        {{ errors(row.description) }}
+                    </div>
+                    {% if loop.first %}
+                    {# the first row is always included. The column stays at lg so
+                       its fields line up with the rows below, which have Remove. #}
+                    <div class="col-lg-auto ticket-remove-col d-none d-lg-block">
+                        <input type="hidden" name="{{ row.included.name }}" value="y">
+                    </div>
+                    {% else %}
+                    <div class="col-12 col-lg-auto ticket-field ticket-remove-col">
+                        <label class="btn btn-danger btn-sm ticket-remove-btn mb-0"
+                            for="{{ row.included.id }}" title="Remove ticket type {{ n }}">
+                            <i class="fa fa-times" aria-hidden="true"></i> Remove
+                        </label>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                {# One checkbox + Add label per extra row, as siblings so the CSS
+                   can show only the first unticked one's label #}
+                <div class="ticket-add">
+                    {% for entry in form.ticket_types.entries[1:] %}
+                    {{ entry.form.included(class="ticket-row-toggle ticket-toggle-" ~ (loop.index + 1),
+                        aria_label="Ticket type row " ~ (loop.index + 1)) }}
+                    <label class="btn btn-primary btn-sm ticket-add-btn mb-0" for="{{ entry.form.included.id }}">
+                        <i class="fa fa-plus" aria-hidden="true"></i> Add Ticket Type
+                    </label>
+                    {% endfor %}
+                    <p class="text-muted ticket-add-limit mb-0">Maximum ticket types reached.</p>
+                </div>
+            </div>
+
+            <div class="event-form-actions mt-4">
+                <a class="btn btn-secondary text-nowrap mx-2"
+                    href="{{ url_for('main.event_details', event_id=event.id) if editing else url_for('main.index') }}">Cancel</a>
+                {{ form.submit(class="btn btn-primary text-nowrap mx-2") }}
+            </div>
+
+        </form>
+    </div>
+
+    <!-- ==== Footer ============================== -->
+{% endblock %}
+
+{% block scripts %}
+    <!-- bootstrap-datepicker plugin, used by the Event Date field below -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js"></script>
+
+    <!-- ====Page scripts ============================== -->
+    <!-- date picker and time spinner -->
+    <script>
+        $(function () {
+
+            /* ---- Event Date: calendar picker -------------------- */
+
+            var $eventDate = $('#enterEventDate').datepicker({
+                format: 'dd/mm/yyyy',
+                weekStart: 1,           // weeks start on Monday
+                startDate: new Date(),  // an event cannot be listed in the past
+                todayHighlight: true,
+                autoclose: true,
+                clearBtn: true,
+                orientation: 'bottom auto'
+            });
+
+            // The calendar icon opens the same picker as clicking the field
+            $('#enterEventDateAddon').on('click', function () {
+                $eventDate.datepicker('show');
+            });
+
+
+            /* ---- Event Time: hour/minute spinner -------------------- */
+
+            var hour = 9;     // the time the spinner starts on
+            var minute = 0;
+
+            // Turns 9 into "09" so the time always shows two digits
+            function twoDigits(number) {
+                if (number < 10) {
+                    return '0' + number;
+                }
+                return '' + number;
+            }
+
+            // Copies the current hour and minute into the popover
+            function showTime() {
+                $('#eventTimeHourValue').text(twoDigits(hour));
+                $('#eventTimeMinuteValue').text(twoDigits(minute));
+            }
+            showTime();
+
+            // Clicking the field opens / closes the popover
+            $('#enterEventTime').on('click', function (event) {
+                event.stopPropagation();
+                $('#eventTimePopover').toggleClass('show');
+            });
+
+            // Each chevron steps its number up or down by one and wraps around
+            $('#eventTimePicker').on('click', '.event-time-spin-btn', function () {
+                var unit = $(this).data('unit');
+                var goingUp = $(this).data('dir') === 'up';
+
+                if (unit === 'hour') {
+                    hour = goingUp ? hour + 1 : hour - 1;
+                    if (hour > 23) { hour = 0; }
+                    if (hour < 0) { hour = 23; }
+                } else {
+                    minute = goingUp ? minute + 1 : minute - 1;
+                    if (minute > 59) { minute = 0; }
+                    if (minute < 0) { minute = 59; }
+                }
+
+                showTime();
+
+                // The field stays empty until the user picks a time
+                fillTimeField();
+            });
+
+            // Copies the popover's time into the Event Time field
+            function fillTimeField() {
+                $('#enterEventTime').val(twoDigits(hour) + ':' + twoDigits(minute));
+            }
+
+            // The tick locks in the time shown - including the starting 09:00,
+            // which the arrows alone never fill in - and closes the popover
+            $('#eventTimeConfirm').on('click', function () {
+                fillTimeField();
+                $('#eventTimePopover').removeClass('show');
+            });
+
+            // Clicking anywhere outside picker closes popover
+            $(document).on('click', function (event) {
+                if ($(event.target).closest('#eventTimePicker').length === 0) {
+                    $('#eventTimePopover').removeClass('show');
+                }
+            });
+
+        });
+    </script>
+{% endblock %}

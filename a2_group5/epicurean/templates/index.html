@@ -1,0 +1,96 @@
+{# Homepage (route main.index, #15). A hero banner, then Recently Added and the
+   category sections from the database (see CATEGORIES in views.py), each card
+   the event_card macro linking to that event's page. Each category heading has
+   an "Explore more events" link to its full, paginated page (main.category).
+   The filters and search are still the static A1 controls (#16, #17).
+   No JavaScript on this page. #}
+{% extends "base_epicurean.html" %}
+{% from "_event_macros.html" import section_heading, event_grid %}
+
+{% block title %}Epicurean{% endblock %}
+{% block description %}Epicurean Home Page{% endblock %}
+
+{% block content %}
+
+
+    <!-- ==== Hero banner ============================== -->
+    {# Eventbrite-style: rounded photo with an off-white gradient over its left side
+       and the text on top (on phones the gradient runs up from the bottom and
+       the text sits at the bottom). CSS only - see "Hero banner" in style.css.
+       The wording is PLACEHOLDER until the real site description is written. #}
+    <div class="event-section-px pt-3">
+        <section class="site-hero" aria-labelledby="siteHeroTitle">
+            <img src="{{ url_for('static', filename='img/homepage_feast.jpg') }}" class="site-hero-img"
+                alt="A long table of shared dishes at an Epicurean event">
+            <div class="site-hero-text">
+                <h1 class="site-hero-title" id="siteHeroTitle">placeholder website description title</h1>
+                <p class="site-hero-description mb-0">placeholder website description</p>
+            </div>
+        </section>
+    </div>
+
+
+    <div class="container-fluid pt-4">
+
+        <!-- ==== Filters ============================== -->
+        <!-- defaults to "None"  -->
+        <div class="row event-section-px py-1">
+            <div class="col-12 col-sm-4 mb-2 mb-sm-0">
+                <label for="selectDietary" class="event-filter-label">Dietary Preference</label>
+                <select class="form-select" id="selectDietary">
+                    <option selected>None</option>
+                    <option>Gluten-Free</option>
+                    <option>Halal</option>
+                    <option>Keto Friendly</option>
+                    <option>Kosher</option>
+                    <option>Low Carb</option>
+                    <option>Paleo</option>
+                    <option>Vegan</option>
+                    <option>Vegetarian</option>
+                </select>
+            </div>
+            <div class="col-12 col-sm-4 mb-2 mb-sm-0">
+                <label for="selectSeasonal" class="event-filter-label">Seasonal / Cultural Options</label>
+                <select class="form-select" id="selectSeasonal">
+                    <option selected>None</option>
+                    <option>Spring Flavours</option>
+                    <option>Summer BBQ</option>
+                    <option>Autumn Harvest</option>
+                    <option>Winter Comforts</option>
+                    <option>Cultural</option>
+                    <option>Holidays</option>
+                </select>
+            </div>
+            <div class="col-12 col-sm-4 mb-2 mb-sm-0">
+                <label for="selectProficiency" class="event-filter-label">Proficiency Filter</label>
+                <select class="form-select" id="selectProficiency">
+                    <option selected>None</option>
+                    <option>Beginner</option>
+                    <option>Intermediate</option>
+                    <option>Expert</option>
+                    <option>Foodie</option>
+                    <option>Chef</option>
+                    <option>Family Friendly</option>
+                </select>
+            </div>
+        </div>
+
+
+        <!-- ==== Event sections ============================== -->
+        {# Recently Added (newest 4), then Popular, This Weekend and Kid Friendly
+           (top 8 by likes each). An event can appear in several. Empty sections
+           are skipped. The prefix keeps each card's favourite id unique. #}
+        {% for section in sections if section.events %}
+        {{ section_heading(section.heading,
+                           url_for('main.category', slug=section.slug) if section.slug else None,
+                           first=loop.first) }}
+        {{ event_grid(section.events, prefix=section.slug or 'recent') }}
+        {% else %}
+        <p class="event-section-px text-muted mt-4">No events have been listed yet.</p>
+        {% endfor %}
+
+    </div>
+
+
+    <!-- ==== Footer ============================== -->
+{% endblock %}

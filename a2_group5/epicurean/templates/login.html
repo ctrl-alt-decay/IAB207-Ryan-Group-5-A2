@@ -1,0 +1,62 @@
+{# Login page (route auth.login). Fields are rendered by hand, not with
+   bootstrap-flask's render_form, so they use the A1 .event-form-* styling. #}
+{% extends "base_epicurean.html" %}
+
+{% block title %}Login - Epicurean{% endblock %}
+{% block description %}Log in to your Epicurean account{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-5 py-5">
+
+    <h1 class="page-heading">Login</h1>
+
+    <div class="row">
+        <div class="col-12 col-lg-8 col-xl-7">
+
+            <form class="event-form-card" method="POST" novalidate>
+                {{ form.hidden_tag() }}
+
+                <div class="event-form-row">
+                    <label class="event-form-label" for="loginEmail">Email Address<span
+                            class="event-form-required">*</span></label>
+                    <div class="event-form-field">
+                        {{ form.email(class="form-control" ~ (" is-invalid" if form.email.errors else ""),
+                                      id="loginEmail", placeholder="you@example.com") }}
+                        {% for error in form.email.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="event-form-row">
+                    <label class="event-form-label" for="loginPassword">Password<span
+                            class="event-form-required">*</span></label>
+                    <div class="event-form-field">
+                        <div class="input-group has-validation">
+                            {{ form.password(class="form-control" ~ (" is-invalid" if form.password.errors else ""),
+                                             id="loginPassword", placeholder="Your password") }}
+                            <button class="btn btn-outline-secondary" type="button" data-password-toggle="loginPassword"
+                                aria-label="Show password" aria-pressed="false" title="Show password">
+                                <i class="fa fa-eye" aria-hidden="true"></i>
+                            </button>
+                            {% for error in form.password.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="event-form-actions mt-4">
+                    <a class="btn btn-secondary text-nowrap mx-2" href="{{ url_for('main.index') }}">Cancel</a>
+                    {{ form.submit(class="btn btn-primary text-nowrap mx-2") }}
+                </div>
+            </form>
+
+            <p class="text-muted mt-3 mb-0">
+                New user? <a href="{{ url_for('auth.register') }}">Click here</a> to sign up.
+            </p>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

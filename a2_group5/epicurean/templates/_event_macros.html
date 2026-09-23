@@ -1,0 +1,88 @@
+{# Shared event pieces. Import with:
+     {% from "_event_macros.html" import event_card, status_badge, section_heading %} #}
+
+
+{# Coloured status pill. The four statuses map onto the badge styles in
+   style.css; small=True is the compact version used on the cards. #}
+{% macro status_badge(status, small=False) -%}
+{%- set styles = {'Open': 'available', 'Sold Out': 'sold-out',
+                  'Cancelled': 'cancelled', 'Inactive': 'inactive'} -%}
+<span class="event-status event-status--{{ styles.get(status, 'inactive') }}{{ ' event-status--sm' if small }} mb-0">{{ status }}</span>
+{%- endmacro %}
+
+
+{# A section heading with an "Explore more events" link on the right (the
+   Eventbrite pattern). The heading itself links to the same page. With no
+   url it's a plain heading. #}
+{% macro section_heading(heading, url=None, first=False) %}
+<div class="event-section-px event-section-heading {{ 'mt-0' if first else 'mt-5' }}">
+    <h2 class="event-heading mb-0">
+        {% if url %}<a class="event-heading-link" href="{{ url }}">{{ heading }}</a>{% else %}{{ heading }}{% endif %}
+    </h2>
+    {% if url %}
+    <a class="event-explore-link" href="{{ url }}" aria-label="Explore more {{ heading }} events">
+        Explore more events <i class="fa fa-angle-right" aria-hidden="true"></i>
+    </a>
+    {% endif %}
+</div>
+{% endmacro %}
+
+
+{# One event tile. The title is a real link, and Bootstrap's stretched-link
+   stretches it over the whole card, so the card is clickable without
+   JavaScript. The favourite/share buttons sit above it (z-index in style.css).
+   The heart is a CSS-only toggle (a hidden checkbox) - it isn't saved yet.
+   `prefix` keeps its id unique when the same event is shown in two sections. #}
+{% macro event_card(event, prefix='') %}
+{% set fav_id = 'fav-' ~ prefix ~ '-' ~ event.id %}
+<div class="card event-card h-100">
+    <div class="event-card-img-wrap">
+        <img src="{{ url_for('static', filename=event.image_path) }}" class="card-img-top event-card-img"
+            alt="{{ event.title }}">
+        <div class="event-card-actions">
+            <input type="checkbox" class="event-favourite-toggle" id="{{ fav_id }}"
+                aria-label="Favourite {{ event.title }}">
+            <label class="event-icon-btn event-icon-btn--favourite mb-0" for="{{ fav_id }}" title="Favourite">
+                <i class="fa fa-heart-o event-favourite-off" aria-hidden="true"></i>
+                <i class="fa fa-heart event-favourite-on" aria-hidden="true"></i>
+            </label>
+            <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body d-flex flex-column">
+        <h3 class="card-title">
+            <a class="stretched-link event-card-link"
+                href="{{ url_for('main.event_details', event_id=event.id) }}">{{ event.title }}</a>
+        </h3>
+        <p class="event-card-date mb-0">
+            {{ event.event_date.strftime('%a') }} {{ event.event_date.day }} {{ event.event_date.strftime('%b') }}
+            at {{ event.event_time.strftime('%I:%M %p').lstrip('0') }}
+        </p>
+        <p class="event-card-location mb-2">{{ event.venue }}</p>
+        <div class="mt-auto d-flex justify-content-between align-items-end">
+            <div>
+                <p class="event-card-price mb-1">
+                    {% if event.from_price is not none %}From ${{ '%.2f'|format(event.from_price) }}
+                    {% else %}Tickets coming soon{% endif %}
+                </p>
+                <p class="event-card-likes mb-0"><i class="fa fa-heart" aria-hidden="true"></i> {{ event.likes }} likes</p>
+            </div>
+            {{ status_badge(event.status, small=True) }}
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+
+{# A grid of event cards: 4 a row from lg, 3 from md, 2 from sm, 1 on phones #}
+{% macro event_grid(events, prefix='') %}
+<div class="row event-section-px py-3">
+    {% for event in events %}
+    <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
+        {{ event_card(event, prefix) }}
+    </div>
+    {% endfor %}
+</div>
+{% endmacro %}
