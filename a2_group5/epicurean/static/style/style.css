@@ -294,16 +294,23 @@
 
 /* ============================= Hero banner ============================= */
 /* Homepage banner in Eventbrite's style: a rounded photo with an off-white
-   gradient over it and the text on the pale part. On phones the gradient
-   rises from the bottom and the text sits at the bottom; from md it comes in
-   from the left and the text sits on the left. No image editing needed - the
-   gradient (Colours region) does the fading. */
+   gradient over one side and the text on the pale part (colours in the
+   Colours region).
+
+   The photo has the EPICUREAN logo printed in it (about 34-66% across and
+   36-55% down the image), so the fade and the text are kept clear of it:
+     - phones: the fade rises from the bottom but stops just below the logo,
+       and the text sits in that bottom strip
+     - md and up: the fade covers only the left third, the text is limited to
+       that strip, and the photo is framed a little left of centre (20%) so the
+       logo always starts right of the fade, however wide the banner is
+   If the photo is ever replaced with one without the logo, these limits can go. */
 
 .site-hero {
     position: relative;
     display: flex;
     align-items: flex-end;
-    min-height: 320px;
+    min-height: 420px;
     overflow: hidden;
     border-radius: 20px;
 }
@@ -329,19 +336,19 @@
 .site-hero-text {
     position: relative;
     z-index: 1;
-    max-width: 34rem;
-    padding: 1.5rem;
+    padding: 1.25rem;
 }
 
+/* grows with the screen, from 1.4rem on phones to 2.25rem on wide screens */
 .site-hero-title {
-    font-size: 1.75rem;
+    font-size: clamp(1.4rem, 2.6vw, 2.25rem);
     font-weight: 700;
     line-height: 1.15;
     margin-bottom: 0.75rem;
 }
 
 .site-hero-description {
-    font-size: 1rem;
+    font-size: clamp(0.9rem, 1.3vw, 1.1rem);
 }
 
 @media (min-width: 768px) {
@@ -350,16 +357,14 @@
         min-height: 380px;
     }
 
+    .site-hero-img {
+        object-position: 20% center;
+    }
+
+    /* stays inside the pale left strip, clear of the logo */
     .site-hero-text {
-        padding: 2.5rem 3rem;
-    }
-
-    .site-hero-title {
-        font-size: 2.25rem;
-    }
-
-    .site-hero-description {
-        font-size: 1.1rem;
+        max-width: 29%;
+        padding: 2rem 0 2rem 2.5rem;
     }
 }
 
@@ -1295,16 +1300,19 @@ html {
 
 
 /* Hero banner: the navbar's off-white on the text side, fading to clear
-   (the Eventbrite gradient) - from the bottom on phones, from the left from md.
+   before the logo in the photo - rising from the bottom to 44% on phones,
+   and across the left third (clear by 33%) from md. 82% opaque so a little of
+   the photo shows through; any lighter and the heading drops below 3:1
+   contrast over the darkest parts of the photo behind it.
    Heading in a darker shade of the brand blue (#a0c1ec is too pale to read
    on off-white: 1.76:1; this is 4.95:1), near-black description. */
 .site-hero::after {
-    background: linear-gradient(to top, rgba(248, 249, 250, 0.97) 25%, rgba(248, 249, 250, 0) 85%);
+    background: linear-gradient(to top, rgba(248, 249, 250, 0.82) 30%, rgba(248, 249, 250, 0) 44%);
 }
 
 @media (min-width: 768px) {
     .site-hero::after {
-        background: linear-gradient(92deg, rgba(248, 249, 250, 0.98) 28%, rgba(248, 249, 250, 0) 66%);
+        background: linear-gradient(to right, rgba(248, 249, 250, 0.82) 27%, rgba(248, 249, 250, 0) 33%);
     }
 }
 
