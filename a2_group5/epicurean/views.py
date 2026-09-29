@@ -10,8 +10,9 @@ from flask_wtf.csrf import generate_csrf
 from werkzeug.utils import secure_filename
 
 from . import db
-from .models import Event, TicketType, Booking, Like
-from .forms import BookingForm, EventForm, EditEventForm, CancelEventForm, LikeForm
+from .models import Event, TicketType, Booking, Like, Comment
+from .forms import (BookingForm, EventForm, EditEventForm, CancelEventForm, LikeForm,
+                    CommentForm)
 
 # Public site pages, events and booking. Endpoints are referenced as
 # 'main.<function>' in url_for().
@@ -407,9 +408,36 @@ def event_details(event_id):
     is_owner = current_user.is_authenticated and event.owner_id == current_user.id
     comments = sorted(event.comments, key=lambda c: c.posted_at, reverse=True)
     return render_template('viewitem.html', event=event, is_owner=is_owner,
-                           comments=comments,
+                           comments=comments, comment_form=CommentForm(),
                            sale_message=NOT_ON_SALE.get(event.effective_status),
                            acknowledgement=_acknowledgement_statement(event))
+
+
+# Posting a comment (#23). Login required, so every comment has a name on it;
+# everyone - logged in or not - can read them on the event page. Afterwards the
+# browser goes back to the event page's Comments section, where the new comment
+# is first in the list, or where a refusal is shown ('comment-error' messages
+# appear there, not at the top of the page). A GET only happens when
+# Flask-Login sends someone back here after they logged in, so show them the
+# event to write their comment there.
+@main_bp.route('/event/<int:event_id>/comment', methods=['GET', 'POST'])
+@login_required
+def post_comment(event_id):
+    event = db.get_or_404(Event, event_id)
+    comments_section = url_for('main.event_details', event_id=event.id) + '#comments'
+    if request.method == 'GET':
+        return redirect(comments_section)
+
+    form = CommentForm()
+    if form.validate_on_submit():
+        db.session.add(Comment(event_id=event.id, user_id=current_user.id,
+                               body=form.body.data.strip()))
+        db.session.commit()
+    else:
+        for errors in form.errors.values():
+            for error in errors:
+                flash(error, 'comment-error')
+    return redirect(comments_section)
 
 
 def _acknowledgement_statement(event):

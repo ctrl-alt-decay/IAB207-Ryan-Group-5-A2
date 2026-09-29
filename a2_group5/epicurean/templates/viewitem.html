@@ -1,7 +1,7 @@
 {# Event details page (route main.event_details, #20). One template for every
    event, filled from its database row by the view. Tickets are bought from the
-   ticket table, one small form per ticket type (#21). Still to come: the
-   comment box doesn't post yet (#23). #}
+   ticket table, one small form per ticket type (#21), and logged-in visitors
+   can post comments (#23). #}
 {% extends "base_epicurean.html" %}
 {% from "_event_macros.html" import status_badge %}
 
@@ -206,23 +206,37 @@
         </div>
 
         <!-- ==== Comments ============================== -->
-        <h2 class="section-heading pt-3">Comments</h2>
-        {# The box below is still the static A1 one - posting is #23 #}
-        <div class="row py-1">
+        <h2 class="section-heading scroll-target pt-3" id="comments">Comments</h2>
+        {# Posting needs an account (#23): logged-in visitors get the form, which
+           posts to main.post_comment (login required there too); everyone else
+           gets a way in. Everyone can read the comments below, newest first. #}
+        {% for message in get_flashed_messages(category_filter=['comment-error']) %}
+        <div class="alert alert-danger" role="alert">{{ message }}</div>
+        {% endfor %}
+        {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('main.post_comment', event_id=event.id) }}" class="row py-1">
+            {{ comment_form.hidden_tag() }}
             <div class="col-auto">
-                <img src="{{ url_for('static', filename='img/user_account.png') }}" class="img-fluid avatar-icon" alt="User avatar">
+                {{ avatar(current_user, 'Your avatar') }}
             </div>
             <div class="col">
                 {# plain divs, not .row - Bootstrap 5 stretches anything placed
                    directly in a .row to full width #}
                 <div class="py-1">
-                    <input class="form-control" id="enterComment" placeholder="Write a comment...">
+                    <textarea class="form-control" id="enterComment" name="body" rows="3"
+                        maxlength="{{ comment_form.MAX_LENGTH }}" required
+                        placeholder="Write a comment..." aria-label="Write a comment"></textarea>
                 </div>
                 <div class="py-1">
-                    <button class="btn btn-primary text-nowrap" type="button">Post</button>
+                    <button class="btn btn-primary text-nowrap" type="submit">Post</button>
                 </div>
             </div>
-        </div>
+        </form>
+        {% else %}
+        <p class="py-1">
+            <a href="{{ url_for('auth.login', next=request.path) }}">Log in</a> to post a comment.
+        </p>
+        {% endif %}
         {% for comment in comments %}
         <div class="row py-1">
             <div class="col-auto">
@@ -230,8 +244,9 @@
             </div>
             <div class="col">
                 <div>
+                    {# posted_at is stored in UTC; local_time shows the Brisbane date #}
                     <strong>Posted By: {{ comment.user.first_name }} {{ comment.user.last_name }}
-                        - {{ comment.posted_at.strftime('%d/%m/%Y') }}</strong>
+                        - {{ comment.posted_at|local_time('%d/%m/%Y') }}</strong>
                 </div>
                 <div>
                     {{ comment.body }}

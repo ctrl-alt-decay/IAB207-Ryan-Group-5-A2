@@ -215,6 +215,17 @@ class LikeForm(FlaskForm):
     next = HiddenField()
 
 
+# Posting a comment on an event page (#23). DataRequired also refuses a comment
+# that's nothing but spaces.
+class CommentForm(FlaskForm):
+    MAX_LENGTH = 1000
+
+    body = TextAreaField("Comment", validators=[
+        DataRequired('Write a comment before posting'),
+        Length(max=MAX_LENGTH, message='Comments can be up to 1000 characters')])
+    submit = SubmitField("Post")
+
+
 # Edit Event (#24): the Create Event form with two differences. The image is
 # optional (leave it empty to keep the current one), and the event's existing
 # date is accepted even if it has passed - only a *new* date must be upcoming.
