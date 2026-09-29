@@ -145,13 +145,19 @@ def category(slug):
                            liked_ids=_liked_event_ids())
 
 
-def _local_path(path):
+def local_path(path):
     """`path` if it's a page on this site (e.g. '/events/popular?page=2'),
-    otherwise None - so the like form can't be used to send people elsewhere
-    ('//other-site.com' and backslash tricks are refused)."""
-    if path and path.startswith('/') and not path.startswith('//') and '\\' not in path:
-        return path
-    return None
+    otherwise None. For "go back to where you were" addresses that arrive in a
+    request - the like form's `next`, and login's ?next= (auth.login) - so they
+    can't be used to send people to another site. Refused: full addresses
+    ('https://...'), '//other-site.com', backslashes ('/\\other-site.com'), and
+    tabs, line breaks or other control characters, which browsers strip out
+    ('/<tab>/other-site.com' would become '//other-site.com')."""
+    if not path or not path.startswith('/') or path.startswith('//'):
+        return None
+    if '\\' in path or any(ord(c) < 32 or c.isspace() for c in path):
+        return None
+    return path
 
 
 # Like / unlike an event: the heart on the event cards. It's a small form, so
@@ -180,7 +186,7 @@ def toggle_like(event_id):
         db.session.commit()
     else:
         flash("Your like couldn't be saved. Please try again.", 'danger')
-    back = _local_path(form.next.data) or url_for('main.index')
+    back = local_path(form.next.data) or url_for('main.index')
     return redirect('{}#event-{}'.format(back, event.id))
 
 
