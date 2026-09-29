@@ -1,7 +1,7 @@
 import os
 import secrets
 import uuid
-from datetime import date, timedelta
+from datetime import date, timedelta, timezone
 
 from flask import (Blueprint, render_template, request, redirect, url_for, flash,
                    current_app, abort)
@@ -13,8 +13,7 @@ from .models import Event, TicketType, Booking
 from .forms import BookingForm, EventForm, EditEventForm, CancelEventForm
 
 # Public site pages, events and booking. Endpoints are referenced as
-# 'main.<function>' in url_for(). Everything here reads the database except
-# the bookings table on the history page, which is still the static A1 one (#22).
+# 'main.<function>' in url_for().
 main_bp = Blueprint('main', __name__)
 
 # where uploaded event images are stored, relative to the static folder
@@ -30,6 +29,17 @@ EVENTS_PER_PAGE = 12
 POPULAR_MIN_LIKES = 100
 # a ticket type with any of these in its name counts as a kids' ticket
 KID_TICKET_WORDS = ('child', 'kid', 'family')
+# Times like Booking.booked_at are stored in UTC and shown in Brisbane time,
+# which is UTC+10 all year (Queensland has no daylight saving).
+SITE_TIMEZONE = timezone(timedelta(hours=10))
+
+
+@main_bp.app_template_filter('local_time')
+def local_time(value, fmt='%d/%m/%Y, %H:%M'):
+    """A stored UTC datetime as Brisbane time, e.g. {{ booking.booked_at|local_time }}."""
+    if value is None:
+        return ''
+    return value.replace(tzinfo=timezone.utc).astimezone(SITE_TIMEZONE).strftime(fmt)
 
 
 def this_weekend(today):
@@ -306,16 +316,20 @@ def _delete_uploaded_image(filename):
             os.remove(path)
 
 
-# Booking history plus, for #24, the events the user has created themselves.
-# The bookings table is still the static A1 one until #22.
+# Booking history (#22): the user's own bookings, newest first, plus (#24) the
+# events they have created themselves.
 @main_bp.route('/history')
 @login_required
 def history():
+    bookings = db.session.scalars(
+        db.select(Booking)
+        .where(Booking.user_id == current_user.id)
+        .order_by(Booking.booked_at.desc(), Booking.id.desc())).all()
     my_events = db.session.scalars(
         db.select(Event)
         .where(Event.owner_id == current_user.id)
         .order_by(Event.event_date.desc(), Event.event_time.desc())).all()
-    return render_template('history.html', my_events=my_events)
+    return render_template('history.html', bookings=bookings, my_events=my_events)
 
 
 # An event's own page (#20): the same layout for every event, filled from its row.
