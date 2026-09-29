@@ -246,9 +246,10 @@
             </div>
             <div class="col">
                 <div>
-                    {# posted_at is stored in UTC; local_time shows the Brisbane date #}
-                    <strong>Posted By: {{ comment.user.first_name }} {{ comment.user.last_name }}
-                        - {{ comment.posted_at|local_time('%d/%m/%Y') }}</strong>
+                    {# the commenter's name, then when it was posted - posted_at is
+                       stored in UTC, and local_time shows it in Brisbane time #}
+                    <strong>{{ comment.user.first_name }} {{ comment.user.last_name }}</strong>
+                    <span class="text-muted small ms-1">{{ comment.posted_at|local_time }}</span>
                 </div>
                 <div>
                     {{ comment.body }}
