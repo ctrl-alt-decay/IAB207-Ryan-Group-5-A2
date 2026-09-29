@@ -1,7 +1,8 @@
 {# History page (route main.history, login required). Two sections:
-     - My Bookings (#22): the logged-in user's bookings, newest first. View
-       opens the event's page; the order number links to the booking's order
-       page, which only its buyer can open.
+     - My Bookings (#22): the logged-in user's orders, newest first - an
+       order's bookings (one per ticket type) share one row (models.Order).
+       View opens the event's page; the order number links to the order page,
+       which only its buyer can open.
      - My Events: the events the logged-in user created, with Edit and Cancel
        (#24). Those buttons only appear here for the owner, and main.edit_event
        and main.cancel_event check ownership again on the server. #}
@@ -16,17 +17,17 @@
         <h1 class="page-heading">History</h1>
         <h2 class="section-heading">My Bookings</h2>
 
-        {# Two views of the same bookings: the table from 992px (lg) up, and one
-           stacked card per booking below that, so phones and tablets never have
+        {# Two views of the same orders: the table from 992px (lg) up, and one
+           stacked card per order below that, so phones and tablets never have
            to scroll a table sideways (it doesn't fit below 992px). Bootstrap's
            d-* classes show one and hide the other. #}
 
-        {# "2 × Adult" #}
-        {% macro booking_tickets(booking) -%}
-        {{ booking.quantity }} &times; {{ booking.ticket_type.name }}
+        {# "2 × Adult", one line per ticket type in the order #}
+        {% macro order_tickets(order) -%}
+        {% for line in order.lines %}{{ line.quantity }} &times; {{ line.ticket_type.name }}{% if not loop.last %}<br>{% endif %}{% endfor %}
         {%- endmacro %}
 
-        {% if bookings %}
+        {% if orders %}
         <!-- ==== Booking table (lg and up) ============================== -->
         <div class="row d-none d-lg-flex">
             <div class="col-12">
@@ -44,20 +45,20 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for booking in bookings %}
+                            {% for order in orders %}
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <img src="{{ url_for('static', filename=booking.event.image_path) }}" class="history-table-thumb me-3" alt="{{ booking.event.title }}">
-                                        <span class="entry-title">{{ booking.event.title }}</span>
+                                        <img src="{{ url_for('static', filename=order.event.image_path) }}" class="history-table-thumb me-3" alt="{{ order.event.title }}">
+                                        <span class="entry-title">{{ order.event.title }}</span>
                                     </div>
                                 </td>
-                                <td>{{ booking_tickets(booking) }}</td>
-                                <td><a href="{{ url_for('main.order_confirmation', order_number=booking.order_number) }}" title="Order details">{{ booking.order_number }}</a></td>
-                                <td>${{ '%.2f'|format(booking.total_price) }}</td>
-                                <td>{{ status_badge(booking.event.effective_status) }}</td>
-                                <td>{{ booking.booked_at|local_time }}</td>
-                                <td class="text-end"><a href="{{ url_for('main.event_details', event_id=booking.event_id) }}" class="btn btn-primary btn-sm" aria-label="View {{ booking.event.title }}">View</a></td>
+                                <td>{{ order_tickets(order) }}</td>
+                                <td><a href="{{ url_for('main.order_confirmation', order_number=order.order_number) }}" title="Order details">{{ order.order_number }}</a></td>
+                                <td>${{ '%.2f'|format(order.total_price) }}</td>
+                                <td>{{ status_badge(order.event.effective_status) }}</td>
+                                <td>{{ order.booked_at|local_time }}</td>
+                                <td class="text-end"><a href="{{ url_for('main.event_details', event_id=order.event.id) }}" class="btn btn-primary btn-sm" aria-label="View {{ order.event.title }}">View</a></td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -68,35 +69,35 @@
 
         <!-- ==== Booking cards (below lg) ============================== -->
         <ul class="list-unstyled d-lg-none mb-0">
-            {% for booking in bookings %}
+            {% for order in orders %}
             <li class="event-form-card booking-card">
                 <div class="d-flex align-items-center mb-3">
-                    <img src="{{ url_for('static', filename=booking.event.image_path) }}" class="history-table-thumb me-3" alt="{{ booking.event.title }}">
-                    <h3 class="entry-title mb-0">{{ booking.event.title }}</h3>
+                    <img src="{{ url_for('static', filename=order.event.image_path) }}" class="history-table-thumb me-3" alt="{{ order.event.title }}">
+                    <h3 class="entry-title mb-0">{{ order.event.title }}</h3>
                 </div>
                 <dl class="booking-card-details">
                     <div class="booking-card-item">
                         <dt>Tickets</dt>
-                        <dd>{{ booking_tickets(booking) }}</dd>
+                        <dd>{{ order_tickets(order) }}</dd>
                     </div>
                     <div class="booking-card-item">
                         <dt>Order Number</dt>
-                        <dd><a href="{{ url_for('main.order_confirmation', order_number=booking.order_number) }}" title="Order details">{{ booking.order_number }}</a></dd>
+                        <dd><a href="{{ url_for('main.order_confirmation', order_number=order.order_number) }}" title="Order details">{{ order.order_number }}</a></dd>
                     </div>
                     <div class="booking-card-item">
                         <dt>Total</dt>
-                        <dd>${{ '%.2f'|format(booking.total_price) }}</dd>
+                        <dd>${{ '%.2f'|format(order.total_price) }}</dd>
                     </div>
                     <div class="booking-card-item">
                         <dt>Status</dt>
-                        <dd>{{ status_badge(booking.event.effective_status) }}</dd>
+                        <dd>{{ status_badge(order.event.effective_status) }}</dd>
                     </div>
                     <div class="booking-card-item">
                         <dt>Date : Time Booked</dt>
-                        <dd>{{ booking.booked_at|local_time }}</dd>
+                        <dd>{{ order.booked_at|local_time }}</dd>
                     </div>
                 </dl>
-                <a href="{{ url_for('main.event_details', event_id=booking.event_id) }}" class="btn btn-primary btn-sm w-100" aria-label="View {{ booking.event.title }}">View</a>
+                <a href="{{ url_for('main.event_details', event_id=order.event.id) }}" class="btn btn-primary btn-sm w-100" aria-label="View {{ order.event.title }}">View</a>
             </li>
             {% endfor %}
         </ul>

@@ -1159,14 +1159,6 @@ html {
     width: 5.5rem;
 }
 
-/* One ticket table row's buy form: quantity box and Buy button side by side */
-.ticket-buy-form {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 0;
-}
-
 /* Checkout screen (#21): a panel over the event page, shown when main.checkout
    renders it. No JavaScript - the dimmed backdrop is a link back to the event,
    and the page behind is `inert`. Tall panels scroll inside the overlay. */

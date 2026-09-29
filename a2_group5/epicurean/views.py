@@ -1,7 +1,7 @@
 import os
 import secrets
 import uuid
-from datetime import date, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from flask import (Blueprint, render_template, request, redirect, url_for, flash,
                    current_app, abort)
@@ -10,8 +10,8 @@ from flask_wtf.csrf import generate_csrf
 from werkzeug.utils import secure_filename
 
 from . import db
-from .models import Event, TicketType, Booking, Like, Comment
-from .forms import (BookingForm, EventForm, EditEventForm, CancelEventForm, LikeForm,
+from .models import Event, TicketType, Booking, Like, Comment, Order, orders_from
+from .forms import (OrderForm, EventForm, EditEventForm, CancelEventForm, LikeForm,
                     CommentForm)
 
 # Public site pages, events and booking. Endpoints are referenced as
@@ -385,20 +385,21 @@ def _delete_uploaded_image(filename):
             os.remove(path)
 
 
-# Booking history (#22): the user's own bookings, newest first, plus (#24) the
+# Booking history (#22): the user's own orders, newest first - an order's
+# bookings (one per ticket type) are grouped into one row - plus (#24) the
 # events they have created themselves.
 @main_bp.route('/history')
 @login_required
 def history():
-    bookings = db.session.scalars(
+    orders = orders_from(db.session.scalars(
         db.select(Booking)
         .where(Booking.user_id == current_user.id)
-        .order_by(Booking.booked_at.desc(), Booking.id.desc())).all()
+        .order_by(Booking.booked_at.desc(), Booking.id.desc())))
     my_events = db.session.scalars(
         db.select(Event)
         .where(Event.owner_id == current_user.id)
         .order_by(Event.event_date.desc(), Event.event_time.desc())).all()
-    return render_template('history.html', bookings=bookings, my_events=my_events)
+    return render_template('history.html', orders=orders, my_events=my_events)
 
 
 # An event's own page (#20): the same layout for every event, filled from its row.
@@ -478,61 +479,76 @@ def _tickets_section(event):
     return url_for('main.event_details', event_id=event.id) + '#ticketsSection'
 
 
-def _checked_order(event, form):
-    """Check a ticket_type + quantity request for `event` - used by both the
-    checkout screen and the final booking, so they can't disagree. Returns
-    (ticket, quantity) if it can go ahead. If not, flashes why as a
+def _requested_quantities(event, data):
+    """How many of each of the event's ticket types were asked for, from form
+    data with a 'qty-<ticket type id>' field per type (the Tickets table, or
+    the checkout screen's Confirm form). Only this event's ticket types are
+    read, so another event's can't sneak in. Returns [(ticket, quantity)] for
+    those above 0, or flashes why not and returns None."""
+    lines = []
+    for ticket in event.ticket_types:
+        value = data.get('qty-{}'.format(ticket.id), '').strip() or '0'
+        if not value.isdigit():   # also refuses negatives and decimals
+            flash('Quantities must be whole numbers, 0 or more.', 'ticket-error')
+            return None
+        if int(value):
+            lines.append((ticket, int(value)))
+    if not lines:
+        flash('Choose how many tickets you would like of at least one ticket type.',
+              'ticket-error')
+        return None
+    return lines
+
+
+def _checked_order(event, data):
+    """Check an order for `event` - used by both the checkout screen and the
+    final booking, so they can't disagree. Returns its lines,
+    [(ticket, quantity)], if it can go ahead. If not, flashes why as a
     'ticket-error' (the event page shows those in its Tickets section, where
     the browser is sent back to) and returns None. Checked on the server, so a
-    request made straight to the URL is refused too: the ticket type must
-    belong to this event, the event must be on sale (not Cancelled, Inactive
-    or Sold Out - #25), and the tier must have enough tickets left."""
-    form.ticket_type.choices = [(t.id, t.name) for t in event.ticket_types]
-    if not form.validate():
-        for errors in form.errors.values():
-            for error in errors:
-                flash(error, 'ticket-error')
-        return None
-    ticket = db.session.get(TicketType, form.ticket_type.data)
-    quantity = form.quantity.data
+    request made straight to the URL is refused too: the event must be on sale
+    (not Cancelled, Inactive or Sold Out - #25), and every ticket type ordered
+    must have enough tickets left."""
     if event.effective_status in NOT_ON_SALE:
         flash(NOT_ON_SALE[event.effective_status], 'ticket-error')
         return None
-    if quantity > ticket.tickets_left:
-        if ticket.tickets_left:
-            flash('Only {} {} ticket{} left - please choose {} or fewer.'.format(
-                ticket.tickets_left, ticket.name, 's' if ticket.tickets_left != 1 else '',
-                ticket.tickets_left), 'ticket-error')
-        else:
-            flash('{} tickets are sold out.'.format(ticket.name), 'ticket-error')
+    lines = _requested_quantities(event, data)
+    if lines is None:
         return None
-    return ticket, quantity
+    ok = True
+    for ticket, quantity in lines:
+        if quantity > ticket.tickets_left:
+            ok = False
+            if ticket.tickets_left:
+                flash('Only {} {} ticket{} left - please choose {} or fewer.'.format(
+                    ticket.tickets_left, ticket.name, 's' if ticket.tickets_left != 1 else '',
+                    ticket.tickets_left), 'ticket-error')
+            else:
+                flash('{} tickets are sold out.'.format(ticket.name), 'ticket-error')
+    return lines if ok else None
 
 
-# The checkout screen (#21). Buy in the event page's ticket table opens it - a
-# GET form, so the chosen ticket type and quantity are in the URL. It's the
-# event page with the checkout panel over it: the order and its total on the
-# right, demo payment options on the left, and Confirm / Cancel. Confirm posts
-# to main.book_tickets, which checks the order again. Login required; a
-# logged-out visitor is brought back here after logging in.
+# The checkout screen (#21). Checkout under the event page's ticket table opens
+# it - a GET form, so the chosen quantities are in the URL. It's the event page
+# with the checkout panel over it: the order's lines and total on the right,
+# demo payment options on the left, and Confirm / Cancel. Confirm posts to
+# main.book_tickets, which checks the order again. Login required; a logged-out
+# visitor is brought back here after logging in.
 @main_bp.route('/event/<int:event_id>/checkout')
 @login_required
 def checkout(event_id):
     event = db.get_or_404(Event, event_id)
-    # read from the URL, and no CSRF token - a GET changes nothing
-    form = BookingForm(formdata=request.args, meta={'csrf': False})
-    order = _checked_order(event, form)
-    if order is None:
+    lines = _checked_order(event, request.args)
+    if lines is None:
         return redirect(_tickets_section(event))
-    ticket, quantity = order
-    return _event_page(event, checkout=dict(ticket=ticket, quantity=quantity,
-                                            total=ticket.price * quantity))
+    lines = [(ticket, quantity, ticket.price * quantity) for ticket, quantity in lines]
+    return _event_page(event, checkout=dict(lines=lines,
+                                            total=sum(line[2] for line in lines)))
 
 
 # Buying tickets (#5, #21): Confirm on the checkout screen posts here. Login
-# required; the booking is saved against the logged-in user. One ticket type
-# per booking - the Booking table holds a single ticket_type_id and each order
-# number is unique.
+# required. One order can have several ticket types: it's saved as one Booking
+# per ticket type, all sharing a new order number (see Booking in models.py).
 @main_bp.route('/event/<int:event_id>/book', methods=['GET', 'POST'])
 @login_required
 def book_tickets(event_id):
@@ -543,31 +559,39 @@ def book_tickets(event_id):
     if request.method == 'GET':
         return redirect(url_for('main.event_details', event_id=event.id))
 
-    order = _checked_order(event, BookingForm())
-    if order is None:
+    if not OrderForm().validate_on_submit():   # the CSRF token
+        flash("Your order couldn't be confirmed. Please try again.", 'ticket-error')
         return redirect(_tickets_section(event))
-    ticket, quantity = order
+    lines = _checked_order(event, request.form)
+    if lines is None:
+        return redirect(_tickets_section(event))
 
-    booking = Booking(
-        order_number=new_order_number(),
-        user_id=current_user.id,
-        event_id=event.id,
-        ticket_type_id=ticket.id,
-        quantity=quantity,
-        # priced on the server from the ticket type - never trusted from the page
-        total_price=ticket.price * quantity,
-    )
-    db.session.add(booking)
+    order_number = new_order_number()
+    booked_at = datetime.utcnow()   # the same for every line of the order
+    for ticket, quantity in lines:
+        db.session.add(Booking(
+            order_number=order_number,
+            user_id=current_user.id,
+            event_id=event.id,
+            ticket_type_id=ticket.id,
+            quantity=quantity,
+            # priced on the server from the ticket type - never trusted from the page
+            total_price=ticket.price * quantity,
+            booked_at=booked_at,
+        ))
     db.session.commit()
-    return redirect(url_for('main.order_confirmation', order_number=booking.order_number))
+    return redirect(url_for('main.order_confirmation', order_number=order_number))
 
 
-# Shown straight after a successful booking. Only the user who made the booking
-# can open it - anyone else gets a 404, so order numbers can't be probed.
+# The order page: shown straight after buying, and from the order number in the
+# booking history. Only the user who made the order can open it - anyone else
+# gets a 404, so order numbers can't be probed.
 @main_bp.route('/order/<order_number>')
 @login_required
 def order_confirmation(order_number):
-    booking = db.first_or_404(db.select(Booking).where(
+    lines = db.session.scalars(db.select(Booking).where(
         Booking.order_number == order_number,
-        Booking.user_id == current_user.id))
-    return render_template('order_confirmation.html', booking=booking)
+        Booking.user_id == current_user.id)).all()
+    if not lines:
+        abort(404)
+    return render_template('order_confirmation.html', order=Order(lines))

@@ -1,7 +1,7 @@
 {# Event details page (route main.event_details, #20). One template for every
    event, filled from its database row by the view. Tickets are bought from the
-   ticket table, one small form per ticket type (#21), and logged-in visitors
-   can post comments (#23). #}
+   ticket table - a quantity for each ticket type, then Checkout (#21) - and
+   logged-in visitors can post comments (#23). #}
 {% extends "base_epicurean.html" %}
 {% from "_event_macros.html" import status_badge %}
 
@@ -134,10 +134,11 @@
         <div class="row py-1">
             <div class="col-12 col-lg-8 mx-auto">
                 {# Logged-in visitors buy from the table while the event is on sale:
-                   each tier's row has its own small form (quantity + Buy) that opens
-                   the checkout screen (main.checkout), so no JavaScript. sale_message
-                   says why an event isn't on sale (Cancelled / Inactive / Sold Out -
-                   #25). The server checks all of this again at checkout and booking. #}
+                   the whole table is one form with a quantity box per ticket type,
+                   and Checkout opens the checkout screen (main.checkout) for every
+                   type with more than 0 - so no JavaScript. sale_message says why an
+                   event isn't on sale (Cancelled / Inactive / Sold Out - #25). The
+                   server checks all of this again at checkout and booking. #}
                 {% set can_buy = current_user.is_authenticated and not sale_message %}
                 {# why a purchase was refused (main.checkout / main.book_tickets),
                    shown here by the form rather than at the top of the page #}
@@ -145,6 +146,10 @@
                 <div class="alert alert-danger" role="alert">{{ message }}</div>
                 {% endfor %}
                 {% if event.ticket_types %}
+                {% if can_buy %}
+                {# a GET form: it only opens the checkout screen - nothing is booked yet #}
+                <form method="get" action="{{ url_for('main.checkout', event_id=event.id) }}" id="ticketOrderForm">
+                {% endif %}
                 <div class="table-responsive">
                     <table class="table ticket-type-table" id="purchaseTicketTable">
                         <thead>
@@ -170,17 +175,10 @@
                                 <td>
                                     {% if ticket.tickets_left %}
                                     {# the browser's own number box (its arrows are the stepper);
-                                       max stops it at the tickets left. A GET form: it only
-                                       opens the checkout screen - nothing is booked yet #}
-                                    <form method="get" action="{{ url_for('main.checkout', event_id=event.id) }}"
-                                        class="ticket-buy-form">
-                                        <input type="hidden" name="ticket_type" value="{{ ticket.id }}">
-                                        <input type="number" name="quantity" class="form-control ticket-quantity-input"
-                                            value="1" min="1" max="{{ ticket.tickets_left }}" step="1" required
-                                            aria-label="Number of {{ ticket.name }} tickets">
-                                        <button type="submit" class="btn btn-primary btn-sm text-nowrap"
-                                            aria-label="Buy {{ ticket.name }} tickets">Buy</button>
-                                    </form>
+                                       max stops it at the tickets left #}
+                                    <input type="number" name="qty-{{ ticket.id }}" class="form-control ticket-quantity-input"
+                                        value="0" min="0" max="{{ ticket.tickets_left }}" step="1"
+                                        aria-label="Number of {{ ticket.name }} tickets">
                                     {% endif %}
                                 </td>
                                 {% endif %}
@@ -189,6 +187,12 @@
                         </tbody>
                     </table>
                 </div>
+                {% if can_buy %}
+                <div class="text-center mb-2">
+                    <button type="submit" class="btn btn-primary text-nowrap">Checkout</button>
+                </div>
+                </form>
+                {% endif %}
                 {% else %}
                 <p class="text-muted text-center">No tickets are on sale for this event yet.</p>
                 {% endif %}
@@ -201,7 +205,7 @@
                     <a class="btn btn-primary text-nowrap"
                         href="{{ url_for('auth.login', next=request.path) }}">Log in to buy tickets</a>
                     {% elif event.ticket_types %}
-                    <p class="text-muted small mb-0">Choose how many, then press Buy. Each ticket type is a separate order.</p>
+                    <p class="text-muted small mb-0">Set how many of each ticket type you'd like, then press Checkout.</p>
                     {% endif %}
                 </div>
             </div>
@@ -263,8 +267,8 @@
     </div>
 
     <!-- ==== Checkout (#21) ============================== -->
-    {# Shown over the event page when main.checkout renders it (Buy in the ticket
-       table opens it). No JavaScript: Cancel and the dimmed backdrop are plain
+    {# Shown over the event page when main.checkout renders it (Checkout under the
+       ticket table opens it). No JavaScript: Cancel and the dimmed backdrop are plain
        links back to the event page, and Confirm posts to main.book_tickets,
        which checks the order again. The payment options are a demo - they sit
        outside the Confirm form and have no names, so nothing typed into them is
@@ -285,17 +289,23 @@
                             {{ event.event_date.strftime('%a %d/%m/%Y') }} at {{ event.event_time.strftime('%H:%M') }}<br>
                             {{ event.venue }}
                         </p>
+                        {# one line per ticket type: "2 × Adult ($45.00 each)  $90.00" #}
                         <dl class="checkout-lines">
-                            <div><dt>Ticket type</dt><dd>{{ checkout.ticket.name }}</dd></div>
-                            <div><dt>Price each</dt><dd>${{ '%.2f'|format(checkout.ticket.price) }}</dd></div>
-                            <div><dt>Quantity</dt><dd>{{ checkout.quantity }}</dd></div>
+                            {% for ticket, quantity, line_total in checkout.lines %}
+                            <div>
+                                <dt>{{ quantity }} &times; {{ ticket.name }}
+                                    <span class="text-muted small d-block">${{ '%.2f'|format(ticket.price) }} each</span></dt>
+                                <dd>${{ '%.2f'|format(line_total) }}</dd>
+                            </div>
+                            {% endfor %}
                             <div class="checkout-total"><dt>Total</dt><dd>${{ '%.2f'|format(checkout.total) }}</dd></div>
                         </dl>
                         <form method="post" action="{{ url_for('main.book_tickets', event_id=event.id) }}"
                             class="checkout-actions">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="ticket_type" value="{{ checkout.ticket.id }}">
-                            <input type="hidden" name="quantity" value="{{ checkout.quantity }}">
+                            {% for ticket, quantity, line_total in checkout.lines %}
+                            <input type="hidden" name="qty-{{ ticket.id }}" value="{{ quantity }}">
+                            {% endfor %}
                             <button type="submit" class="btn btn-primary">Confirm purchase</button>
                             <a class="btn btn-outline-secondary" href="{{ back_to_tickets }}">Cancel</a>
                         </form>
