@@ -1,6 +1,6 @@
 {# One category's events (route main.category: /events/popular,
    /events/this-weekend, /events/kid-friendly), most liked first,
-   EVENTS_PER_PAGE to a page. Reached from each homepage section's "Explore
+   EVENTS_PER_PAGE to a page. Upcoming, non-cancelled events only. Reached from each homepage section's "Explore
    more events" link. The page links come from Bootstrap-Flask's
    render_pagination macro (Bootstrap 5 version). #}
 {% extends "base_epicurean.html" %}
@@ -34,7 +34,7 @@
     </div>
 
     {% if events.items %}
-    {{ event_grid(events.items, prefix=slug) }}
+    {{ event_grid(events.items, liked_ids) }}
     {% endif %}
 
     {% if events.pages > 1 %}

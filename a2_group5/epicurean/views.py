@@ -6,11 +6,12 @@ from datetime import date, timedelta
 from flask import (Blueprint, render_template, request, redirect, url_for, flash,
                    current_app, abort)
 from flask_login import login_required, current_user
+from flask_wtf.csrf import generate_csrf
 from werkzeug.utils import secure_filename
 
 from . import db
-from .models import Event, TicketType, Booking
-from .forms import BookingForm, EventForm, EditEventForm, CancelEventForm
+from .models import Event, TicketType, Booking, Like
+from .forms import BookingForm, EventForm, EditEventForm, CancelEventForm, LikeForm
 
 # Public site pages, events and booking. Endpoints are referenced as
 # 'main.<function>' in url_for(). Everything here reads the database except
@@ -54,10 +55,16 @@ def _this_weekend_filter():
     return Event.event_date.between(start, end)
 
 
+def _upcoming():
+    """Not cancelled and not already past (#15). The homepage and the category
+    pages only list these; every event's own page still opens by its link."""
+    return db.and_(Event.status != 'Cancelled', Event.event_date >= date.today())
+
+
 # The homepage's category sections, which also each have their own paginated
-# page (main.category). Rules are evaluated when the page loads, so an event
-# joins every category it qualifies for - doubling up is fine. Everything is
-# sorted by likes first (more ways to sort can be added later).
+# page (main.category). Rules are evaluated when the page loads. On its category
+# page an event is listed under every category it fits, but the homepage shows
+# each event only once (see index). Everything is sorted by likes first.
 CATEGORIES = {
     'popular': ('Popular', lambda: Event.likes >= POPULAR_MIN_LIKES),
     'this-weekend': ('This Weekend', _this_weekend_filter),
@@ -67,24 +74,45 @@ CATEGORIES = {
 
 def _category_query(slug):
     heading, rule = CATEGORIES[slug]
-    return (db.select(Event).where(rule())
+    return (db.select(Event).where(rule(), _upcoming())
             .order_by(Event.likes.desc(), Event.event_date, Event.event_time, Event.id))
 
 
+def _liked_event_ids():
+    """The ids of the events the logged-in user has liked, so their hearts show
+    filled in. Empty for visitors who aren't logged in."""
+    if not current_user.is_authenticated:
+        return set()
+    return set(db.session.scalars(db.select(Like.event_id).where(Like.user_id == current_user.id)))
+
+
+# csrf_token() for templates, for small forms written out by hand rather than
+# from a form object (the like hearts). A template global, not a context
+# processor, so the macros in _event_macros.html can use it too. LikeForm
+# checks the token on submit.
+@main_bp.app_template_global('csrf_token')
+def csrf_token():
+    return generate_csrf()
+
+
 # Homepage (#15): Recently Added, then the top events of each category, each
-# with an "Explore more events" link to its full page. Empty sections are left
-# off the page.
+# with an "Explore more events" link to its full page. For variety, each event
+# appears only once - in the first section it fits - so later sections skip the
+# events already shown above them. Empty sections are left off the page.
 @main_bp.route('/')
 def index():
     recent = db.session.scalars(
-        db.select(Event)
+        db.select(Event).where(_upcoming())
         .order_by(Event.created_at.desc(), Event.id.desc())
         .limit(RECENTLY_ADDED_SIZE)).all()
     sections = [dict(heading='Recently Added', events=recent, slug=None)]
+    shown = {event.id for event in recent}
     for slug, (heading, rule) in CATEGORIES.items():
-        events = db.session.scalars(_category_query(slug).limit(SECTION_SIZE)).all()
+        events = db.session.scalars(
+            _category_query(slug).where(Event.id.not_in(shown)).limit(SECTION_SIZE)).all()
+        shown.update(event.id for event in events)
         sections.append(dict(heading=heading, events=events, slug=slug))
-    return render_template('index.html', sections=sections)
+    return render_template('index.html', sections=sections, liked_ids=_liked_event_ids())
 
 
 # One category's events, most liked first, EVENTS_PER_PAGE to a page
@@ -94,7 +122,47 @@ def category(slug):
     if slug not in CATEGORIES:
         abort(404)
     events = db.paginate(_category_query(slug), per_page=EVENTS_PER_PAGE, error_out=True)
-    return render_template('events.html', heading=CATEGORIES[slug][0], slug=slug, events=events)
+    return render_template('events.html', heading=CATEGORIES[slug][0], slug=slug, events=events,
+                           liked_ids=_liked_event_ids())
+
+
+def _local_path(path):
+    """`path` if it's a page on this site (e.g. '/events/popular?page=2'),
+    otherwise None - so the like form can't be used to send people elsewhere
+    ('//other-site.com' and backslash tricks are refused)."""
+    if path and path.startswith('/') and not path.startswith('//') and '\\' not in path:
+        return path
+    return None
+
+
+# Like / unlike an event: the heart on the event cards. It's a small form, so
+# no JavaScript - this saves the change, then sends the browser back to the
+# page it was on, scrolled to the same card (#event-<id>), with the new count.
+# Login required, so each person can like an event once and unlike it again.
+# A GET only happens when Flask-Login sends someone back here after they logged
+# in; liking needs a POST, so show them the event instead.
+@main_bp.route('/event/<int:event_id>/like', methods=['GET', 'POST'])
+@login_required
+def toggle_like(event_id):
+    event = db.get_or_404(Event, event_id)
+    if request.method == 'GET':
+        return redirect(url_for('main.event_details', event_id=event.id))
+
+    form = LikeForm()
+    if form.validate_on_submit():
+        like = db.session.scalar(db.select(Like).where(
+            Like.user_id == current_user.id, Like.event_id == event.id))
+        if like:
+            db.session.delete(like)
+            event.likes = max(event.likes - 1, 0)
+        else:
+            db.session.add(Like(user_id=current_user.id, event_id=event.id))
+            event.likes += 1
+        db.session.commit()
+    else:
+        flash("Your like couldn't be saved. Please try again.", 'danger')
+    back = _local_path(form.next.data) or url_for('main.index')
+    return redirect('{}#event-{}'.format(back, event.id))
 
 
 # Login required (#5): logged-out visitors are sent to /login and brought back

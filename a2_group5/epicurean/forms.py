@@ -9,7 +9,7 @@ from wtforms import Form
 from wtforms.fields import (TextAreaField, SubmitField, StringField,
                             PasswordField, SelectField, IntegerField,
                             DecimalField, DateField, TimeField, RadioField,
-                            BooleanField, FieldList, FormField)
+                            BooleanField, FieldList, FormField, HiddenField)
 from wtforms.validators import (InputRequired, DataRequired, Length, Email,
                                 EqualTo, NumberRange, Optional, ValidationError)
 from wtforms.widgets import HiddenInput
@@ -205,6 +205,14 @@ class EventForm(FlaskForm):
 # POST carries a CSRF token like every other change on the site.
 class CancelEventForm(FlaskForm):
     submit = SubmitField("Yes, Cancel Event")
+
+
+# The heart on each event card: a tiny form written out in _event_macros.html
+# (one per card, so not from hidden_tag()). This checks its CSRF token; `next`
+# is the page the heart was clicked on, to go back to afterwards. The route
+# works out whether it's a like or an unlike.
+class LikeForm(FlaskForm):
+    next = HiddenField()
 
 
 # Edit Event (#24): the Create Event form with two differences. The image is

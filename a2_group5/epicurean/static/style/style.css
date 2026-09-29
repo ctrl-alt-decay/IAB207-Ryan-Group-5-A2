@@ -238,29 +238,12 @@
     transform: scale(1.08);
 }
 
-/* The favourite heart is a CSS-only toggle: a hidden checkbox just before the
-   heart's label. Ticked swaps the outline heart for the filled one. (Not saved
-   anywhere yet.) */
-.event-favourite-toggle {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: 0;
-    opacity: 0;
-    pointer-events: none;
-}
-
+/* The like heart is the submit button of a small form (event_card in
+   _event_macros.html). .is-liked marks an event the logged-in user has liked:
+   it gets the filled heart icon and stays red (Colours region). */
 .event-icon-btn--favourite {
     cursor: pointer;
-}
-
-.event-favourite-on,
-.event-favourite-toggle:checked + .event-icon-btn--favourite .event-favourite-off {
-    display: none;
-}
-
-.event-favourite-toggle:checked + .event-icon-btn--favourite .event-favourite-on {
-    display: inline-block;
+    padding: 0;
 }
 
 /* show the buttons while something in the card has keyboard focus too */
@@ -1255,9 +1238,9 @@ html {
     background-color: #fff;
 }
 
-/* Red on hover, and stays red once favourited */
+/* Red on hover, and stays red once liked */
 .event-icon-btn--favourite:hover,
-.event-favourite-toggle:checked + .event-icon-btn--favourite {
+.event-icon-btn--favourite.is-liked {
     color: #dc3545;
 }
 
@@ -1351,9 +1334,9 @@ html {
     color: #1a1a1a;
 }
 
-/* keyboard focus rings for the CSS-only toggles */
+/* keyboard focus rings for the CSS-only menu toggle and the like heart */
 .nav-toggle:focus-visible + .navbar-toggler,
-.event-favourite-toggle:focus-visible + .event-icon-btn--favourite {
+.event-icon-btn--favourite:focus-visible {
     box-shadow: 0 0 0 0.2rem rgba(134, 173, 222, 0.8);
 }
 

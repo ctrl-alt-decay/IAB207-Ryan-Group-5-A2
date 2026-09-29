@@ -78,13 +78,14 @@
 
         <!-- ==== Event sections ============================== -->
         {# Recently Added (newest 4), then Popular, This Weekend and Kid Friendly
-           (top 8 by likes each). An event can appear in several. Empty sections
-           are skipped. The prefix keeps each card's favourite id unique. #}
+           (top 8 by likes each). Upcoming, non-cancelled events only, and each
+           event appears in just one section (the first it fits - main.index).
+           Empty sections are skipped. #}
         {% for section in sections if section.events %}
         {{ section_heading(section.heading,
                            url_for('main.category', slug=section.slug) if section.slug else None,
                            first=loop.first) }}
-        {{ event_grid(section.events, prefix=section.slug or 'recent') }}
+        {{ event_grid(section.events, liked_ids) }}
         {% else %}
         <p class="event-section-px text-muted mt-4">No events have been listed yet.</p>
         {% endfor %}

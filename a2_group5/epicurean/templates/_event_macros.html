@@ -30,22 +30,26 @@
 
 {# One event tile. The title is a real link, and Bootstrap's stretched-link
    stretches it over the whole card, so the card is clickable without
-   JavaScript. The favourite/share buttons sit above it (z-index in style.css).
-   The heart is a CSS-only toggle (a hidden checkbox) - it isn't saved yet.
-   `prefix` keeps its id unique when the same event is shown in two sections. #}
-{% macro event_card(event, prefix='') %}
-{% set fav_id = 'fav-' ~ prefix ~ '-' ~ event.id %}
-<div class="card event-card h-100">
+   JavaScript. The like/share buttons sit above it (z-index in style.css).
+   The heart is a small form (main.toggle_like), so it needs no JavaScript
+   either: clicking it likes the event - or unlikes it if `liked` - and the
+   page reloads scrolled back to this card (its id, event-<id>) with the new
+   count. An event appears at most once per page, so the id is unique. #}
+{% macro event_card(event, liked=False) %}
+<div class="card event-card scroll-target h-100" id="event-{{ event.id }}">
     <div class="event-card-img-wrap">
         <img src="{{ url_for('static', filename=event.image_path) }}" class="card-img-top event-card-img"
             alt="{{ event.title }}">
         <div class="event-card-actions">
-            <input type="checkbox" class="event-favourite-toggle" id="{{ fav_id }}"
-                aria-label="Favourite {{ event.title }}">
-            <label class="event-icon-btn event-icon-btn--favourite mb-0" for="{{ fav_id }}" title="Favourite">
-                <i class="fa fa-heart-o event-favourite-off" aria-hidden="true"></i>
-                <i class="fa fa-heart event-favourite-on" aria-hidden="true"></i>
-            </label>
+            <form method="post" action="{{ url_for('main.toggle_like', event_id=event.id) }}" class="m-0">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+                <button type="submit" class="event-icon-btn event-icon-btn--favourite{{ ' is-liked' if liked }}"
+                    title="{{ 'Unlike' if liked else 'Like' }}" aria-label="Like {{ event.title }}"
+                    aria-pressed="{{ 'true' if liked else 'false' }}">
+                    <i class="fa {{ 'fa-heart' if liked else 'fa-heart-o' }}" aria-hidden="true"></i>
+                </button>
+            </form>
             <button class="event-icon-btn event-icon-btn--share" type="button" title="Share (coming soon)">
                 <i class="fa fa-share-alt" aria-hidden="true"></i>
             </button>
@@ -67,7 +71,7 @@
                     {% if event.from_price is not none %}From ${{ '%.2f'|format(event.from_price) }}
                     {% else %}Tickets coming soon{% endif %}
                 </p>
-                <p class="event-card-likes mb-0"><i class="fa fa-heart" aria-hidden="true"></i> {{ event.likes }} likes</p>
+                <p class="event-card-likes mb-0"><i class="fa fa-heart" aria-hidden="true"></i> {{ event.likes }} {{ 'like' if event.likes == 1 else 'likes' }}</p>
             </div>
             {{ status_badge(event.status, small=True) }}
         </div>
@@ -76,12 +80,13 @@
 {% endmacro %}
 
 
-{# A grid of event cards: 4 a row from lg, 3 from md, 2 from sm, 1 on phones #}
-{% macro event_grid(events, prefix='') %}
+{# A grid of event cards: 4 a row from lg, 3 from md, 2 from sm, 1 on phones.
+   liked_ids: the events the logged-in user has liked (filled hearts). #}
+{% macro event_grid(events, liked_ids=()) %}
 <div class="row event-section-px py-3">
     {% for event in events %}
     <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
-        {{ event_card(event, prefix) }}
+        {{ event_card(event, liked=event.id in liked_ids) }}
     </div>
     {% endfor %}
 </div>

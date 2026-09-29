@@ -1,4 +1,4 @@
-# Database schema: user, event, ticket_type, booking, comment.
+# Database schema: user, event, ticket_type, booking, comment, event_like.
 # Status-style fields are plain strings (SQLite has no enum type); the allowed
 # values are listed beside each column and should be enforced by the forms.
 # Each relationship(backref=...) adds an attribute on BOTH sides - e.g.
@@ -59,8 +59,9 @@ class Event(db.Model):
     status = db.Column(db.String(20), nullable=False, default='Open')
 
     # How many likes the event has - the homepage and category pages sort by
-    # this, and Popular needs at least POPULAR_MIN_LIKES (views.py). Only the
-    # sample events have likes so far; the heart button doesn't save yet.
+    # this, and Popular needs at least POPULAR_MIN_LIKES (views.py). The heart
+    # on the event cards adds or takes away 1 (main.toggle_like); the sample
+    # events start with seeded totals, so this isn't a count of Like rows.
     # server_default lets add_missing_columns() add it to older databases.
     likes = db.Column(db.Integer, nullable=False, default=0, server_default=db.text('0'))
 
@@ -172,3 +173,20 @@ class Comment(db.Model):
 
     def __repr__(self):
         return "<Comment {}>".format(self.id)
+
+
+# One user liking one event (the heart on the event cards). It records WHO
+# liked what, so the heart shows filled for them and a second click unlikes;
+# Event.likes holds the total. The unique constraint means a user can like an
+# event only once. ('like' is an SQL keyword, hence the table name.)
+class Like(db.Model):
+    __tablename__ = 'event_like'
+    __table_args__ = (db.UniqueConstraint('user_id', 'event_id'),)
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
+    liked_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return "<Like user {} event {}>".format(self.user_id, self.event_id)
