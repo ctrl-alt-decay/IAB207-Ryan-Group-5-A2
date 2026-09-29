@@ -8,6 +8,7 @@ from flask_bcrypt import generate_password_hash, check_password_hash
 from flask_login import login_user, login_required, logout_user, current_user
 from .models import User
 from .forms import LoginForm, RegisterForm, ProfilePictureForm
+from .views import local_path
 from . import db
 
 # Account routes: register, login, logout, the account page and profile pictures.
@@ -84,12 +85,11 @@ def login():
         if error is None:
             login_user(user)
             flash('Welcome back, {}.'.format(user.first_name), 'success')
-            nextp = request.args.get('next')  # this gives the url from where the login page was accessed
-            # only follow on-site paths. Caution: '//other-site.com' also starts
-            # with '/' and would pass this check.
-            if nextp is None or not nextp.startswith('/'):
-                return redirect(url_for('auth.account'))
-            return redirect(nextp)
+            # ?next= is the page that sent them here to log in (#5, #27). Only
+            # follow it if it's a page on this site - local_path refuses
+            # '//other-site.com' and the like - otherwise go to the account page.
+            nextp = local_path(request.args.get('next'))
+            return redirect(nextp or url_for('auth.account'))
         else:
             flash(error, 'danger')
 
