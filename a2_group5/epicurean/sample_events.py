@@ -25,10 +25,12 @@ Where the data came from:
   - description (a brief plus a longer paragraph in DETAILS) and categories:
     written for each event (the cards had none)
 
-Dates: the cards gave a day and month but no year, and most had passed. So:
-  - Popular events: the next time that day and month comes round
-  - This Weekend: the coming Friday-Sunday (on the card's weekday), so they
-    really are this weekend when seeded
+Dates: the cards gave a day and month but no year, and most had passed. Upcoming
+events start no earlier than 1 November (or the day of seeding, once that's
+later - see EARLIEST_MONTH), so they stay open for a while after seeding:
+  - Popular events: the first time that day and month comes round from then
+  - This Weekend: the first Friday-Sunday from then (on the card's weekday).
+    (So the homepage's This Weekend section is empty until that weekend.)
   - Bring Your Kids: the weekend after that
   - the one Inactive card: last weekend, so its status matches its date
 
@@ -471,19 +473,29 @@ def _full_description(spec):
 
 WEEKDAY_OFFSET = {'Fri': 0, 'Sat': 1, 'Sun': 2}
 
+# Upcoming sample events are dated from the 1st of this month of the seeding
+# year (or from the day of seeding, if that's later) - see the top of this file.
+EARLIEST_MONTH = 11
+
+
+def _coming_friday(day):
+    return day + timedelta(days=(4 - day.weekday()) % 7)
+
 
 def _event_date(spec, today):
     """Work out the event date from the card, as described at the top of this file."""
-    friday = today + timedelta(days=(4 - today.weekday()) % 7)  # the coming Friday
+    offset = WEEKDAY_OFFSET.get(spec['day'])
+    if spec['status'] == 'Inactive':
+        # last weekend, so it has already happened
+        return _coming_friday(today) - timedelta(days=7) + timedelta(days=offset)
+    start = max(today + timedelta(days=1), date(today.year, EARLIEST_MONTH, 1))
     if spec['group'] == 'popular':
         day, month = spec['day']
-        for year in (today.year, today.year + 1):
+        for year in (start.year, start.year + 1):
             candidate = date(year, month, day)
-            if candidate > today:
+            if candidate >= start:
                 return candidate
-    offset = WEEKDAY_OFFSET[spec['day']]
-    if spec['status'] == 'Inactive':
-        return friday - timedelta(days=7) + timedelta(days=offset)  # last weekend
+    friday = _coming_friday(start)
     if spec['group'] == 'weekend':
         return friday + timedelta(days=offset)
     return friday + timedelta(days=7 + offset)  # kids: the weekend after
