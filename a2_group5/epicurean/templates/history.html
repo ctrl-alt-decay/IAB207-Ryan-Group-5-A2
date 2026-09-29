@@ -1,6 +1,7 @@
 {# History page (route main.history, login required). Two sections:
      - My Bookings (#22): the logged-in user's bookings, newest first. View
-       opens the booking's order page, which only its buyer can open.
+       opens the event's page; the order number links to the booking's order
+       page, which only its buyer can open.
      - My Events: the events the logged-in user created, with Edit and Cancel
        (#24). Those buttons only appear here for the owner, and main.edit_event
        and main.cancel_event check ownership again on the server. #}
@@ -52,11 +53,11 @@
                                     </div>
                                 </td>
                                 <td>{{ booking_tickets(booking) }}</td>
-                                <td>{{ booking.order_number }}</td>
+                                <td><a href="{{ url_for('main.order_confirmation', order_number=booking.order_number) }}" title="Order details">{{ booking.order_number }}</a></td>
                                 <td>${{ '%.2f'|format(booking.total_price) }}</td>
                                 <td>{{ status_badge(booking.event.effective_status) }}</td>
                                 <td>{{ booking.booked_at|local_time }}</td>
-                                <td class="text-end"><a href="{{ url_for('main.order_confirmation', order_number=booking.order_number) }}" class="btn btn-primary btn-sm">View</a></td>
+                                <td class="text-end"><a href="{{ url_for('main.event_details', event_id=booking.event_id) }}" class="btn btn-primary btn-sm" aria-label="View {{ booking.event.title }}">View</a></td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -80,7 +81,7 @@
                     </div>
                     <div class="booking-card-item">
                         <dt>Order Number</dt>
-                        <dd>{{ booking.order_number }}</dd>
+                        <dd><a href="{{ url_for('main.order_confirmation', order_number=booking.order_number) }}" title="Order details">{{ booking.order_number }}</a></dd>
                     </div>
                     <div class="booking-card-item">
                         <dt>Total</dt>
@@ -95,7 +96,7 @@
                         <dd>{{ booking.booked_at|local_time }}</dd>
                     </div>
                 </dl>
-                <a href="{{ url_for('main.order_confirmation', order_number=booking.order_number) }}" class="btn btn-primary btn-sm w-100">View</a>
+                <a href="{{ url_for('main.event_details', event_id=booking.event_id) }}" class="btn btn-primary btn-sm w-100" aria-label="View {{ booking.event.title }}">View</a>
             </li>
             {% endfor %}
         </ul>
