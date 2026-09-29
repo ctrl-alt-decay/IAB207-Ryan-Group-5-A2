@@ -1167,6 +1167,118 @@ html {
     margin: 0;
 }
 
+/* Checkout screen (#21): a panel over the event page, shown when main.checkout
+   renders it. No JavaScript - the dimmed backdrop is a link back to the event,
+   and the page behind is `inert`. Tall panels scroll inside the overlay. */
+body:has(.checkout-overlay) {
+    overflow: hidden;
+}
+
+.checkout-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1050;   /* above the sticky navbar (1020) */
+    display: flex;
+    padding: 0.75rem;
+    overflow-y: auto;
+}
+
+.checkout-backdrop {
+    position: fixed;
+    inset: 0;
+    cursor: default;
+}
+
+.checkout-panel {
+    position: relative;   /* above the backdrop */
+    width: 100%;
+    max-width: 960px;
+    margin: auto;         /* centred, and still scrolls when taller than the screen */
+    padding: 1.25rem;
+    border-radius: 16px;
+}
+
+@media (min-width: 768px) {
+    .checkout-overlay {
+        padding: 2.5rem;
+    }
+
+    .checkout-panel {
+        padding: 2rem;
+    }
+}
+
+.checkout-subheading {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+/* Order lines: label left, value right */
+.checkout-lines > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.3rem 0;
+}
+
+.checkout-lines dt {
+    font-weight: 400;
+}
+
+.checkout-lines dd {
+    margin: 0;
+    text-align: right;
+}
+
+.checkout-total {
+    margin-top: 0.4rem;
+    padding-top: 0.6rem !important;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.checkout-total dt {
+    font-weight: 700;
+}
+
+.checkout-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1.25rem 0 0;
+}
+
+.checkout-actions .btn {
+    flex: 1 1 auto;
+}
+
+.checkout-payment {
+    min-width: 0;
+}
+
+.checkout-payment .form-check {
+    margin-bottom: 0.4rem;
+}
+
+.checkout-demo-note {
+    font-size: 0.85rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+}
+
+/* Only the chosen payment option's details show (CSS :has, no JavaScript) */
+.checkout-option-details {
+    display: none;
+    margin-top: 1rem;
+}
+
+.checkout-payment:has(#payCard:checked) .checkout-card-fields,
+.checkout-payment:has(#payPaypal:checked) .checkout-paypal-note,
+.checkout-payment:has(#payVenue:checked) .checkout-venue-note {
+    display: block;
+}
+
 
 /* =============================== Colours =============================== */
 /* Every colour in the site, grouped in the same order as the sections above.
@@ -1590,6 +1702,28 @@ html {
 }
 
 /* Grey minus, brand-blue plus, matching the site's button colours */
+
+
+/* Checkout screen: dimmed page behind a white panel */
+.checkout-backdrop {
+    background-color: rgba(0, 0, 0, 0.55);
+}
+
+.checkout-panel {
+    background-color: #fff;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.checkout-total {
+    border-top: 1px solid #dee2e6;
+}
+
+/* the "demo only" note: a soft amber so it's noticed but not alarming */
+.checkout-demo-note {
+    background-color: #fff8e1;
+    border: 1px solid #ffe08a;
+    color: #5c4a00;
+}
 
 
 /* Buttons */

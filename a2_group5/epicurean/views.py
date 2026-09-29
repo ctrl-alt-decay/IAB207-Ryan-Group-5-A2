@@ -404,12 +404,18 @@ def history():
 # An event's own page (#20): the same layout for every event, filled from its row.
 @main_bp.route('/event/<int:event_id>')
 def event_details(event_id):
-    event = db.get_or_404(Event, event_id)
+    return _event_page(db.get_or_404(Event, event_id))
+
+
+def _event_page(event, checkout=None):
+    """Render an event's page. With `checkout` (from main.checkout: the chosen
+    ticket type, quantity and total), the checkout screen is shown over it."""
     is_owner = current_user.is_authenticated and event.owner_id == current_user.id
     comments = sorted(event.comments, key=lambda c: c.posted_at, reverse=True)
     return render_template('viewitem.html', event=event, is_owner=is_owner,
                            comments=comments, comment_form=CommentForm(),
                            sale_message=NOT_ON_SALE.get(event.effective_status),
+                           checkout=checkout,
                            acknowledgement=_acknowledgement_statement(event))
 
 
@@ -468,40 +474,30 @@ NOT_ON_SALE = {
 }
 
 
-# Buying tickets (#5, #21). Login required; the booking is saved against the
-# logged-in user. One ticket type per booking - the Booking table holds a single
-# ticket_type_id and each order number is unique. Each row of the event page's
-# ticket table is its own small form posting here (ticket_type + quantity).
-@main_bp.route('/event/<int:event_id>/book', methods=['GET', 'POST'])
-@login_required
-def book_tickets(event_id):
-    event = db.get_or_404(Event, event_id)
-    tickets_section = url_for('main.event_details', event_id=event.id) + '#ticketsSection'
+def _tickets_section(event):
+    return url_for('main.event_details', event_id=event.id) + '#ticketsSection'
 
-    # A GET only happens when Flask-Login sends someone back here after they
-    # logged in. Booking is POST-only, so return them to the event page to buy.
-    if request.method == 'GET':
-        return redirect(url_for('main.event_details', event_id=event.id))
 
-    # Refusals are flashed as 'ticket-error': the event page shows those in its
-    # Tickets section, where the browser lands (#ticketsSection), rather than
-    # at the top of the page with the other messages.
-    form = BookingForm()
+def _checked_order(event, form):
+    """Check a ticket_type + quantity request for `event` - used by both the
+    checkout screen and the final booking, so they can't disagree. Returns
+    (ticket, quantity) if it can go ahead. If not, flashes why as a
+    'ticket-error' (the event page shows those in its Tickets section, where
+    the browser is sent back to) and returns None. Checked on the server, so a
+    request made straight to the URL is refused too: the ticket type must
+    belong to this event, the event must be on sale (not Cancelled, Inactive
+    or Sold Out - #25), and the tier must have enough tickets left."""
     form.ticket_type.choices = [(t.id, t.name) for t in event.ticket_types]
-    if not form.validate_on_submit():
+    if not form.validate():
         for errors in form.errors.values():
             for error in errors:
                 flash(error, 'ticket-error')
-        return redirect(tickets_section)
-
+        return None
     ticket = db.session.get(TicketType, form.ticket_type.data)
     quantity = form.quantity.data
-    # Checked here, not only on the page, so a booking posted straight to this
-    # URL is refused too: the event must be on sale (not Cancelled, Inactive or
-    # Sold Out - #25), and this tier must have enough tickets left.
     if event.effective_status in NOT_ON_SALE:
         flash(NOT_ON_SALE[event.effective_status], 'ticket-error')
-        return redirect(tickets_section)
+        return None
     if quantity > ticket.tickets_left:
         if ticket.tickets_left:
             flash('Only {} {} ticket{} left - please choose {} or fewer.'.format(
@@ -509,7 +505,48 @@ def book_tickets(event_id):
                 ticket.tickets_left), 'ticket-error')
         else:
             flash('{} tickets are sold out.'.format(ticket.name), 'ticket-error')
-        return redirect(tickets_section)
+        return None
+    return ticket, quantity
+
+
+# The checkout screen (#21). Buy in the event page's ticket table opens it - a
+# GET form, so the chosen ticket type and quantity are in the URL. It's the
+# event page with the checkout panel over it: the order and its total on the
+# right, demo payment options on the left, and Confirm / Cancel. Confirm posts
+# to main.book_tickets, which checks the order again. Login required; a
+# logged-out visitor is brought back here after logging in.
+@main_bp.route('/event/<int:event_id>/checkout')
+@login_required
+def checkout(event_id):
+    event = db.get_or_404(Event, event_id)
+    # read from the URL, and no CSRF token - a GET changes nothing
+    form = BookingForm(formdata=request.args, meta={'csrf': False})
+    order = _checked_order(event, form)
+    if order is None:
+        return redirect(_tickets_section(event))
+    ticket, quantity = order
+    return _event_page(event, checkout=dict(ticket=ticket, quantity=quantity,
+                                            total=ticket.price * quantity))
+
+
+# Buying tickets (#5, #21): Confirm on the checkout screen posts here. Login
+# required; the booking is saved against the logged-in user. One ticket type
+# per booking - the Booking table holds a single ticket_type_id and each order
+# number is unique.
+@main_bp.route('/event/<int:event_id>/book', methods=['GET', 'POST'])
+@login_required
+def book_tickets(event_id):
+    event = db.get_or_404(Event, event_id)
+
+    # A GET only happens when Flask-Login sends someone back here after they
+    # logged in. Booking is POST-only, so return them to the event page to buy.
+    if request.method == 'GET':
+        return redirect(url_for('main.event_details', event_id=event.id))
+
+    order = _checked_order(event, BookingForm())
+    if order is None:
+        return redirect(_tickets_section(event))
+    ticket, quantity = order
 
     booking = Booking(
         order_number=new_order_number(),
