@@ -110,7 +110,7 @@
                     <span class="event-form-label">Events</span>
                     <div class="event-form-field">
                         {% for event in current_user.events %}
-                        <div>{{ event.title }} <span class="event-status event-status--sm">{{ event.status }}</span></div>
+                        <div>{{ event.title }} <span class="event-status event-status--sm">{{ event.effective_status }}</span></div>
                         {% endfor %}
                     </div>
                 </div>

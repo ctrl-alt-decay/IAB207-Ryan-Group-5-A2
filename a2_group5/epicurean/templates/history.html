@@ -54,7 +54,7 @@
                                 <td>{{ booking_tickets(booking) }}</td>
                                 <td>{{ booking.order_number }}</td>
                                 <td>${{ '%.2f'|format(booking.total_price) }}</td>
-                                <td>{{ status_badge(booking.event.status) }}</td>
+                                <td>{{ status_badge(booking.event.effective_status) }}</td>
                                 <td>{{ booking.booked_at|local_time }}</td>
                                 <td class="text-end"><a href="{{ url_for('main.order_confirmation', order_number=booking.order_number) }}" class="btn btn-primary btn-sm">View</a></td>
                             </tr>
@@ -88,7 +88,7 @@
                     </div>
                     <div class="booking-card-item">
                         <dt>Status</dt>
-                        <dd>{{ status_badge(booking.event.status) }}</dd>
+                        <dd>{{ status_badge(booking.event.effective_status) }}</dd>
                     </div>
                     <div class="booking-card-item">
                         <dt>Date : Time Booked</dt>
@@ -147,7 +147,7 @@
                                 </td>
                                 <td>{{ event.event_date.strftime('%d/%m/%Y') }}, {{ event.event_time.strftime('%H:%M') }}</td>
                                 <td>{{ tickets_summary(event) }}</td>
-                                <td>{{ status_badge(event.status) }}</td>
+                                <td>{{ status_badge(event.effective_status) }}</td>
                                 <td class="text-end text-nowrap owner-actions">{{ owner_actions(event) }}</td>
                             </tr>
                             {% endfor %}
@@ -175,7 +175,7 @@
                     </div>
                     <div class="booking-card-item">
                         <dt>Status</dt>
-                        <dd>{{ status_badge(event.status) }}</dd>
+                        <dd>{{ status_badge(event.effective_status) }}</dd>
                     </div>
                 </dl>
                 <div class="owner-actions owner-actions--card">{{ owner_actions(event) }}</div>

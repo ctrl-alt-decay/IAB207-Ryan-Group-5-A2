@@ -6,7 +6,7 @@
 import os
 
 from . import db
-from datetime import datetime
+from datetime import date, datetime
 from flask import current_app
 from flask_login import UserMixin
 
@@ -54,8 +54,11 @@ class Event(db.Model):
     seasonal_cultural = db.Column(db.String(50))    # Summer BBQ, Cultural, ...
     proficiency = db.Column(db.String(50))          # Beginner, Family Friendly, ...
 
-    # 'Open' | 'Inactive' | 'Sold Out' | 'Cancelled'
-    # Nothing updates this automatically yet (e.g. to 'Inactive' once the date passes).
+    # 'Open' | 'Cancelled' - the only status set by hand (an owner cancelling).
+    # The status SHOWN - Open, Inactive, Sold Out or Cancelled - is worked out
+    # by effective_status below (#25), so it can't go out of date. Databases
+    # made before #25 may still hold 'Sold Out' or 'Inactive' here; only
+    # 'Cancelled' is read.
     status = db.Column(db.String(20), nullable=False, default='Open')
 
     # How many likes the event has - the homepage and category pages sort by
@@ -113,6 +116,25 @@ class Event(db.Model):
     @property
     def tickets_sold(self):
         return sum(b.quantity for b in self.bookings)
+
+    @property
+    def effective_status(self):
+        """The event's status as shown and enforced (#25), worked out when it's
+        read rather than stored, so it's never out of date:
+          - Cancelled: the owner cancelled it (the one status that's stored)
+          - Inactive:  its date has passed
+          - Sold Out:  every ticket type has no tickets left
+          - Open:      otherwise - including an event with no ticket types yet
+                       ("Tickets coming soon"), which isn't sold out
+        The status badges show this, and main.book_tickets only sells tickets
+        while it's Open. Tickets left per tier come from TicketType.tickets_left."""
+        if self.status == 'Cancelled':
+            return 'Cancelled'
+        if self.event_date < date.today():
+            return 'Inactive'
+        if self.ticket_types and not any(t.tickets_left for t in self.ticket_types):
+            return 'Sold Out'
+        return 'Open'
 
 
 # One price tier of an event (e.g. Adult, $45.00, 60 available). A Booking points

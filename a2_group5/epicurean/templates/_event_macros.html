@@ -3,7 +3,8 @@
 
 
 {# Coloured status pill. The four statuses map onto the badge styles in
-   style.css; small=True is the compact version used on the cards. #}
+   style.css; small=True is the compact version used on the cards. Pass it
+   event.effective_status (#25), not the stored event.status. #}
 {% macro status_badge(status, small=False) -%}
 {%- set styles = {'Open': 'available', 'Sold Out': 'sold-out',
                   'Cancelled': 'cancelled', 'Inactive': 'inactive'} -%}
@@ -73,7 +74,7 @@
                 </p>
                 <p class="event-card-likes mb-0"><i class="fa fa-heart" aria-hidden="true"></i> {{ event.likes }} {{ 'like' if event.likes == 1 else 'likes' }}</p>
             </div>
-            {{ status_badge(event.status, small=True) }}
+            {{ status_badge(event.effective_status, small=True) }}
         </div>
     </div>
 </div>

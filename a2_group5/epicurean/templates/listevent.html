@@ -32,8 +32,9 @@
         {% if editing %}
         <h1 class="page-heading">Edit Event</h1>
         <p class="text-muted">
-            Change any of the details below. The status ({{ event.status }}) can't be changed here -
-            to call the event off, use Cancel Event instead.
+            Change any of the details below. The status ({{ event.effective_status }}) is worked out
+            from the date and tickets left, so it can't be set here - to call the event off, use
+            Cancel Event instead.
         </p>
         {% else %}
         <h1 class="page-heading">Create Event</h1>
