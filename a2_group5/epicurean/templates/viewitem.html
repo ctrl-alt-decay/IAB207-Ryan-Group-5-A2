@@ -1,7 +1,7 @@
 {# Event details page (route main.event_details, #20). One template for every
-   event, filled from its database row by the view. Still to come: Purchase
-   is the static A1 button until booking is wired up (#21), and the comment box
-   doesn't post yet (#23). #}
+   event, filled from its database row by the view. Tickets are bought from the
+   ticket table, one small form per ticket type (#21). Still to come: the
+   comment box doesn't post yet (#23). #}
 {% extends "base_epicurean.html" %}
 {% from "_event_macros.html" import status_badge %}
 
@@ -131,6 +131,17 @@
         <h2 class="section-heading scroll-target pt-3" id="ticketsSection">Tickets</h2>
         <div class="row py-1">
             <div class="col-12 col-lg-8 mx-auto">
+                {# Logged-in visitors buy from the table while the event is on sale:
+                   each tier's row has its own small form (quantity + Buy) posting to
+                   main.book_tickets, so no JavaScript. sale_message says why an
+                   event isn't on sale (Cancelled / Inactive / Sold Out - #25).
+                   main.book_tickets checks all of this again on the server. #}
+                {% set can_buy = current_user.is_authenticated and not sale_message %}
+                {# why a purchase was refused (main.book_tickets), shown here by the
+                   form rather than at the top of the page #}
+                {% for message in get_flashed_messages(category_filter=['ticket-error']) %}
+                <div class="alert alert-danger" role="alert">{{ message }}</div>
+                {% endfor %}
                 {% if event.ticket_types %}
                 <div class="table-responsive">
                     <table class="table ticket-type-table" id="purchaseTicketTable">
@@ -140,13 +151,10 @@
                                 <th>Price</th>
                                 <th>Description</th>
                                 <th>Available</th>
-                                <th>Quantity</th>
+                                {% if can_buy %}<th>Quantity</th>{% endif %}
                             </tr>
                         </thead>
                         <tbody>
-                            {# Quantity is the browser's own number box (its arrows are the
-                               stepper - no JavaScript). max stops it at the tickets left;
-                               the server will check again when booking is wired up (#21). #}
                             {% for ticket in event.ticket_types %}
                             <tr>
                                 <td>{{ ticket.name }}</td>
@@ -156,12 +164,24 @@
                                     {% if ticket.tickets_left %}{{ ticket.tickets_left }} of {{ ticket.capacity }} left
                                     {% else %}<span class="text-muted">Sold out</span>{% endif %}
                                 </td>
+                                {% if can_buy %}
                                 <td>
-                                    <input type="number" class="form-control ticket-quantity-input" value="0"
-                                        min="0" max="{{ ticket.tickets_left }}" step="1"
-                                        aria-label="Number of {{ ticket.name }} tickets"
-                                        {{ 'disabled' if not ticket.tickets_left or event.status == 'Cancelled' }}>
+                                    {% if ticket.tickets_left %}
+                                    {# the browser's own number box (its arrows are the stepper);
+                                       max stops it at the tickets left #}
+                                    <form method="post" action="{{ url_for('main.book_tickets', event_id=event.id) }}"
+                                        class="ticket-buy-form">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="ticket_type" value="{{ ticket.id }}">
+                                        <input type="number" name="quantity" class="form-control ticket-quantity-input"
+                                            value="1" min="1" max="{{ ticket.tickets_left }}" step="1" required
+                                            aria-label="Number of {{ ticket.name }} tickets">
+                                        <button type="submit" class="btn btn-primary btn-sm text-nowrap"
+                                            aria-label="Buy {{ ticket.name }} tickets">Buy</button>
+                                    </form>
+                                    {% endif %}
                                 </td>
+                                {% endif %}
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -172,15 +192,14 @@
                 {% endif %}
                 <div class="text-center">
                     {# Buying needs an account (#5). The real check is on the server
-                       (main.book_tickets); this just shows logged-out visitors the way in.
-                       Purchase is still the static A1 button until #21 wires it up. #}
-                    {% if event.status == 'Cancelled' %}
-                    <p class="text-muted mb-0">Tickets are no longer on sale.</p>
-                    {% elif current_user.is_authenticated %}
-                    <a class="btn btn-primary text-nowrap" href="{{ url_for('main.index') }}">Purchase</a>
-                    {% else %}
+                       (main.book_tickets); this just shows logged-out visitors the way in. #}
+                    {% if sale_message %}
+                    <p class="text-muted mb-0">{{ sale_message }}</p>
+                    {% elif not current_user.is_authenticated and event.ticket_types %}
                     <a class="btn btn-primary text-nowrap"
                         href="{{ url_for('auth.login', next=request.path) }}">Log in to buy tickets</a>
+                    {% elif event.ticket_types %}
+                    <p class="text-muted small mb-0">Choose how many, then press Buy. Each ticket type is a separate order.</p>
                     {% endif %}
                 </div>
             </div>

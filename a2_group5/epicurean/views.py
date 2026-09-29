@@ -408,6 +408,7 @@ def event_details(event_id):
     comments = sorted(event.comments, key=lambda c: c.posted_at, reverse=True)
     return render_template('viewitem.html', event=event, is_owner=is_owner,
                            comments=comments,
+                           sale_message=NOT_ON_SALE.get(event.effective_status),
                            acknowledgement=_acknowledgement_statement(event))
 
 
@@ -430,30 +431,58 @@ def new_order_number():
             return number
 
 
-# Buying tickets (#5). Login required; the booking is saved against the
+# Why tickets can't be bought, by effective_status (#25). Open isn't here - an
+# Open event is on sale. Shown on the event page and by main.book_tickets.
+NOT_ON_SALE = {
+    'Cancelled': 'This event has been cancelled, so tickets are no longer on sale.',
+    'Inactive': 'This event has already taken place, so tickets are no longer on sale.',
+    'Sold Out': 'This event is sold out.',
+}
+
+
+# Buying tickets (#5, #21). Login required; the booking is saved against the
 # logged-in user. One ticket type per booking - the Booking table holds a single
-# ticket_type_id and each order number is unique.
+# ticket_type_id and each order number is unique. Each row of the event page's
+# ticket table is its own small form posting here (ticket_type + quantity).
 @main_bp.route('/event/<int:event_id>/book', methods=['GET', 'POST'])
 @login_required
 def book_tickets(event_id):
     event = db.get_or_404(Event, event_id)
+    tickets_section = url_for('main.event_details', event_id=event.id) + '#ticketsSection'
 
     # A GET only happens when Flask-Login sends someone back here after they
     # logged in. Booking is POST-only, so return them to the event page to buy.
     if request.method == 'GET':
         return redirect(url_for('main.event_details', event_id=event.id))
 
+    # Refusals are flashed as 'ticket-error': the event page shows those in its
+    # Tickets section, where the browser lands (#ticketsSection), rather than
+    # at the top of the page with the other messages.
     form = BookingForm()
     form.ticket_type.choices = [(t.id, t.name) for t in event.ticket_types]
     if not form.validate_on_submit():
         for errors in form.errors.values():
             for error in errors:
-                flash(error, 'danger')
-        return redirect(url_for('main.event_details', event_id=event.id))
+                flash(error, 'ticket-error')
+        return redirect(tickets_section)
 
     ticket = db.session.get(TicketType, form.ticket_type.data)
     quantity = form.quantity.data
-    # TODO(#21): refuse Sold Out / Inactive / Cancelled events and check capacity
+    # Checked here, not only on the page, so a booking posted straight to this
+    # URL is refused too: the event must be on sale (not Cancelled, Inactive or
+    # Sold Out - #25), and this tier must have enough tickets left.
+    if event.effective_status in NOT_ON_SALE:
+        flash(NOT_ON_SALE[event.effective_status], 'ticket-error')
+        return redirect(tickets_section)
+    if quantity > ticket.tickets_left:
+        if ticket.tickets_left:
+            flash('Only {} {} ticket{} left - please choose {} or fewer.'.format(
+                ticket.tickets_left, ticket.name, 's' if ticket.tickets_left != 1 else '',
+                ticket.tickets_left), 'ticket-error')
+        else:
+            flash('{} tickets are sold out.'.format(ticket.name), 'ticket-error')
+        return redirect(tickets_section)
+
     booking = Booking(
         order_number=new_order_number(),
         user_id=current_user.id,

@@ -1159,6 +1159,14 @@ html {
     width: 5.5rem;
 }
 
+/* One ticket table row's buy form: quantity box and Buy button side by side */
+.ticket-buy-form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+}
+
 
 /* =============================== Colours =============================== */
 /* Every colour in the site, grouped in the same order as the sections above.

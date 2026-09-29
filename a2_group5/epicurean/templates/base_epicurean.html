@@ -87,7 +87,9 @@
     </nav>
 
     <!-- ==== Flashed messages ============================== -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
+    {# 'ticket-error' messages are left out here: the event page shows them in
+       its Tickets section, next to the form they're about (#21) #}
+    {% with messages = get_flashed_messages(with_categories=true)|rejectattr('0', 'equalto', 'ticket-error')|list %}
     {% if messages %}
     {# The x closes a message without JavaScript: it's the label of a hidden
        checkbox just before the message, and a ticked box hides the message
