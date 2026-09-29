@@ -107,22 +107,30 @@ def csrf_token():
 
 
 # Homepage (#15): Recently Added, then the top events of each category, each
-# with an "Explore more events" link to its full page. For variety, each event
-# appears only once - in the first section it fits - so later sections skip the
-# events already shown above them. Empty sections are left off the page.
+# with an "Explore more events" link to its full page. For variety, a section
+# prefers events not already shown above it; only if fewer than SECTION_SIZE of
+# those fit does it top up with events already shown, so every section still
+# fills up when enough events qualify. Empty sections are left off the page.
 @main_bp.route('/')
 def index():
     recent = db.session.scalars(
         db.select(Event).where(_upcoming())
         .order_by(Event.created_at.desc(), Event.id.desc())
         .limit(RECENTLY_ADDED_SIZE)).all()
-    sections = [dict(heading='Recently Added', events=recent, slug=None)]
+    sections = [dict(heading='Recently Added', events=recent, repeat_ids=set(), slug=None)]
     shown = {event.id for event in recent}
     for slug, (heading, rule) in CATEGORIES.items():
         events = db.session.scalars(
             _category_query(slug).where(Event.id.not_in(shown)).limit(SECTION_SIZE)).all()
+        repeats = []
+        if len(events) < SECTION_SIZE:
+            repeats = db.session.scalars(
+                _category_query(slug).where(Event.id.in_(shown))
+                .limit(SECTION_SIZE - len(events))).all()
         shown.update(event.id for event in events)
-        sections.append(dict(heading=heading, events=events, slug=slug))
+        # repeat_ids: cards already on the page, which mustn't repeat its id
+        sections.append(dict(heading=heading, events=events + repeats,
+                             repeat_ids={event.id for event in repeats}, slug=slug))
     return render_template('index.html', sections=sections, liked_ids=_liked_event_ids())
 
 

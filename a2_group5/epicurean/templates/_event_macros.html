@@ -35,9 +35,10 @@
    The heart is a small form (main.toggle_like), so it needs no JavaScript
    either: clicking it likes the event - or unlikes it if `liked` - and the
    page reloads scrolled back to this card (its id, event-<id>) with the new
-   count. An event appears at most once per page, so the id is unique. #}
-{% macro event_card(event, liked=False) %}
-<div class="card event-card scroll-target h-100" id="event-{{ event.id }}">
+   count. with_id=False leaves the id off a second card for the same event
+   (the homepage can repeat one to fill a section), so ids stay unique. #}
+{% macro event_card(event, liked=False, with_id=True) %}
+<div class="card event-card scroll-target h-100"{% if with_id %} id="event-{{ event.id }}"{% endif %}>
     <div class="event-card-img-wrap">
         <img src="{{ url_for('static', filename=event.image_path) }}" class="card-img-top event-card-img"
             alt="{{ event.title }}">
@@ -82,12 +83,13 @@
 
 
 {# A grid of event cards: 4 a row from lg, 3 from md, 2 from sm, 1 on phones.
-   liked_ids: the events the logged-in user has liked (filled hearts). #}
-{% macro event_grid(events, liked_ids=()) %}
+   liked_ids: the events the logged-in user has liked (filled hearts).
+   repeat_ids: events already shown higher up the page (no id on their card). #}
+{% macro event_grid(events, liked_ids=(), repeat_ids=()) %}
 <div class="row event-section-px py-3">
     {% for event in events %}
     <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
-        {{ event_card(event, liked=event.id in liked_ids) }}
+        {{ event_card(event, liked=event.id in liked_ids, with_id=event.id not in repeat_ids) }}
     </div>
     {% endfor %}
 </div>
