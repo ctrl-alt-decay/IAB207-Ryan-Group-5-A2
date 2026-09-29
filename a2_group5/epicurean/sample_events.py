@@ -25,12 +25,21 @@ Where the data came from:
   - description (a brief plus a longer paragraph in DETAILS) and categories:
     written for each event (the cards had none)
 
-Dates: the cards gave a day and month but no year, and most had passed. So:
-  - Popular events: the next time that day and month comes round
-  - This Weekend: the coming Friday-Sunday (on the card's weekday), so they
-    really are this weekend when seeded
+Dates: the cards gave a day and month but no year, and most had passed. Upcoming
+events start no earlier than 1 November (or the day of seeding, once that's
+later - see EARLIEST_MONTH), so they stay open for a while after seeding:
+  - Popular events: the first time that day and month comes round from then
+  - This Weekend: the first Friday-Sunday from then (on the card's weekday).
+    (So the homepage's This Weekend section is empty until that weekend.)
   - Bring Your Kids: the weekend after that
   - the one Inactive card: last weekend, so its status matches its date
+
+Statuses (#25): the status shown is worked out from the date and the tickets
+left (Event.effective_status), and only Cancelled is stored. So the cards'
+statuses come about like this:
+  - Cancelled: stored as Cancelled
+  - Inactive: dated last weekend (above), so it shows Inactive
+  - Sold Out: sample bookings take every ticket that's left
 "Sales End Soon" isn't one of the four statuses, so those cards became Open.
 """
 
@@ -464,19 +473,29 @@ def _full_description(spec):
 
 WEEKDAY_OFFSET = {'Fri': 0, 'Sat': 1, 'Sun': 2}
 
+# Upcoming sample events are dated from the 1st of this month of the seeding
+# year (or from the day of seeding, if that's later) - see the top of this file.
+EARLIEST_MONTH = 11
+
+
+def _coming_friday(day):
+    return day + timedelta(days=(4 - day.weekday()) % 7)
+
 
 def _event_date(spec, today):
     """Work out the event date from the card, as described at the top of this file."""
-    friday = today + timedelta(days=(4 - today.weekday()) % 7)  # the coming Friday
+    offset = WEEKDAY_OFFSET.get(spec['day'])
+    if spec['status'] == 'Inactive':
+        # last weekend, so it has already happened
+        return _coming_friday(today) - timedelta(days=7) + timedelta(days=offset)
+    start = max(today + timedelta(days=1), date(today.year, EARLIEST_MONTH, 1))
     if spec['group'] == 'popular':
         day, month = spec['day']
-        for year in (today.year, today.year + 1):
+        for year in (start.year, start.year + 1):
             candidate = date(year, month, day)
-            if candidate > today:
+            if candidate >= start:
                 return candidate
-    offset = WEEKDAY_OFFSET[spec['day']]
-    if spec['status'] == 'Inactive':
-        return friday - timedelta(days=7) + timedelta(days=offset)  # last weekend
+    friday = _coming_friday(start)
     if spec['group'] == 'weekend':
         return friday + timedelta(days=offset)
     return friday + timedelta(days=7 + offset)  # kids: the weekend after
@@ -513,8 +532,8 @@ def _organisers():
 
 def add_sample_events():
     """Add any of the sample events that aren't in the database yet (matched by
-    title), plus a few bookings for the Popular ones. Returns how many events
-    were added. Commits."""
+    title), plus sample bookings: a few for the Popular ones, and enough to sell
+    out the Sold Out ones. Returns how many events were added. Commits."""
     from .views import new_order_number  # here, not at the top: views imports forms etc.
 
     users = _organisers()
@@ -538,7 +557,8 @@ def add_sample_events():
             dietary_preference=spec['dietary'],
             seasonal_cultural=spec['seasonal'],
             proficiency=spec['proficiency'],
-            status=spec['status'],
+            # only Cancelled is stored - the rest is worked out (#25)
+            status='Cancelled' if spec['status'] == 'Cancelled' else 'Open',
             acknowledgement_type=ack_type,
             acknowledgement_city=ack_city,
             owner=users[index % len(users)],
@@ -570,6 +590,22 @@ def add_sample_events():
             db.session.flush()  # so the next order number sees this one
             remaining -= quantity
             turn += 1
+
+    # The cards that were Sold Out: book whatever is left of every tier, so
+    # they really are sold out (#25 works the status out from the tickets).
+    # One block booking per tier keeps the test accounts' histories short.
+    for spec, event in added:
+        if spec['status'] != 'Sold Out':
+            continue
+        buyers = [u for u in users if u is not event.owner]
+        for turn, ticket in enumerate(event.ticket_types):
+            left = ticket.tickets_left
+            if left:
+                db.session.add(Booking(
+                    order_number=new_order_number(), user=buyers[turn % len(buyers)],
+                    event=event, ticket_type=ticket, quantity=left,
+                    total_price=ticket.price * left))
+                db.session.flush()
 
     db.session.commit()
     return len(added)

@@ -1,5 +1,7 @@
-{# Order confirmation (route main.order_confirmation, login required). Shown
-   straight after a successful booking; only the user who made it can open it. #}
+{# Order page (route main.order_confirmation, login required). Shown straight
+   after a successful purchase, and from the order number in the booking
+   history; only the user who made the order can open it. An order can have
+   several ticket types - one line each (models.Order). #}
 {% extends "base_epicurean.html" %}
 
 {% block title %}Order Confirmed - Epicurean{% endblock %}
@@ -18,30 +20,35 @@
 
                 <div class="event-form-row">
                     <span class="event-form-label">Order Number</span>
-                    <div class="event-form-field"><strong>{{ booking.order_number }}</strong></div>
+                    <div class="event-form-field"><strong>{{ order.order_number }}</strong></div>
                 </div>
                 <div class="event-form-row">
                     <span class="event-form-label">Event</span>
-                    <div class="event-form-field">{{ booking.event.title }}</div>
+                    <div class="event-form-field">
+                        <a href="{{ url_for('main.event_details', event_id=order.event.id) }}">{{ order.event.title }}</a>
+                    </div>
                 </div>
                 <div class="event-form-row">
                     <span class="event-form-label">Date</span>
                     <div class="event-form-field">
-                        {{ booking.event.event_date.strftime('%d/%m/%Y') }} &middot;
-                        {{ booking.event.event_time.strftime('%H:%M') }}
+                        {{ order.event.event_date.strftime('%d/%m/%Y') }} &middot;
+                        {{ order.event.event_time.strftime('%H:%M') }}
                     </div>
                 </div>
                 <div class="event-form-row">
-                    <span class="event-form-label">Ticket Type</span>
-                    <div class="event-form-field">{{ booking.ticket_type.name }}</div>
-                </div>
-                <div class="event-form-row">
-                    <span class="event-form-label">Quantity</span>
-                    <div class="event-form-field">{{ booking.quantity }}</div>
+                    <span class="event-form-label">Tickets</span>
+                    <div class="event-form-field">
+                        {# "2 × Adult ($45.00 each) - $90.00", one line per ticket type #}
+                        {% for line in order.lines %}
+                        <div>{{ line.quantity }} &times; {{ line.ticket_type.name }}
+                            <span class="text-muted">(${{ '%.2f'|format(line.ticket_type.price) }} each)</span>
+                            - ${{ '%.2f'|format(line.total_price) }}</div>
+                        {% endfor %}
+                    </div>
                 </div>
                 <div class="event-form-row">
                     <span class="event-form-label">Total</span>
-                    <div class="event-form-field">${{ '%.2f'|format(booking.total_price) }}</div>
+                    <div class="event-form-field"><strong>${{ '%.2f'|format(order.total_price) }}</strong></div>
                 </div>
 
                 <div class="event-form-actions mt-4">

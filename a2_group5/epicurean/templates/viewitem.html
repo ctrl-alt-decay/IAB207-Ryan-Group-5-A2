@@ -1,11 +1,11 @@
 {# Event details page (route main.event_details, #20). One template for every
-   event, filled from its database row by the view. Still to come: Purchase
-   is the static A1 button until booking is wired up (#21), and the comment box
-   doesn't post yet (#23). #}
+   event, filled from its database row by the view. Tickets are bought from the
+   ticket table - a quantity for each ticket type, then Checkout (#21) - and
+   logged-in visitors can post comments (#23). #}
 {% extends "base_epicurean.html" %}
 {% from "_event_macros.html" import status_badge %}
 
-{% block title %}{{ event.title }} - Epicurean{% endblock %}
+{% block title %}{{ 'Checkout - ' if checkout }}{{ event.title }} - Epicurean{% endblock %}
 {% block description %}{{ event.title }} at {{ event.venue }}{% endblock %}
 
 {# a user's profile picture, or the default avatar #}
@@ -15,7 +15,9 @@
 {%- endmacro %}
 
 {% block content %}
-    <div class="container-fluid px-3 px-md-5 py-4 py-md-5">
+    {# inert while the checkout screen is open: the page behind it can't be
+       clicked or tabbed into (an HTML attribute - no JavaScript) #}
+    <div class="container-fluid px-3 px-md-5 py-4 py-md-5"{{ ' inert' if checkout }}>
     {# capped width, so a wide screen doesn't stretch the title/overview column
        into a mostly empty band between it and the info card #}
     <div class="event-page">
@@ -29,7 +31,7 @@
         <div class="row py-2">
             <div class="col-12">
                 <!-- Same badge styles as the event cards on the home page -->
-                {{ status_badge(event.status) }}
+                {{ status_badge(event.effective_status) }}
             </div>
         </div>
 
@@ -131,7 +133,23 @@
         <h2 class="section-heading scroll-target pt-3" id="ticketsSection">Tickets</h2>
         <div class="row py-1">
             <div class="col-12 col-lg-8 mx-auto">
+                {# Logged-in visitors buy from the table while the event is on sale:
+                   the whole table is one form with a quantity box per ticket type,
+                   and Checkout opens the checkout screen (main.checkout) for every
+                   type with more than 0 - so no JavaScript. sale_message says why an
+                   event isn't on sale (Cancelled / Inactive / Sold Out - #25). The
+                   server checks all of this again at checkout and booking. #}
+                {% set can_buy = current_user.is_authenticated and not sale_message %}
+                {# why a purchase was refused (main.checkout / main.book_tickets),
+                   shown here by the form rather than at the top of the page #}
+                {% for message in get_flashed_messages(category_filter=['ticket-error']) %}
+                <div class="alert alert-danger" role="alert">{{ message }}</div>
+                {% endfor %}
                 {% if event.ticket_types %}
+                {% if can_buy %}
+                {# a GET form: it only opens the checkout screen - nothing is booked yet #}
+                <form method="get" action="{{ url_for('main.checkout', event_id=event.id) }}" id="ticketOrderForm">
+                {% endif %}
                 <div class="table-responsive">
                     <table class="table ticket-type-table" id="purchaseTicketTable">
                         <thead>
@@ -140,13 +158,10 @@
                                 <th>Price</th>
                                 <th>Description</th>
                                 <th>Available</th>
-                                <th>Quantity</th>
+                                {% if can_buy %}<th>Quantity</th>{% endif %}
                             </tr>
                         </thead>
                         <tbody>
-                            {# Quantity is the browser's own number box (its arrows are the
-                               stepper - no JavaScript). max stops it at the tickets left;
-                               the server will check again when booking is wired up (#21). #}
                             {% for ticket in event.ticket_types %}
                             <tr>
                                 <td>{{ ticket.name }}</td>
@@ -156,54 +171,78 @@
                                     {% if ticket.tickets_left %}{{ ticket.tickets_left }} of {{ ticket.capacity }} left
                                     {% else %}<span class="text-muted">Sold out</span>{% endif %}
                                 </td>
+                                {% if can_buy %}
                                 <td>
-                                    <input type="number" class="form-control ticket-quantity-input" value="0"
-                                        min="0" max="{{ ticket.tickets_left }}" step="1"
-                                        aria-label="Number of {{ ticket.name }} tickets"
-                                        {{ 'disabled' if not ticket.tickets_left or event.status == 'Cancelled' }}>
+                                    {% if ticket.tickets_left %}
+                                    {# the browser's own number box (its arrows are the stepper);
+                                       max stops it at the tickets left #}
+                                    <input type="number" name="qty-{{ ticket.id }}" class="form-control ticket-quantity-input"
+                                        value="0" min="0" max="{{ ticket.tickets_left }}" step="1"
+                                        aria-label="Number of {{ ticket.name }} tickets">
+                                    {% endif %}
                                 </td>
+                                {% endif %}
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
+                {% if can_buy %}
+                <div class="text-center mb-2">
+                    <button type="submit" class="btn btn-primary text-nowrap">Checkout</button>
+                </div>
+                </form>
+                {% endif %}
                 {% else %}
                 <p class="text-muted text-center">No tickets are on sale for this event yet.</p>
                 {% endif %}
                 <div class="text-center">
                     {# Buying needs an account (#5). The real check is on the server
-                       (main.book_tickets); this just shows logged-out visitors the way in.
-                       Purchase is still the static A1 button until #21 wires it up. #}
-                    {% if event.status == 'Cancelled' %}
-                    <p class="text-muted mb-0">Tickets are no longer on sale.</p>
-                    {% elif current_user.is_authenticated %}
-                    <a class="btn btn-primary text-nowrap" href="{{ url_for('main.index') }}">Purchase</a>
-                    {% else %}
+                       (main.book_tickets); this just shows logged-out visitors the way in. #}
+                    {% if sale_message %}
+                    <p class="text-muted mb-0">{{ sale_message }}</p>
+                    {% elif not current_user.is_authenticated and event.ticket_types %}
                     <a class="btn btn-primary text-nowrap"
                         href="{{ url_for('auth.login', next=request.path) }}">Log in to buy tickets</a>
+                    {% elif event.ticket_types %}
+                    <p class="text-muted small mb-0">Set how many of each ticket type you'd like, then press Checkout.</p>
                     {% endif %}
                 </div>
             </div>
         </div>
 
         <!-- ==== Comments ============================== -->
-        <h2 class="section-heading pt-3">Comments</h2>
-        {# The box below is still the static A1 one - posting is #23 #}
-        <div class="row py-1">
+        <h2 class="section-heading scroll-target pt-3" id="comments">Comments</h2>
+        {# Posting needs an account (#23): logged-in visitors get the form, which
+           posts to main.post_comment (login required there too); everyone else
+           gets a way in. Everyone can read the comments below, newest first. #}
+        {% for message in get_flashed_messages(category_filter=['comment-error']) %}
+        <div class="alert alert-danger" role="alert">{{ message }}</div>
+        {% endfor %}
+        {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('main.post_comment', event_id=event.id) }}" class="row py-1">
+            {{ comment_form.hidden_tag() }}
             <div class="col-auto">
-                <img src="{{ url_for('static', filename='img/user_account.png') }}" class="img-fluid avatar-icon" alt="User avatar">
+                {{ avatar(current_user, 'Your avatar') }}
             </div>
             <div class="col">
                 {# plain divs, not .row - Bootstrap 5 stretches anything placed
                    directly in a .row to full width #}
                 <div class="py-1">
-                    <input class="form-control" id="enterComment" placeholder="Write a comment...">
+                    <textarea class="form-control" id="enterComment" name="body" rows="3"
+                        maxlength="{{ comment_form.MAX_LENGTH }}" required
+                        placeholder="Write a comment..." aria-label="Write a comment"></textarea>
                 </div>
                 <div class="py-1">
-                    <button class="btn btn-primary text-nowrap" type="button">Post</button>
+                    <button class="btn btn-primary text-nowrap" type="submit">Post</button>
                 </div>
             </div>
-        </div>
+        </form>
+        {% else %}
+        <p class="py-1">
+            <a href="{{ url_for('auth.login', next=request.path) }}">Log in</a> to post a comment.
+        </p>
+        {% endif %}
         {% for comment in comments %}
         <div class="row py-1">
             <div class="col-auto">
@@ -211,8 +250,10 @@
             </div>
             <div class="col">
                 <div>
-                    <strong>Posted By: {{ comment.user.first_name }} {{ comment.user.last_name }}
-                        - {{ comment.posted_at.strftime('%d/%m/%Y') }}</strong>
+                    {# the commenter's name, then when it was posted - posted_at is
+                       stored in UTC, and local_time shows it in Brisbane time #}
+                    <strong>{{ comment.user.first_name }} {{ comment.user.last_name }}</strong>
+                    <span class="text-muted small ms-1">{{ comment.posted_at|local_time }}</span>
                 </div>
                 <div>
                     {{ comment.body }}
@@ -224,6 +265,113 @@
         {% endfor %}
     </div>
     </div>
+
+    <!-- ==== Checkout (#21) ============================== -->
+    {# Shown over the event page when main.checkout renders it (Checkout under the
+       ticket table opens it). No JavaScript: Cancel and the dimmed backdrop are plain
+       links back to the event page, and Confirm posts to main.book_tickets,
+       which checks the order again. The payment options are a demo - they sit
+       outside the Confirm form and have no names, so nothing typed into them is
+       sent anywhere, and none is required. #}
+    {% if checkout %}
+    {% set back_to_tickets = url_for('main.event_details', event_id=event.id) ~ '#ticketsSection' %}
+    <div class="checkout-overlay" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle">
+        <a class="checkout-backdrop" href="{{ back_to_tickets }}" tabindex="-1" aria-hidden="true"></a>
+        <div class="checkout-panel">
+            <h2 class="page-heading mb-3" id="checkoutTitle">Checkout</h2>
+            <div class="row g-4">
+                <!-- Order summary: on the right from lg, first on smaller screens -->
+                <div class="col-12 col-lg-5 order-lg-2">
+                    <div class="event-form-card checkout-summary">
+                        <h3 class="checkout-subheading">Your order</h3>
+                        <p class="entry-title mb-1">{{ event.title }}</p>
+                        <p class="text-muted small mb-3">
+                            {{ event.event_date.strftime('%a %d/%m/%Y') }} at {{ event.event_time.strftime('%H:%M') }}<br>
+                            {{ event.venue }}
+                        </p>
+                        {# one line per ticket type: "2 × Adult ($45.00 each)  $90.00" #}
+                        <dl class="checkout-lines">
+                            {% for ticket, quantity, line_total in checkout.lines %}
+                            <div>
+                                <dt>{{ quantity }} &times; {{ ticket.name }}
+                                    <span class="text-muted small d-block">${{ '%.2f'|format(ticket.price) }} each</span></dt>
+                                <dd>${{ '%.2f'|format(line_total) }}</dd>
+                            </div>
+                            {% endfor %}
+                            <div class="checkout-total"><dt>Total</dt><dd>${{ '%.2f'|format(checkout.total) }}</dd></div>
+                        </dl>
+                        <form method="post" action="{{ url_for('main.book_tickets', event_id=event.id) }}"
+                            class="checkout-actions">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {% for ticket, quantity, line_total in checkout.lines %}
+                            <input type="hidden" name="qty-{{ ticket.id }}" value="{{ quantity }}">
+                            {% endfor %}
+                            <button type="submit" class="btn btn-primary">Confirm purchase</button>
+                            <a class="btn btn-outline-secondary" href="{{ back_to_tickets }}">Cancel</a>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Payment options (demo) -->
+                <div class="col-12 col-lg-7 order-lg-1">
+                    <fieldset class="checkout-payment">
+                        <legend class="checkout-subheading">Payment</legend>
+                        <p class="checkout-demo-note">
+                            <i class="fa fa-info-circle" aria-hidden="true"></i>
+                            Demo only - nothing here is required, sent or saved. Please don't enter real card details.
+                        </p>
+                        {# the chosen option's extra details are shown by CSS (:has) #}
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="payment_method" id="payCard" checked autofocus>
+                            <label class="form-check-label" for="payCard">
+                                <i class="fa fa-credit-card" aria-hidden="true"></i> Credit or debit card</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="payment_method" id="payPaypal">
+                            <label class="form-check-label" for="payPaypal">
+                                <i class="fa fa-paypal" aria-hidden="true"></i> PayPal</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="payment_method" id="payVenue">
+                            <label class="form-check-label" for="payVenue">
+                                <i class="fa fa-money" aria-hidden="true"></i> Pay at the venue</label>
+                        </div>
+
+                        <div class="checkout-option-details checkout-card-fields">
+                            <div class="mb-2">
+                                <label class="form-label" for="cardName">Name on card</label>
+                                <input class="form-control" id="cardName" autocomplete="off">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label" for="cardNumber">Card number</label>
+                                <input class="form-control" id="cardNumber" inputmode="numeric" maxlength="19"
+                                    placeholder="1234 5678 9012 3456" autocomplete="off">
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="form-label" for="cardExpiry">Expiry</label>
+                                    <input class="form-control" id="cardExpiry" inputmode="numeric" maxlength="5"
+                                        placeholder="MM/YY" autocomplete="off">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label" for="cardCvc">CVC</label>
+                                    <input class="form-control" id="cardCvc" inputmode="numeric" maxlength="4"
+                                        placeholder="123" autocomplete="off">
+                                </div>
+                            </div>
+                        </div>
+                        <p class="checkout-option-details checkout-paypal-note mb-0">
+                            You'd be sent to PayPal to pay, then brought back here. (Not part of this demo.)
+                        </p>
+                        <p class="checkout-option-details checkout-venue-note mb-0">
+                            Pay when you arrive - show your order number at the door.
+                        </p>
+                    </fieldset>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
 
     <!-- ==== Footer ============================== -->

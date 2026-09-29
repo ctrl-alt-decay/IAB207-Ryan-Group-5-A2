@@ -1,7 +1,7 @@
 import os
 import secrets
 import uuid
-from datetime import date, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from flask import (Blueprint, render_template, request, redirect, url_for, flash,
                    current_app, abort)
@@ -10,8 +10,9 @@ from flask_wtf.csrf import generate_csrf
 from werkzeug.utils import secure_filename
 
 from . import db
-from .models import Event, TicketType, Booking, Like
-from .forms import BookingForm, EventForm, EditEventForm, CancelEventForm, LikeForm
+from .models import Event, TicketType, Booking, Like, Comment, Order, orders_from
+from .forms import (OrderForm, EventForm, EditEventForm, CancelEventForm, LikeForm,
+                    CommentForm)
 
 # Public site pages, events and booking. Endpoints are referenced as
 # 'main.<function>' in url_for().
@@ -106,22 +107,30 @@ def csrf_token():
 
 
 # Homepage (#15): Recently Added, then the top events of each category, each
-# with an "Explore more events" link to its full page. For variety, each event
-# appears only once - in the first section it fits - so later sections skip the
-# events already shown above them. Empty sections are left off the page.
+# with an "Explore more events" link to its full page. For variety, a section
+# prefers events not already shown above it; only if fewer than SECTION_SIZE of
+# those fit does it top up with events already shown, so every section still
+# fills up when enough events qualify. Empty sections are left off the page.
 @main_bp.route('/')
 def index():
     recent = db.session.scalars(
         db.select(Event).where(_upcoming())
         .order_by(Event.created_at.desc(), Event.id.desc())
         .limit(RECENTLY_ADDED_SIZE)).all()
-    sections = [dict(heading='Recently Added', events=recent, slug=None)]
+    sections = [dict(heading='Recently Added', events=recent, repeat_ids=set(), slug=None)]
     shown = {event.id for event in recent}
     for slug, (heading, rule) in CATEGORIES.items():
         events = db.session.scalars(
             _category_query(slug).where(Event.id.not_in(shown)).limit(SECTION_SIZE)).all()
+        repeats = []
+        if len(events) < SECTION_SIZE:
+            repeats = db.session.scalars(
+                _category_query(slug).where(Event.id.in_(shown))
+                .limit(SECTION_SIZE - len(events))).all()
         shown.update(event.id for event in events)
-        sections.append(dict(heading=heading, events=events, slug=slug))
+        # repeat_ids: cards already on the page, which mustn't repeat its id
+        sections.append(dict(heading=heading, events=events + repeats,
+                             repeat_ids={event.id for event in repeats}, slug=slug))
     return render_template('index.html', sections=sections, liked_ids=_liked_event_ids())
 
 
@@ -384,31 +393,66 @@ def _delete_uploaded_image(filename):
             os.remove(path)
 
 
-# Booking history (#22): the user's own bookings, newest first, plus (#24) the
+# Booking history (#22): the user's own orders, newest first - an order's
+# bookings (one per ticket type) are grouped into one row - plus (#24) the
 # events they have created themselves.
 @main_bp.route('/history')
 @login_required
 def history():
-    bookings = db.session.scalars(
+    orders = orders_from(db.session.scalars(
         db.select(Booking)
         .where(Booking.user_id == current_user.id)
-        .order_by(Booking.booked_at.desc(), Booking.id.desc())).all()
+        .order_by(Booking.booked_at.desc(), Booking.id.desc())))
     my_events = db.session.scalars(
         db.select(Event)
         .where(Event.owner_id == current_user.id)
         .order_by(Event.event_date.desc(), Event.event_time.desc())).all()
-    return render_template('history.html', bookings=bookings, my_events=my_events)
+    return render_template('history.html', orders=orders, my_events=my_events)
 
 
 # An event's own page (#20): the same layout for every event, filled from its row.
 @main_bp.route('/event/<int:event_id>')
 def event_details(event_id):
-    event = db.get_or_404(Event, event_id)
+    return _event_page(db.get_or_404(Event, event_id))
+
+
+def _event_page(event, checkout=None):
+    """Render an event's page. With `checkout` (from main.checkout: the chosen
+    ticket type, quantity and total), the checkout screen is shown over it."""
     is_owner = current_user.is_authenticated and event.owner_id == current_user.id
     comments = sorted(event.comments, key=lambda c: c.posted_at, reverse=True)
     return render_template('viewitem.html', event=event, is_owner=is_owner,
-                           comments=comments,
+                           comments=comments, comment_form=CommentForm(),
+                           sale_message=NOT_ON_SALE.get(event.effective_status),
+                           checkout=checkout,
                            acknowledgement=_acknowledgement_statement(event))
+
+
+# Posting a comment (#23). Login required, so every comment has a name on it;
+# everyone - logged in or not - can read them on the event page. Afterwards the
+# browser goes back to the event page's Comments section, where the new comment
+# is first in the list, or where a refusal is shown ('comment-error' messages
+# appear there, not at the top of the page). A GET only happens when
+# Flask-Login sends someone back here after they logged in, so show them the
+# event to write their comment there.
+@main_bp.route('/event/<int:event_id>/comment', methods=['GET', 'POST'])
+@login_required
+def post_comment(event_id):
+    event = db.get_or_404(Event, event_id)
+    comments_section = url_for('main.event_details', event_id=event.id) + '#comments'
+    if request.method == 'GET':
+        return redirect(comments_section)
+
+    form = CommentForm()
+    if form.validate_on_submit():
+        db.session.add(Comment(event_id=event.id, user_id=current_user.id,
+                               body=form.body.data.strip()))
+        db.session.commit()
+    else:
+        for errors in form.errors.values():
+            for error in errors:
+                flash(error, 'comment-error')
+    return redirect(comments_section)
 
 
 def _acknowledgement_statement(event):
@@ -430,9 +474,89 @@ def new_order_number():
             return number
 
 
-# Buying tickets (#5). Login required; the booking is saved against the
-# logged-in user. One ticket type per booking - the Booking table holds a single
-# ticket_type_id and each order number is unique.
+# Why tickets can't be bought, by effective_status (#25). Open isn't here - an
+# Open event is on sale. Shown on the event page and by main.book_tickets.
+NOT_ON_SALE = {
+    'Cancelled': 'This event has been cancelled, so tickets are no longer on sale.',
+    'Inactive': 'This event has already taken place, so tickets are no longer on sale.',
+    'Sold Out': 'This event is sold out.',
+}
+
+
+def _tickets_section(event):
+    return url_for('main.event_details', event_id=event.id) + '#ticketsSection'
+
+
+def _requested_quantities(event, data):
+    """How many of each of the event's ticket types were asked for, from form
+    data with a 'qty-<ticket type id>' field per type (the Tickets table, or
+    the checkout screen's Confirm form). Only this event's ticket types are
+    read, so another event's can't sneak in. Returns [(ticket, quantity)] for
+    those above 0, or flashes why not and returns None."""
+    lines = []
+    for ticket in event.ticket_types:
+        value = data.get('qty-{}'.format(ticket.id), '').strip() or '0'
+        if not value.isdigit():   # also refuses negatives and decimals
+            flash('Quantities must be whole numbers, 0 or more.', 'ticket-error')
+            return None
+        if int(value):
+            lines.append((ticket, int(value)))
+    if not lines:
+        flash('Choose how many tickets you would like of at least one ticket type.',
+              'ticket-error')
+        return None
+    return lines
+
+
+def _checked_order(event, data):
+    """Check an order for `event` - used by both the checkout screen and the
+    final booking, so they can't disagree. Returns its lines,
+    [(ticket, quantity)], if it can go ahead. If not, flashes why as a
+    'ticket-error' (the event page shows those in its Tickets section, where
+    the browser is sent back to) and returns None. Checked on the server, so a
+    request made straight to the URL is refused too: the event must be on sale
+    (not Cancelled, Inactive or Sold Out - #25), and every ticket type ordered
+    must have enough tickets left."""
+    if event.effective_status in NOT_ON_SALE:
+        flash(NOT_ON_SALE[event.effective_status], 'ticket-error')
+        return None
+    lines = _requested_quantities(event, data)
+    if lines is None:
+        return None
+    ok = True
+    for ticket, quantity in lines:
+        if quantity > ticket.tickets_left:
+            ok = False
+            if ticket.tickets_left:
+                flash('Only {} {} ticket{} left - please choose {} or fewer.'.format(
+                    ticket.tickets_left, ticket.name, 's' if ticket.tickets_left != 1 else '',
+                    ticket.tickets_left), 'ticket-error')
+            else:
+                flash('{} tickets are sold out.'.format(ticket.name), 'ticket-error')
+    return lines if ok else None
+
+
+# The checkout screen (#21). Checkout under the event page's ticket table opens
+# it - a GET form, so the chosen quantities are in the URL. It's the event page
+# with the checkout panel over it: the order's lines and total on the right,
+# demo payment options on the left, and Confirm / Cancel. Confirm posts to
+# main.book_tickets, which checks the order again. Login required; a logged-out
+# visitor is brought back here after logging in.
+@main_bp.route('/event/<int:event_id>/checkout')
+@login_required
+def checkout(event_id):
+    event = db.get_or_404(Event, event_id)
+    lines = _checked_order(event, request.args)
+    if lines is None:
+        return redirect(_tickets_section(event))
+    lines = [(ticket, quantity, ticket.price * quantity) for ticket, quantity in lines]
+    return _event_page(event, checkout=dict(lines=lines,
+                                            total=sum(line[2] for line in lines)))
+
+
+# Buying tickets (#5, #21): Confirm on the checkout screen posts here. Login
+# required. One order can have several ticket types: it's saved as one Booking
+# per ticket type, all sharing a new order number (see Booking in models.py).
 @main_bp.route('/event/<int:event_id>/book', methods=['GET', 'POST'])
 @login_required
 def book_tickets(event_id):
@@ -443,37 +567,39 @@ def book_tickets(event_id):
     if request.method == 'GET':
         return redirect(url_for('main.event_details', event_id=event.id))
 
-    form = BookingForm()
-    form.ticket_type.choices = [(t.id, t.name) for t in event.ticket_types]
-    if not form.validate_on_submit():
-        for errors in form.errors.values():
-            for error in errors:
-                flash(error, 'danger')
-        return redirect(url_for('main.event_details', event_id=event.id))
+    if not OrderForm().validate_on_submit():   # the CSRF token
+        flash("Your order couldn't be confirmed. Please try again.", 'ticket-error')
+        return redirect(_tickets_section(event))
+    lines = _checked_order(event, request.form)
+    if lines is None:
+        return redirect(_tickets_section(event))
 
-    ticket = db.session.get(TicketType, form.ticket_type.data)
-    quantity = form.quantity.data
-    # TODO(#21): refuse Sold Out / Inactive / Cancelled events and check capacity
-    booking = Booking(
-        order_number=new_order_number(),
-        user_id=current_user.id,
-        event_id=event.id,
-        ticket_type_id=ticket.id,
-        quantity=quantity,
-        # priced on the server from the ticket type - never trusted from the page
-        total_price=ticket.price * quantity,
-    )
-    db.session.add(booking)
+    order_number = new_order_number()
+    booked_at = datetime.utcnow()   # the same for every line of the order
+    for ticket, quantity in lines:
+        db.session.add(Booking(
+            order_number=order_number,
+            user_id=current_user.id,
+            event_id=event.id,
+            ticket_type_id=ticket.id,
+            quantity=quantity,
+            # priced on the server from the ticket type - never trusted from the page
+            total_price=ticket.price * quantity,
+            booked_at=booked_at,
+        ))
     db.session.commit()
-    return redirect(url_for('main.order_confirmation', order_number=booking.order_number))
+    return redirect(url_for('main.order_confirmation', order_number=order_number))
 
 
-# Shown straight after a successful booking. Only the user who made the booking
-# can open it - anyone else gets a 404, so order numbers can't be probed.
+# The order page: shown straight after buying, and from the order number in the
+# booking history. Only the user who made the order can open it - anyone else
+# gets a 404, so order numbers can't be probed.
 @main_bp.route('/order/<order_number>')
 @login_required
 def order_confirmation(order_number):
-    booking = db.first_or_404(db.select(Booking).where(
+    lines = db.session.scalars(db.select(Booking).where(
         Booking.order_number == order_number,
-        Booking.user_id == current_user.id))
-    return render_template('order_confirmation.html', booking=booking)
+        Booking.user_id == current_user.id)).all()
+    if not lines:
+        abort(404)
+    return render_template('order_confirmation.html', order=Order(lines))

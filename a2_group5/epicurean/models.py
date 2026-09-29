@@ -6,7 +6,7 @@
 import os
 
 from . import db
-from datetime import datetime
+from datetime import date, datetime
 from flask import current_app
 from flask_login import UserMixin
 
@@ -54,8 +54,11 @@ class Event(db.Model):
     seasonal_cultural = db.Column(db.String(50))    # Summer BBQ, Cultural, ...
     proficiency = db.Column(db.String(50))          # Beginner, Family Friendly, ...
 
-    # 'Open' | 'Inactive' | 'Sold Out' | 'Cancelled'
-    # Nothing updates this automatically yet (e.g. to 'Inactive' once the date passes).
+    # 'Open' | 'Cancelled' - the only status set by hand (an owner cancelling).
+    # The status SHOWN - Open, Inactive, Sold Out or Cancelled - is worked out
+    # by effective_status below (#25), so it can't go out of date. Databases
+    # made before #25 may still hold 'Sold Out' or 'Inactive' here; only
+    # 'Cancelled' is read.
     status = db.Column(db.String(20), nullable=False, default='Open')
 
     # How many likes the event has - the homepage and category pages sort by
@@ -114,6 +117,25 @@ class Event(db.Model):
     def tickets_sold(self):
         return sum(b.quantity for b in self.bookings)
 
+    @property
+    def effective_status(self):
+        """The event's status as shown and enforced (#25), worked out when it's
+        read rather than stored, so it's never out of date:
+          - Cancelled: the owner cancelled it (the one status that's stored)
+          - Inactive:  its date has passed
+          - Sold Out:  every ticket type has no tickets left
+          - Open:      otherwise - including an event with no ticket types yet
+                       ("Tickets coming soon"), which isn't sold out
+        The status badges show this, and main.book_tickets only sells tickets
+        while it's Open. Tickets left per tier come from TicketType.tickets_left."""
+        if self.status == 'Cancelled':
+            return 'Cancelled'
+        if self.event_date < date.today():
+            return 'Inactive'
+        if self.ticket_types and not any(t.tickets_left for t in self.ticket_types):
+            return 'Sold Out'
+        return 'Open'
+
 
 # One price tier of an event (e.g. Adult, $45.00, 60 available). A Booking points
 # at a specific tier, which is where its price comes from.
@@ -142,14 +164,19 @@ class TicketType(db.Model):
         return max(self.capacity - self.tickets_sold, 0)
 
 
-# One purchase: a user buying `quantity` tickets of one TicketType.
-# order_number is the reference shown to the user. event_id duplicates
-# ticket_type.event_id to make per-event queries simple - keep the two consistent.
+# One line of an order: a user buying `quantity` tickets of one TicketType.
+# An order (one purchase) can cover several ticket types of the same event:
+# one Booking per type, all sharing the order's order_number, user, event and
+# booked_at - see Order below. order_number is the reference shown to the user.
+# event_id duplicates ticket_type.event_id to make per-event queries simple -
+# keep the two consistent.
 class Booking(db.Model):
     __tablename__ = 'booking'
 
     id = db.Column(db.Integer, primary_key=True)
-    order_number = db.Column(db.String(20), unique=True, nullable=False)  # 'EPI-64118'
+    # not unique: an order's bookings share it. (Databases made before orders
+    # could hold several ticket types still have it unique - re-seed them.)
+    order_number = db.Column(db.String(20), nullable=False, index=True)  # 'EPI-64118'
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
     ticket_type_id = db.Column(db.Integer, db.ForeignKey('ticket_type.id'), nullable=False)
@@ -159,6 +186,33 @@ class Booking(db.Model):
 
     def __repr__(self):
         return "<Booking {}>".format(self.order_number)
+
+
+class Order:
+    """One purchase: the Booking rows that share an order number, one per ticket
+    type. Not a table - it's built from those rows (see orders_from) for the
+    order page and the booking history."""
+
+    def __init__(self, bookings):
+        self.lines = sorted(bookings, key=lambda b: b.id)   # in the order they were chosen
+        first = self.lines[0]
+        self.order_number = first.order_number
+        self.user = first.user
+        self.event = first.event
+        self.booked_at = first.booked_at
+
+    @property
+    def total_price(self):
+        return sum(b.total_price for b in self.lines)
+
+
+def orders_from(bookings):
+    """Group bookings into Orders by order number, keeping the order they came in
+    (so bookings sorted newest first give orders newest first)."""
+    grouped = {}
+    for booking in bookings:
+        grouped.setdefault(booking.order_number, []).append(booking)
+    return [Order(lines) for lines in grouped.values()]
 
 
 # A comment on an event page, displayed with the commenter's name and posted_at.
