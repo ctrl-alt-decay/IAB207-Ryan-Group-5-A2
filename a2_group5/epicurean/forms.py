@@ -144,7 +144,7 @@ class EventForm(FlaskForm):
     # the capital city when the type is Enhanced. These preview lines are
     # PLACEHOLDER wording until the real acknowledgement copy is written.
     CAPITAL_CITIES = ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide',
-                      'Hobart', 'Darwin', 'Canberra']
+                      'Hobart', 'Darwin', 'Canberra', 'Other']
     GENERIC_ACK_PREVIEW = 'GENERIC ACKNOWLEDGEMENT OF COUNTRY PLACEHOLDER TEXT'
     ENHANCED_ACK_PREVIEW = 'ENHANCED ACKNOWLEDGEMENT OF COUNTRY PLACEHOLDER TEXT for {}'
 
