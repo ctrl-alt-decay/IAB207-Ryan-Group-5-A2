@@ -1,0 +1,106 @@
+{# Search & filter results (route main.search, #16 #17). Reached from the
+   navbar search bar (base_epicurean.html) and the homepage filter dropdowns
+   (index.html) - both plain GET forms, so a search is just a URL
+   (e.g. /search?q=ramen&dietary=Vegan) and this page works with no
+   JavaScript. Same card-grid layout as a category page (events.html), most
+   liked first, paginated - plus a "refine your search" panel so the filters
+   can be narrowed further without going back to the homepage.
+   dietary_options / seasonal_options / proficiency_options (from EventForm in
+   forms.py) are passed in by main.search so this file doesn't duplicate that
+   list a third time. #}
+{% extends "base_epicurean.html" %}
+{% from "_event_macros.html" import event_grid %}
+{% from "bootstrap5/pagination.html" import render_pagination %}
+{% from "bootstrap5/nav.html" import render_breadcrumb_item %}
+
+{% block title %}Search Results - Epicurean{% endblock %}
+{% block description %}Search results on Epicurean{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 py-md-5">
+
+    <div class="event-section-px">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+                {{ render_breadcrumb_item('main.index', 'Home') }}
+                {{ render_breadcrumb_item('main.search', 'Search Results') }}
+            </ol>
+        </nav>
+        <h1 class="page-heading mb-1">Search Results</h1>
+        <p class="text-muted mb-0">
+            {% if events.total %}
+            {{ events.total }} event{{ 's' if events.total != 1 }} found, most liked first
+            {%- if events.pages > 1 %} - page {{ events.page }} of {{ events.pages }}{% endif %}
+            {% elif has_criteria %}
+            No events matched your search. Try different keywords or clear a filter below.
+            {% else %}
+            No events have been listed yet.
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- ==== Refine your search ============================== -->
+    {# Same idea as the homepage filters: a plain GET form back to this same
+       page, so changing a filter here narrows the results further without
+       losing the free-text search. Each dropdown's current value is echoed
+       back with `selected`, and the free-text/location inputs keep whatever
+       was typed, so refining feels like adjusting one search rather than
+       starting over. #}
+    <div class="event-section-px py-3">
+        <form method="get" action="{{ url_for('main.search') }}" class="row g-2 align-items-end">
+            <div class="col-12 col-md-4">
+                <label for="searchQ" class="event-filter-label">Keywords</label>
+                <input type="text" class="form-control" id="searchQ" name="q"
+                    value="{{ request.args.get('q', '') }}" placeholder="Search events">
+            </div>
+            <div class="col-12 col-md-4">
+                <label for="searchLocation" class="event-filter-label">Location</label>
+                <input type="text" class="form-control" id="searchLocation" name="location"
+                    value="{{ request.args.get('location', '') }}" placeholder="Choose a location">
+            </div>
+            <div class="col-12 col-sm-4 col-md-4">
+                <label for="selectDietary" class="event-filter-label">Dietary Preference</label>
+                <select class="form-select" id="selectDietary" name="dietary">
+                    <option value="None">None</option>
+                    {% for option in dietary_options if option != 'None' %}
+                    <option {{ 'selected' if request.args.get('dietary') == option }}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-sm-4 col-md-4">
+                <label for="selectSeasonal" class="event-filter-label">Seasonal / Cultural Options</label>
+                <select class="form-select" id="selectSeasonal" name="seasonal">
+                    <option value="None">None</option>
+                    {% for option in seasonal_options if option != 'None' %}
+                    <option {{ 'selected' if request.args.get('seasonal') == option }}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-sm-4 col-md-4">
+                <label for="selectProficiency" class="event-filter-label">Proficiency Filter</label>
+                <select class="form-select" id="selectProficiency" name="proficiency">
+                    <option value="None">None</option>
+                    {% for option in proficiency_options if option != 'None' %}
+                    <option {{ 'selected' if request.args.get('proficiency') == option }}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 mt-2">
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                <a href="{{ url_for('main.search') }}" class="btn btn-outline-secondary">Clear</a>
+            </div>
+        </form>
+    </div>
+
+    {% if events.items %}
+    {{ event_grid(events.items, liked_ids) }}
+    {% endif %}
+
+    {% if events.pages > 1 %}
+    <div class="event-section-px">
+        {{ render_pagination(events, align='center') }}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

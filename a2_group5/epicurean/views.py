@@ -25,7 +25,7 @@ EVENT_UPLOAD_DIR = os.path.join('uploads', 'events')
 # find what they just created); each category section shows its top few.
 RECENTLY_ADDED_SIZE = 4
 SECTION_SIZE = 8
-# Category pages ("Explore more events"): events per page
+# Category pages ("Explore more events") and search results: events per page
 EVENTS_PER_PAGE = 12
 # an event needs at least this many likes to count as Popular
 POPULAR_MIN_LIKES = 100
@@ -67,8 +67,9 @@ def _this_weekend_filter():
 
 
 def _upcoming():
-    """Not cancelled and not already past (#15). The homepage and the category
-    pages only list these; every event's own page still opens by its link."""
+    """Not cancelled and not already past (#15). The homepage, the category
+    pages and search only list these; every event's own page still opens by
+    its link."""
     return db.and_(Event.status != 'Cancelled', Event.event_date >= date.today())
 
 
@@ -143,6 +144,75 @@ def category(slug):
     events = db.paginate(_category_query(slug), per_page=EVENTS_PER_PAGE, error_out=True)
     return render_template('events.html', heading=CATEGORIES[slug][0], slug=slug, events=events,
                            liked_ids=_liked_event_ids())
+
+
+# ---- Search & filtering (#16, #17) ---------------------------------------
+# The navbar search bar (base_epicurean.html) and the homepage filter
+# dropdowns (index.html) both post here as plain GET forms - no JavaScript,
+# so a search is just a shareable, bookmarkable URL
+# (e.g. /search?q=ramen&dietary=Vegan). Query params:
+#   q                                - free text: matched against the title,
+#                                       description and venue
+#   location                         - the search bar's second field: matched
+#                                       against the venue only
+#   dietary, seasonal, proficiency   - exact match against the matching Event
+#                                       column; missing or 'None' means no
+#                                       filter on that one
+# TODO (AI-enhanced discovery): `q` currently does a plain case-insensitive
+# substring match. The brief's AI-enhanced discovery requirement belongs here -
+# e.g. ranking/matching with sentence-transformers embeddings over the title +
+# description instead of (or as well as) the substring match below. Left for
+# a follow-up once this plain version is confirmed working.
+FILTER_PARAMS = {
+    'dietary': Event.dietary_preference,
+    'seasonal': Event.seasonal_cultural,
+    'proficiency': Event.proficiency,
+}
+
+
+def _search_query(args):
+    """The Event select for a search/filter request, built from `args`
+    (request.args): upcoming and not cancelled, like every other listing page,
+    narrowed by whichever of q / location / dietary / seasonal / proficiency
+    were actually given."""
+    query = db.select(Event).where(_upcoming())
+
+    text = (args.get('q') or '').strip()
+    if text:
+        like = '%{}%'.format(text)
+        query = query.where(db.or_(
+            Event.title.ilike(like), Event.description.ilike(like), Event.venue.ilike(like)))
+
+    location = (args.get('location') or '').strip()
+    if location:
+        query = query.where(Event.venue.ilike('%{}%'.format(location)))
+
+    for param, column in FILTER_PARAMS.items():
+        value = (args.get(param) or '').strip()
+        if value and value != 'None':
+            query = query.where(column == value)
+
+    return query.order_by(Event.likes.desc(), Event.event_date, Event.event_time, Event.id)
+
+
+def _has_search_criteria(args):
+    """True if the request actually asked for anything (so the page can tell
+    "no events listed yet" apart from "nothing matched your search")."""
+    return any((args.get(key) or '').strip() for key in ('q', 'location', *FILTER_PARAMS))
+
+
+# Search & filter results (#16, #17): reached from the navbar search bar and
+# the homepage filter dropdowns. Same layout as a category page - most liked
+# first, paginated - plus a "refine your search" panel so the filters can be
+# narrowed further without going back to the homepage.
+@main_bp.route('/search')
+def search():
+    events = db.paginate(_search_query(request.args), per_page=EVENTS_PER_PAGE, error_out=False)
+    return render_template(
+        'search.html', events=events, liked_ids=_liked_event_ids(),
+        has_criteria=_has_search_criteria(request.args),
+        dietary_options=EventForm.DIETARY, seasonal_options=EventForm.SEASONAL,
+        proficiency_options=EventForm.PROFICIENCY)
 
 
 def local_path(path):
