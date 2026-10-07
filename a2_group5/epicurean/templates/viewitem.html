@@ -71,6 +71,12 @@
                                 <dt><i class="fa fa-map-marker event-meta-icon" aria-hidden="true"></i> Venue</dt>
                                 <dd>{{ event.venue }}</dd>
                             </div>
+                            {% if event.city %}
+                            <div class="event-info-item">
+                                <dt><i class="fa fa-map-o event-meta-icon" aria-hidden="true"></i> City</dt>
+                                <dd>{{ event.city }}</dd>
+                            </div>
+                            {% endif %}
                             <div class="event-info-item">
                                 <dt><i class="fa fa-calendar event-meta-icon" aria-hidden="true"></i> Date</dt>
                                 <dd>{{ event.event_date.strftime('%d/%m/%Y') }}</dd>

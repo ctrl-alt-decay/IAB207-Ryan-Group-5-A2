@@ -160,8 +160,24 @@ class EventForm(FlaskForm):
     seasonal_cultural = SelectField("Seasonal / Cultural Options", choices=SEASONAL)
     proficiency = SelectField("Proficiency", choices=PROFICIENCY)
 
+    # The major Australian cities an event can be listed under: the one closest
+    # to the venue, so an event in a suburb or a nearby town still shows up under
+    # its city. Stored as shown, e.g. 'Townsville, QLD'.
+    CITIES = ['Adelaide, SA', 'Albury, NSW', 'Alice Springs, NT', 'Ballarat, VIC',
+              'Bendigo, VIC', 'Brisbane, QLD', 'Bunbury, WA', 'Bundaberg, QLD',
+              'Cairns, QLD', 'Canberra, ACT', 'Central Coast, NSW', 'Coffs Harbour, NSW',
+              'Darwin, NT', 'Geelong, VIC', 'Gold Coast, QLD', 'Hervey Bay, QLD',
+              'Hobart, TAS', 'Launceston, TAS', 'Mackay, QLD', 'Melbourne, VIC',
+              'Newcastle, NSW', 'Perth, WA', 'Rockhampton, QLD', 'Sunshine Coast, QLD',
+              'Sydney, NSW', 'Toowoomba, QLD', 'Townsville, QLD', 'Wagga Wagga, NSW',
+              'Wollongong, NSW']
+
     venue = StringField("Venue / Address", validators=[
         DataRequired('Enter the venue address'), Length(max=255)])
+    # '' is the "Choose the closest city" prompt, which DataRequired refuses
+    city = SelectField("City", choices=[('', 'Choose the closest city')]
+                       + [(city, city) for city in CITIES],
+                       validators=[DataRequired('Choose the city closest to the venue')])
     event_date = DateField("Event Date", format='%d/%m/%Y', validators=[
         InputRequired('Choose the event date')])
     event_time = TimeField("Event Time", format='%H:%M', validators=[

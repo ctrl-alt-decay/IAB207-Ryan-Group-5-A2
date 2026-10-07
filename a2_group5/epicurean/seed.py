@@ -61,6 +61,7 @@ def seed():
         title='Summer Rooftop BBQ',
         description='A relaxed rooftop BBQ with seasonal produce and live music.',
         venue='Rooftop Terrace, 45 Edward St, Brisbane QLD 4000',
+        city='Brisbane, QLD',
         event_date=date(2026, 12, 5),
         event_time=time(17, 30),
         image_filename='bbq-seminar_event.jpg',   # an A1 photo in static/img/
@@ -74,7 +75,8 @@ def seed():
     pasta = Event(
         title='Handmade Pasta Workshop',
         description='Learn to make fresh pasta from scratch with a local chef.',
-        venue='The Kitchen Studio, 7 Boundary St, West End QLD 4101',
+        venue='The Kitchen Studio, 7 Gouger Street, Adelaide SA 5000',
+        city='Adelaide, SA',
         event_date=date(2026, 11, 21),
         event_time=time(10, 0),
         image_filename='gnocchi_workshop.jpg',    # an A1 photo in static/img/

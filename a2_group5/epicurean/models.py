@@ -44,7 +44,11 @@ class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(150), nullable=False)
     description = db.Column(db.Text, nullable=False)
-    venue = db.Column(db.String(255), nullable=False)
+    venue = db.Column(db.String(255), nullable=False)   # name and street address
+    # The major city closest to the venue, e.g. 'Townsville, QLD' (EventForm.CITIES),
+    # so events can be found by city even when they're in a suburb or nearby town.
+    # Empty for events made before the field existed (add_missing_columns adds it).
+    city = db.Column(db.String(50))
     event_date = db.Column(db.Date, nullable=False)
     event_time = db.Column(db.Time, nullable=False)
     image_filename = db.Column(db.String(255))

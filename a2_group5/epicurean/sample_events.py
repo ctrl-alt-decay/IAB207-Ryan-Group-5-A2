@@ -15,7 +15,9 @@ Running it twice is harmless. seed.py also calls add_sample_events() after
 rebuilding its own data.
 
 Where the data came from:
-  - title, venue, time, weekday, "From" price, status and likes: the A1 cards
+  - title, venue name, time, weekday, "From" price, status and likes: the A1 cards
+  - street address and City: added for each event (the cards only named the
+    venue), spread across Australia's major cities - see EventForm.CITIES
   - image: the card's photo in static/img/ (stored as just the filename;
     Event.image_path finds it there)
   - ticket tiers: the patterns in TIERS, modelled on the A1 Cinco De Mayo page
@@ -115,12 +117,14 @@ CINCO_DESCRIPTION = (
 EVENTS = [
     # ---- Popular ----
     dict(group='popular', title='Cinco De Mayo Fiesta', image='cinco-de-mayo_event.jpg',
-         day=(2, 5), at=time(12, 0), venue='Fiesta Square, Riverside Markets',
+         day=(2, 5), at=time(12, 0),
+         venue='Fiesta Square, 2 Riverside Markets Way, Parramatta NSW 2150', city='Sydney, NSW',
          price='35.00', status='Sold Out', tiers='family', likes=412,
          dietary=None, seasonal='Cultural', proficiency='Family Friendly', ack='Generic',
          description=CINCO_DESCRIPTION),
     dict(group='popular', title='Oktoberfest', image='oktoberfest_event.jpg',
-         day=(25, 9), at=time(18, 0), venue='The Beer Hall, Warehouse District',
+         day=(25, 9), at=time(18, 0),
+         venue='The Beer Hall, 14 Warehouse Lane, Fortitude Valley QLD 4006', city='Brisbane, QLD',
          price='29.99', status='Open', tiers='adults', likes=356,
          dietary=None, seasonal='Cultural', proficiency='Foodie', ack=('Enhanced', 'Brisbane'),
          description='Raise your stein: the Warehouse District is going full Bavarian for one night '
@@ -130,7 +134,8 @@ EVENTS = [
                      'stein-holding contest crowns the steadiest arm in the hall, and once the band '
                      'strikes up the drinking songs, expect the whole room on its feet for a toast.'),
     dict(group='popular', title='Underwater Dining Experience', image='underwater_event.jpg',
-         day=(14, 11), at=time(19, 0), venue='The Reef Room, Marina Point',
+         day=(14, 11), at=time(19, 0),
+         venue='The Reef Room, 1 Marina Point, Cairns City QLD 4870', city='Cairns, QLD',
          price='250.00', status='Sold Out', tiers='premium', likes=289,
          capacity={'Standard': 22, 'With Wine Pairing': 10},  # 32 seats, as DETAILS says
          dietary='Gluten-Free', seasonal=None, proficiency='Foodie', ack=None,
@@ -142,7 +147,8 @@ EVENTS = [
                      'coconut and passionfruit dessert as the underwater floodlights switch on '
                      'outside.'),
     dict(group='popular', title='Vineyard Vegan Picnic', image='vegan-vinyard_event.jpg',
-         day=(8, 2), at=time(12, 30), venue='Hillside Vineyard, Valley Road',
+         day=(8, 2), at=time(12, 30),
+         venue='Hillside Vineyard, 88 Valley Road, Tanunda SA 5352', city='Adelaide, SA',
          price='75.00', status='Cancelled', tiers='adults', likes=178,
          dietary='Vegan', seasonal='Summer BBQ', proficiency=None, ack=None,
          description='Long summer lunches don\'t get much greener than this. Spread out on the lawns '
@@ -152,7 +158,8 @@ EVENTS = [
                      'the terrace, and before you leave, join the winemaker for a short walk through '
                      'the rows to see the season\'s grapes ripening on the vine.'),
     dict(group='popular', title='Truffle Hunting & Feast', image='truffle-hunt_event.jpg',
-         day=(21, 6), at=time(9, 0), venue='Blackwood Forest Estate',
+         day=(21, 6), at=time(9, 0),
+         venue='Blackwood Forest Estate, 210 Blackwood Road, Manjimup WA 6258', city='Bunbury, WA',
          price='120.00', status='Open', tiers='premium', likes=233,
          dietary=None, seasonal='Winter Comforts', proficiency='Foodie', ack=None,
          description='Swap the supermarket for the forest floor and hunt down winter\'s most prized '
@@ -163,7 +170,8 @@ EVENTS = [
                      'truffled mushroom soup, hand-cut tagliatelle, and a truffle honey panna cotta '
                      'to finish.'),
     dict(group='popular', title='Midnight Ramen Society', image='midnight-ramen_event.jpg',
-         day=(10, 7), at=time(23, 0), venue='Back Alley Kitchen, Chinatown',
+         day=(10, 7), at=time(23, 0),
+         venue='Back Alley Kitchen, 7 Heffernan Lane, Melbourne VIC 3000', city='Melbourne, VIC',
          price='28.00', status='Open', tiers='adults', likes=501,
          dietary=None, seasonal='Winter Comforts', proficiency='Foodie', ack=None,
          description='When the city goes quiet, the best bowl in Chinatown starts steaming. Once a '
@@ -173,7 +181,8 @@ EVENTS = [
                      'down a whisky and sake list picked to stand up to a rich, porky broth. The '
                      'lights stay low, the playlist stays lo-fi, and nobody is in a hurry to leave.'),
     dict(group='popular', title="Chef's Table Tasting Menu", image='chef-table_event.jpg',
-         day=(30, 8), at=time(19, 30), venue='The Pass, City Centre',
+         day=(30, 8), at=time(19, 30),
+         venue='The Pass, 30 Lonsdale Street, Braddon ACT 2612', city='Canberra, ACT',
          price='180.00', status='Open', tiers='premium', likes=94,
          capacity={'Standard': 8, 'With Wine Pairing': 4},  # twelve seats at the pass
          dietary=None, seasonal=None, proficiency='Expert', ack=None,
@@ -185,7 +194,8 @@ EVENTS = [
                      'sourcing, and a front-row view of a professional kitchen running service at '
                      'full pace.'),
     dict(group='popular', title='Harbourside Seafood Festival', image='harbor-seafood_event.jpg',
-         day=(15, 3), at=time(11, 0), venue='Harbourside Promenade, Pier 4',
+         day=(15, 3), at=time(11, 0),
+         venue='Harbourside Promenade, Pier 4, Hobart TAS 7000', city='Hobart, TAS',
          price='15.00', status='Open', tiers='general', likes=620,
          dietary=None, seasonal='Autumn Harvest', proficiency=None, ack='Generic',
          description='Salt air, sizzling grills and the best of the autumn catch, all along the '
@@ -197,7 +207,8 @@ EVENTS = [
 
     # ---- This Weekend ----
     dict(group='weekend', title='Gnocchi Culinary Workshop', image='gnocchi_workshop.jpg',
-         day='Sat', at=time(10, 0), venue='Trattoria Alessandra, Little Italy',
+         day='Sat', at=time(10, 0),
+         venue='Trattoria Alessandra, 45 Norton Street, Leichhardt NSW 2040', city='Sydney, NSW',
          price='40.00', status='Cancelled', tiers='workshop', likes=87,
          dietary='Vegetarian', seasonal='Cultural', proficiency='Beginner', ack=None,
          description='Pillowy, handmade gnocchi is easier than you think, and Trattoria Alessandra '
@@ -208,7 +219,8 @@ EVENTS = [
                      'ridges. The class ends around the long trattoria table, sharing the meal with '
                      'a glass of Italian red or house-made lemonade.'),
     dict(group='weekend', title='Night Market Noodle Crawl', image='night-noodle_event.jpg',
-         day='Fri', at=time(18, 30), venue='Lantern Night Market',
+         day='Fri', at=time(18, 30),
+         venue='Lantern Night Market, 1 Smith Street, Darwin City NT 0800', city='Darwin, NT',
          price='60.00', status='Inactive', tiers='family', likes=145,
          dietary=None, seasonal='Cultural', proficiency='Foodie', ack=None,
          description='Follow the lanterns and the sound of sizzling woks through five of the '
@@ -218,7 +230,8 @@ EVENTS = [
                      'way. Between stalls, hear the stories of the families behind each recipe, and '
                      'wind down under the lanterns with a bowl of mango sago.'),
     dict(group='weekend', title='Smoked BBQ Masterclass', image='bbq-seminar_event.jpg',
-         day='Sat', at=time(13, 0), venue="Pitmaster's Yard, Southside",
+         day='Sat', at=time(13, 0),
+         venue="Pitmaster's Yard, 16 Southside Road, Toowoomba City QLD 4350", city='Toowoomba, QLD',
          price='85.00', status='Open', tiers='workshop', likes=210,
          dietary='Low Carb', seasonal='Summer BBQ', proficiency='Intermediate', ack=None,
          description='Low and slow is a craft, and this afternoon at the smoker will sharpen yours. '
@@ -229,7 +242,8 @@ EVENTS = [
                      'chicken wings served alongside charred greens and a sharp slaw instead of '
                      'buns.'),
     dict(group='weekend', title='Farmers Market Brunch Tour', image='farmers-market_event.jpg',
-         day='Sat', at=time(8, 0), venue='Old Town Farmers Market',
+         day='Sat', at=time(8, 0),
+         venue='Old Town Farmers Market, 30 Charles Street, Launceston TAS 7250', city='Launceston, TAS',
          price='25.00', status='Open', tiers='family', likes=132,
          dietary='Vegetarian', seasonal='Spring Flavours', proficiency=None, ack=None,
          description='Beat the crowds and taste spring straight from the people who grow it. Arrive '
@@ -239,7 +253,8 @@ EVENTS = [
                      'flavours, from ricotta hotcakes with fresh berries to green shakshuka and '
                      'cold-pressed juice, with a local roaster pulling coffees at the finish line.'),
     dict(group='weekend', title='Sunday Roast Pop-Up', image='sunday-roast_event.jpg',
-         day='Sun', at=time(13, 0), venue='The Ivy Kitchen, Parkside',
+         day='Sun', at=time(13, 0),
+         venue='The Ivy Kitchen, 5 Parkside Lane, Ballarat Central VIC 3350', city='Ballarat, VIC',
          price='32.00', status='Open', tiers='family', likes=76,
          dietary='Halal', seasonal='Winter Comforts', proficiency=None, ack=None,
          description='Nothing beats a proper Sunday roast when the weather turns cold. The Ivy '
@@ -249,7 +264,8 @@ EVENTS = [
                      'tray, the gravy is served by the jug, and there\'s always a second helping of '
                      'crispy potatoes for anyone who asks.'),
     dict(group='weekend', title='Craft Beer & Cheese Pairing', image='craft-beer-and-cheese_event.jpg',
-         day='Sat', at=time(16, 0), venue='Hopyard Taproom, Dock Street',
+         day='Sat', at=time(16, 0),
+         venue='Hopyard Taproom, 3 Dock Street, Newcastle NSW 2300', city='Newcastle, NSW',
          price='45.00', status='Open', tiers='adults', likes=168,
          dietary='Vegetarian', seasonal=None, proficiency='Foodie', ack=None,
          description='Two crafts, five pairings, one very good Saturday afternoon. Settle into the '
@@ -260,7 +276,8 @@ EVENTS = [
                      'through creaminess and dark malt loves a blue, then finish with a look behind '
                      'the scenes of the brewhouse.'),
     dict(group='weekend', title='Dongzhi Festival Dumpling Class', image='dumpling-dongzhi-festival_event.jpg',
-         day='Sat', at=time(11, 0), venue='Golden Wok Studio',
+         day='Sat', at=time(11, 0),
+         venue='Golden Wok Studio, 22 Roe Street, Northbridge WA 6003', city='Perth, WA',
          price='38.00', status='Open', tiers='workshop', likes=99,
          dietary=None, seasonal='Cultural', proficiency='Beginner', ack=None,
          description='Celebrate the longest night of the year the way families have for centuries: '
@@ -270,7 +287,8 @@ EVENTS = [
                      'filling, roll wrappers by hand, and steam your first batch while a pot of '
                      'ginger syrup simmers away for the sweet rice balls.'),
     dict(group='weekend', title='Riverside Food Truck Rally', image='riverside-foodtruck_event.jpg',
-         day='Sun', at=time(12, 0), venue='Riverside Green, East Bank',
+         day='Sun', at=time(12, 0),
+         venue='Riverside Green, 1 East Bank Parade, Kangaroo Point QLD 4169', city='Brisbane, QLD',
          price='10.00', status='Open', tiers='general', likes=304,
          dietary=None, seasonal='Spring Flavours', proficiency=None, ack=('Enhanced', 'Brisbane'),
          description='Spring on the riverbank, with twenty-five food trucks and nowhere else you '
@@ -282,7 +300,8 @@ EVENTS = [
 
     # ---- Bring Your Kids ----
     dict(group='kids', title='Sunrise Sourdough Bake', image='sourdough-class_event.jpg',
-         day='Sat', at=time(7, 0), venue='The Rustic Loaf Bakery',
+         day='Sat', at=time(7, 0),
+         venue='The Rustic Loaf Bakery, 40 Pall Mall, Bendigo VIC 3550', city='Bendigo, VIC',
          price='45.00', status='Open', tiers='kids', likes=63,
          dietary=None, seasonal=None, proficiency='Family Friendly', ack=None,
          description='Get up with the bakers and learn the secret to a crackling crust. Step behind '
@@ -292,7 +311,8 @@ EVENTS = [
                      'into the top, while kids get a pint-sized dough of their own to shape. Warm '
                      'pastries and hot chocolate keep everyone going while the bread bakes.'),
     dict(group='kids', title='Petting Zoo Picnic Day', image='petting-zoo_event.jpg',
-         day='Sun', at=time(10, 0), venue='Green Meadows Farm',
+         day='Sun', at=time(10, 0),
+         venue='Green Meadows Farm, 120 Mountain View Road, Maleny QLD 4552', city='Sunshine Coast, QLD',
          price='15.00', status='Open', tiers='kids', likes=221,
          dietary=None, seasonal='Spring Flavours', proficiency='Family Friendly', ack=None,
          description='Spring has sprung at Green Meadows, and the newest arrivals can\'t wait to meet '
@@ -302,7 +322,8 @@ EVENTS = [
                      'under the gum trees, with fresh farm produce, homemade lemonade, and scones '
                      'with jam and cream.'),
     dict(group='kids', title="Kids' Pizza Making Party", image='kids-pizza_event.jpg',
-         day='Sat', at=time(14, 0), venue='Little Chefs Kitchen Studio',
+         day='Sat', at=time(14, 0),
+         venue='Little Chefs Kitchen Studio, 9 Thomas Drive, Surfers Paradise QLD 4217', city='Gold Coast, QLD',
          price='30.00', status='Open', tiers='kids', likes=189,
          dietary='Vegetarian', seasonal=None, proficiency='Family Friendly', ack=None,
          description='Little hands, big flavours, and a wood-fired oven roaring away. The Little '
@@ -312,7 +333,8 @@ EVENTS = [
                      'dough-shaping game and a peek at how the oven works, and the party finishes '
                      'with slices, fruit skewers and a cheer for every creation.'),
     dict(group='kids', title="Storytime & S'mores Campfire", image='campsite-smore_event.jpg',
-         day='Sat', at=time(18, 0), venue='Lakeside Campgrounds',
+         day='Sat', at=time(18, 0),
+         venue='Lakeside Campgrounds, 2 Lakeside Drive, The Entrance NSW 2261', city='Central Coast, NSW',
          price='20.00', status='Open', tiers='kids', likes=154,
          dietary=None, seasonal='Winter Comforts', proficiency='Family Friendly', ack=None,
          description='Cosy up by the crackling fire as the sun sets over the lake. A local '
@@ -323,7 +345,8 @@ EVENTS = [
                      'torch-lit stargazing walk along the shore, where a ranger points out the '
                      'Southern Cross.'),
     dict(group='kids', title='Cupcake Decorating Workshop', image='cupcake-decor-workshop_event.jpg',
-         day='Sun', at=time(11, 0), venue='Sweet Tooth Studio',
+         day='Sun', at=time(11, 0),
+         venue='Sweet Tooth Studio, 18 Crown Street, Wollongong NSW 2500', city='Wollongong, NSW',
          price='25.00', status='Open', tiers='kids', likes=267,
          dietary=None, seasonal=None, proficiency='Family Friendly', ack=None,
          description='Sprinkles everywhere, and that\'s exactly the point. At Sweet Tooth Studio, '
@@ -333,7 +356,8 @@ EVENTS = [
                      'like piping a rose swirl or shaping a fondant unicorn, and the session ends '
                      'with a mini showcase where every creation gets its moment in the spotlight.'),
     dict(group='kids', title='Kids Cooking Challenge', image='kids-cooking_event.jpg',
-         day='Sat', at=time(10, 0), venue='Community Kitchen Hall',
+         day='Sat', at=time(10, 0),
+         venue='Community Kitchen Hall, 25 Flinders Street, Townsville City QLD 4810', city='Townsville, QLD',
          price='35.00', status='Open', tiers='kids', likes=312,
          dietary=None, seasonal=None, proficiency='Family Friendly', ack=None,
          description='Ready, set, cook! Young chefs race the clock in a friendly cook-off full of '
@@ -343,7 +367,8 @@ EVENTS = [
                      'families cheer from the gallery, and the judges hand out awards for Best '
                      'Flavour, Most Creative and Best Teamwork.'),
     dict(group='kids', title='Ice Cream Sundae Bar', image='icecream-bar_event.jpg',
-         day='Sun', at=time(13, 0), venue='Scoops & Sprinkles Parlour',
+         day='Sun', at=time(13, 0),
+         venue='Scoops & Sprinkles Parlour, 1 Eastern Beach Road, Geelong VIC 3220', city='Geelong, VIC',
          price='18.00', status='Open', tiers='kids', likes=198,
          dietary='Gluten-Free', seasonal='Summer BBQ', proficiency='Family Friendly', ack=None,
          description='Beat the summer heat one scoop at a time. Step up to the sundae bar at Scoops '
@@ -353,7 +378,8 @@ EVENTS = [
                      'are baked fresh on the spot, and kids can watch the team churn a new batch of '
                      'ice cream on the vintage machine behind the counter.'),
     dict(group='kids', title='Carnival Fun Fair Food Trail', image='carnival-funfaire_event.jpg',
-         day='Sat', at=time(12, 0), venue='Riverside Green, East Bank',
+         day='Sat', at=time(12, 0),
+         venue='Riverside Green, 2 River Street, Mackay QLD 4740', city='Mackay, QLD',
          price='12.00', status='Open', tiers='kids', likes=276,
          dietary=None, seasonal='Holidays', proficiency='Family Friendly', ack=None,
          description='Roll up, roll up: the carnival is in town, and the food trail runs right '
@@ -550,6 +576,7 @@ def add_sample_events():
             title=spec['title'],
             description=_full_description(spec),
             venue=spec['venue'],
+            city=spec['city'],
             likes=spec['likes'],
             event_date=_event_date(spec, today),
             event_time=spec['at'],
@@ -613,10 +640,12 @@ def add_sample_events():
 
 def refresh_sample_events():
     """Bring sample events added by an older version of this file up to date:
-    set their likes if they have none, and extend a description that is still
-    exactly the old short brief. Anything an owner has changed through Edit
-    Event is left alone. Returns (likes set, descriptions extended). Commits."""
-    likes_set = descriptions_extended = 0
+    set their likes if they have none, extend a description that is still
+    exactly the old short brief, and give events from before the City field
+    their city and street address (the address only if the venue still has the
+    same name). Anything an owner has changed through Edit Event is left alone.
+    Returns (likes set, descriptions extended, cities added). Commits."""
+    likes_set = descriptions_extended = cities_added = 0
     for spec in EVENTS:
         event = db.session.scalar(db.select(Event).where(Event.title == spec['title']))
         if event is None:
@@ -627,8 +656,13 @@ def refresh_sample_events():
         if event.description == spec['description']:
             event.description = _full_description(spec)
             descriptions_extended += 1
+        if not event.city:
+            if event.venue.split(',')[0] == spec['venue'].split(',')[0]:
+                event.venue = spec['venue']
+            event.city = spec['city']
+            cities_added += 1
     db.session.commit()
-    return likes_set, descriptions_extended
+    return likes_set, descriptions_extended, cities_added
 
 
 def main():
@@ -637,12 +671,12 @@ def main():
     with app.app_context():
         print('Database:', db.engine.url)
         count = add_sample_events()
-        likes_set, extended = refresh_sample_events()
+        likes_set, extended, cities = refresh_sample_events()
         print('Added {} sample events ({} were already there). Events in the database: {}'
               .format(count, len(EVENTS) - count,
                       db.session.scalar(db.select(db.func.count(Event.id)))))
-        print('Updated existing sample events: likes set on {}, descriptions extended on {}'
-              .format(likes_set, extended))
+        print('Updated existing sample events: likes set on {}, descriptions extended on {}, '
+              'city and address added to {}'.format(likes_set, extended, cities))
 
 
 if __name__ == '__main__':
