@@ -247,6 +247,7 @@ def edit_event(event_id):
         # and their ticket_id so saving updates them instead of replacing them.
         form = EditEventForm(
             title=event.title, description=event.description, venue=event.venue,
+            city=event.city or '',
             event_date=event.event_date, event_time=event.event_time,
             dietary_preference=event.dietary_preference or 'None',
             seasonal_cultural=event.seasonal_cultural or 'None',
@@ -310,6 +311,7 @@ def _apply_event_details(event, form):
     event.title = form.title.data.strip()
     event.description = form.description.data.strip()
     event.venue = form.venue.data.strip()
+    event.city = form.city.data
     event.event_date = form.event_date.data
     event.event_time = form.event_time.data
     # the 'None' option is stored as an empty column

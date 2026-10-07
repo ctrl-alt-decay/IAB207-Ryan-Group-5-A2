@@ -66,7 +66,9 @@
             {{ event.event_date.strftime('%a') }} {{ event.event_date.day }} {{ event.event_date.strftime('%b') }}
             at {{ event.event_time.strftime('%I:%M %p').lstrip('0') }}
         </p>
-        <p class="event-card-location mb-2">{{ event.venue }}</p>
+        {# the city reads better than a full street address on a small card; events
+           made before the City field existed show their venue instead #}
+        <p class="event-card-location mb-2">{{ event.city or event.venue }}</p>
         <div class="mt-auto d-flex justify-content-between align-items-end">
             <div>
                 <p class="event-card-price mb-1">

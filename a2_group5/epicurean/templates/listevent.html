@@ -127,8 +127,19 @@
                                 class="event-form-required">*</span></label>
                         <div class="event-form-field">
                             {{ form.venue(class="form-control" ~ invalid(form.venue), id="enterVenue",
-                                placeholder="Please enter the venue address") }}
+                                placeholder="The Beer Hall, 14 Warehouse Lane, Fortitude Valley QLD 4006") }}
                             {{ errors(form.venue) }}
+                        </div>
+                    </div>
+
+                    {# the major city closest to the venue, so the event can be found by
+                       city - e.g. an event in Maleny is listed under Sunshine Coast #}
+                    <div class="event-form-row">
+                        <label class="event-form-label" for="selectCity">City<span
+                                class="event-form-required">*</span></label>
+                        <div class="event-form-field">
+                            {{ form.city(class="form-select" ~ invalid(form.city), id="selectCity") }}
+                            {{ errors(form.city) }}
                         </div>
                     </div>
 
