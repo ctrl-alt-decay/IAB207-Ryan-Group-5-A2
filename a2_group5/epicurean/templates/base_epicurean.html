@@ -40,21 +40,28 @@
                     class="epicurean-logo-img">
             </a>
 
-            <!-- Split search bar -->
-            <form class="event-search-form">
+            <!-- Split search bar (#16). A plain GET form, so no JavaScript is
+                 needed to submit it - pressing the button or Enter sends the
+                 browser to main.search with q/location in the URL, which is
+                 how results stay a shareable, bookmarkable link. The current
+                 values are echoed back so a search done from any page (this
+                 bar is on every page) is still showing on the results page. -->
+            <form class="event-search-form" method="get" action="{{ url_for('main.search') }}">
                 <div class="event-search-bar">
                     <div class="event-search-segment">
                         <i class="fa fa-search event-search-icon"></i>
-                        <input type="text" class="event-search-input" placeholder="Search events"
+                        <input type="text" name="q" value="{{ request.args.get('q', '') }}"
+                            class="event-search-input" placeholder="Search events"
                             aria-label="Search events">
                     </div>
                     <div class="event-search-divider"></div>
                     <div class="event-search-segment">
                         <i class="fa fa-map-marker event-search-icon"></i>
-                        <input type="text" class="event-search-input" placeholder="Choose a location"
+                        <input type="text" name="location" value="{{ request.args.get('location', '') }}"
+                            class="event-search-input" placeholder="Choose a location"
                             aria-label="Choose a location">
                     </div>
-                    <button class="event-search-submit" type="button" title="Search">
+                    <button class="event-search-submit" type="submit" title="Search">
                         <i class="fa fa-search"></i>
                     </button>
                 </div>
