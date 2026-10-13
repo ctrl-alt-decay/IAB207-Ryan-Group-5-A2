@@ -1,4 +1,5 @@
 import os
+import re
 import secrets
 import uuid
 from datetime import date, datetime, timedelta, timezone
@@ -267,6 +268,11 @@ def toggle_like(event_id):
 @login_required
 def create_event():
     form = EventForm()
+    # "Preview acknowledgement" posts the form too, but only to show the
+    # statement its answers would give - nothing is checked or saved
+    if 'preview_ack' in request.form:
+        return render_template('listevent.html', form=form,
+                               ack_preview=_acknowledgement_preview(form))
     if form.validate_on_submit():
         event = Event(owner_id=current_user.id,
                       image_filename=_save_event_image(form.image.data))
@@ -324,6 +330,10 @@ def edit_event(event_id):
             proficiency=event.proficiency or 'None',
             acknowledgement_type=event.acknowledgement_type or 'None',
             acknowledgement_city=event.acknowledgement_city,
+            acknowledgement_custodians=event.acknowledgement_custodians,
+            acknowledgement_connection=event.acknowledgement_connection,
+            acknowledgement_commitment=event.acknowledgement_commitment,
+            acknowledgement_elders=event.acknowledgement_elders,
             ticket_types=[{'included': True, 'ticket_id': t.id, 'name': t.name,
                            'price': t.price, 'capacity': t.capacity,
                            'description': t.description}
@@ -331,6 +341,9 @@ def edit_event(event_id):
     form.original_date = event.event_date
     form.submit.label.text = 'Save Changes'
 
+    if 'preview_ack' in request.form:   # show the statement only - nothing saved
+        return render_template('listevent.html', form=form, event=event,
+                               ack_preview=_acknowledgement_preview(form))
     if form.validate_on_submit():
         problems = _ticket_change_problems(form, event)
         if not problems:
@@ -389,9 +402,16 @@ def _apply_event_details(event, form):
     event.seasonal_cultural = _none_to_null(form.seasonal_cultural.data)
     event.proficiency = _none_to_null(form.proficiency.data)
     event.acknowledgement_type = ack_type
-    # a city left selected before switching away from Enhanced is dropped
-    event.acknowledgement_city = (form.acknowledgement_city.data
-                                  if ack_type == 'Enhanced' else None)
+    # answers left in the Enhanced builder before switching away are dropped
+    enhanced = ack_type == 'Enhanced'
+    event.acknowledgement_city = form.acknowledgement_city.data if enhanced else None
+    event.acknowledgement_custodians = (
+        (form.acknowledgement_custodians.data or '').strip() or None if enhanced else None)
+    event.acknowledgement_connection = (
+        (form.acknowledgement_connection.data or '').strip() or None if enhanced else None)
+    event.acknowledgement_commitment = (
+        (form.acknowledgement_commitment.data or '').strip() or None if enhanced else None)
+    event.acknowledgement_elders = bool(form.acknowledgement_elders.data)
 
 
 def _ticket_rows(form):
@@ -533,14 +553,49 @@ def post_comment(event_id):
     return redirect(comments_section)
 
 
-def _acknowledgement_statement(event):
-    """The Acknowledgement of Country shown on the event page, or None.
-    PLACEHOLDER wording (from EventForm) until the real copy is written."""
-    if event.acknowledgement_type == 'Generic':
+def compose_acknowledgement(ack_type, city, custodians, connection, commitment, elders):
+    """The Acknowledgement of Country statement for these answers, or None for
+    'None'. Generic is the fixed statement (PLACEHOLDER wording for now).
+    Enhanced is put together from the builder's answers: the Traditional
+    Custodians (typed in, or the chosen capital's), how the event connects to
+    Country, an optional commitment, and respects to Elders."""
+    if ack_type == 'Generic':
         return EventForm.GENERIC_ACK_PREVIEW
-    if event.acknowledgement_type == 'Enhanced' and event.acknowledgement_city:
-        return EventForm.ENHANCED_ACK_PREVIEW.format(event.acknowledgement_city)
-    return None
+    if ack_type != 'Enhanced':
+        return None
+    custodians = (custodians or '').strip() or EventForm.CAPITAL_CUSTODIANS.get(city, '')
+    custodians = re.sub(r'^the\s+', '', custodians, flags=re.IGNORECASE)   # "the" is added below
+    if custodians:
+        parts = ['We acknowledge the {}, the Traditional Custodians of the land where this '
+                 'event takes place.'.format(custodians)]
+    else:
+        parts = ['We acknowledge the Traditional Custodians of the land where this event '
+                 'takes place.']
+    for answer in (connection, commitment):
+        answer = (answer or '').strip()
+        if answer:
+            parts.append(answer if answer[-1] in '.!?' else answer + '.')
+    if elders:
+        parts.append('We pay our respects to their Elders past and present.')
+    return ' '.join(parts)
+
+
+def _acknowledgement_statement(event):
+    """The Acknowledgement of Country shown on the event page, or None."""
+    return compose_acknowledgement(
+        event.acknowledgement_type, event.acknowledgement_city,
+        event.acknowledgement_custodians, event.acknowledgement_connection,
+        event.acknowledgement_commitment, event.acknowledgement_elders)
+
+
+def _acknowledgement_preview(form):
+    """The statement the Create/Edit Event form's current answers would give -
+    for its "Preview acknowledgement" button, which shows it without saving."""
+    statement = compose_acknowledgement(
+        form.acknowledgement_type.data, form.acknowledgement_city.data,
+        form.acknowledgement_custodians.data, form.acknowledgement_connection.data,
+        form.acknowledgement_commitment.data, form.acknowledgement_elders.data)
+    return statement or 'No Acknowledgement of Country will be shown on your event page.'
 
 
 def new_order_number():

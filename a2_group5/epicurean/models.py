@@ -78,8 +78,16 @@ class Event(db.Model):
     # acknowledgement ('Sydney', 'Brisbane', ...) and empty for the other types.
     acknowledgement_type = db.Column(db.String(20), default='None')
     acknowledgement_city = db.Column(db.String(50))
-    # Not written by the Create Event form: the statement shown is worked out
-    # from acknowledgement_type and acknowledgement_city.
+    # The rest of the Enhanced builder's answers (empty for the other types).
+    # The statement shown is put together from these when the page is shown
+    # (views.compose_acknowledgement). custodians is only needed when the city
+    # is 'Other'; for a capital, the capital's custodians are used.
+    acknowledgement_custodians = db.Column(db.String(255))
+    acknowledgement_connection = db.Column(db.Text)
+    acknowledgement_commitment = db.Column(db.String(255))
+    acknowledgement_elders = db.Column(db.Boolean, nullable=False, default=True,
+                                       server_default=db.text('1'))
+    # Not written by the Create Event form (unused).
     acknowledgement_text = db.Column(db.Text)
 
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
