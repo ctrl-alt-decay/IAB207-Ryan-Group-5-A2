@@ -271,17 +271,18 @@
                             </div>
                             {{ errors(form.acknowledgement_city) }}
 
-                            <label class="event-filter-label mt-3" for="ackCustodians">Traditional Custodians
-                                <span class="text-muted fw-normal">(needed for "Other" - otherwise only to be more specific)</span></label>
+                            <label class="event-filter-label mt-3" for="ackCustodians">Traditional Custodians</label>
                             {{ form.acknowledgement_custodians(class="form-control" ~ invalid(form.acknowledgement_custodians),
-                                id="ackCustodians", placeholder="Kaurna people") }}
+                                id="ackCustodians", placeholder="e.g. Kaurna people") }}
+                            <small class="text-muted d-block">Needed if you chose Other. Otherwise, only fill this in
+                                to be more specific than the city's.</small>
                             {{ errors(form.acknowledgement_custodians) }}
 
                             <label class="event-filter-label mt-3" for="ackConnection">2. {{ form.acknowledgement_connection.label.text }}<span
                                     class="event-form-required">*</span></label>
                             {{ form.acknowledgement_connection(class="form-control" ~ invalid(form.acknowledgement_connection),
                                 id="ackConnection", rows="3",
-                                placeholder="We cook with native ingredients grown on this land, like finger lime and lemon myrtle.") }}
+                                placeholder="e.g. We cook with native ingredients grown on this land, like finger lime and lemon myrtle.") }}
                             <small class="text-muted d-block">Think about the ingredients, the river, the seasons, or people
                                 sharing food here for thousands of years.</small>
                             {{ errors(form.acknowledgement_connection) }}
@@ -289,7 +290,7 @@
                             <label class="event-filter-label mt-3" for="ackCommitment">3. {{ form.acknowledgement_commitment.label.text }}
                                 <span class="text-muted fw-normal">(optional)</span></label>
                             {{ form.acknowledgement_commitment(class="form-control" ~ invalid(form.acknowledgement_commitment),
-                                id="ackCommitment", placeholder="We buy from First Nations suppliers.") }}
+                                id="ackCommitment", placeholder="e.g. We buy from First Nations suppliers.") }}
                             {{ errors(form.acknowledgement_commitment) }}
 
                             <div class="form-check mt-3">
@@ -326,9 +327,6 @@
             <div class="ack-preview d-block mt-3" role="status">
                 <span class="event-filter-label">Preview - not saved yet</span>
                 {{ ack_preview }}
-                {% if not editing %}
-                <small class="d-block text-muted mt-1">If you'd chosen an image, choose it again before saving.</small>
-                {% endif %}
             </div>
             {% endif %}
 

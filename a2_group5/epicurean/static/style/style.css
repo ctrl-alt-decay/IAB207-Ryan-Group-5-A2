@@ -903,6 +903,12 @@ html {
     order: 1;
 }
 
+/* The builder's example answers ("e.g. ...") read as examples, not text
+   already filled in (colour in the Colours region) */
+.ack-enhanced .form-control::placeholder {
+    font-style: italic;
+}
+
 /* The show/hide rules: a checked radio reveals the blocks that follow it */
 .ack-radio[value="Generic"]:checked ~ .ack-generic,
 .ack-radio[value="Enhanced"]:checked ~ .ack-enhanced,
@@ -1553,6 +1559,11 @@ body:has(.checkout-overlay) {
 .ack-preview {
     background-color: #f8f9fa;
     border-left-color: #a0c1ec;
+}
+
+/* lighter than Bootstrap's placeholder grey, so examples don't look filled in */
+.ack-enhanced .form-control::placeholder {
+    color: #adb5bd;
 }
 
 
