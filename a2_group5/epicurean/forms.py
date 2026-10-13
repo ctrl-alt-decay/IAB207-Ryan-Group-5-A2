@@ -1,6 +1,7 @@
 # WTForms classes. Each is validated server-side in its route with
 # validate_on_submit(), which also checks the CSRF token that {{ form.hidden_tag() }}
 # puts into the template. Error messages here are what the user sees.
+import re
 from datetime import date
 
 from flask_wtf import FlaskForm
@@ -140,13 +141,20 @@ class EventForm(FlaskForm):
     PROFICIENCY = ['None', 'Beginner', 'Intermediate', 'Expert', 'Foodie',
                    'Chef', 'Family Friendly']
 
-    # Acknowledgement of Country (#6). Only the choice is saved: the type, plus
-    # the capital city when the type is Enhanced. These preview lines are
-    # PLACEHOLDER wording until the real acknowledgement copy is written.
+    # Acknowledgement of Country (#6). Generic is one fixed statement. Enhanced
+    # is a guided builder: the creator picks where the event is, says how it
+    # connects to Country and (optionally) a commitment, and the statement is
+    # put together from their answers (views.compose_acknowledgement).
     CAPITAL_CITIES = ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide',
                       'Hobart', 'Darwin', 'Canberra', 'Other']
     GENERIC_ACK_PREVIEW = 'GENERIC ACKNOWLEDGEMENT OF COUNTRY PLACEHOLDER TEXT'
-    ENHANCED_ACK_PREVIEW = 'ENHANCED ACKNOWLEDGEMENT OF COUNTRY PLACEHOLDER TEXT for {}'
+    # PLACEHOLDERS - to be filled in from research: each capital's Traditional
+    # Custodians as they should be named in a statement ("the ... people"),
+    # and the source that name came from, so the claim can be checked.
+    CAPITAL_CUSTODIANS = {city: '[{} Traditional Custodians - placeholder]'.format(city)
+                          for city in CAPITAL_CITIES if city != 'Other'}
+    CUSTODIAN_SOURCES = {city: '[source - placeholder]'
+                         for city in CAPITAL_CITIES if city != 'Other'}
 
     title = StringField("Event Title", validators=[
         DataRequired('Enter an event title'), Length(max=150)])
@@ -187,8 +195,18 @@ class EventForm(FlaskForm):
                                       choices=['None', 'Generic', 'Enhanced'])
     # No city is fine unless the type is Enhanced, so the usual "must be one of
     # the choices" check is off and validate_acknowledgement_city does it instead
-    acknowledgement_city = RadioField("Capital City", choices=CAPITAL_CITIES,
+    acknowledgement_city = RadioField("Where is your event?", choices=CAPITAL_CITIES,
                                       validate_choice=False)
+    # The rest of the Enhanced builder. Only used when the type is Enhanced;
+    # the validate_ methods below decide what's required. (No Optional() here:
+    # on an empty field it would skip those validate_ methods too.)
+    acknowledgement_custodians = StringField("Traditional Custodians", validators=[
+        Length(max=255)])
+    acknowledgement_connection = TextAreaField("How does your event connect to Country?",
+                                               validators=[Length(max=600)])
+    acknowledgement_commitment = StringField("A commitment", validators=[
+        Length(max=255)])
+    acknowledgement_elders = BooleanField("Pay respects to Elders", default=True)
 
     ticket_types = FieldList(FormField(TicketTypeForm),
                              min_entries=TICKET_ROWS, max_entries=TICKET_ROWS)
@@ -201,7 +219,36 @@ class EventForm(FlaskForm):
 
     def validate_acknowledgement_city(self, field):
         if self.acknowledgement_type.data == 'Enhanced' and field.data not in self.CAPITAL_CITIES:
-            raise ValidationError('Choose a capital city for the Enhanced acknowledgement')
+            raise ValidationError('Choose where your event is for the Enhanced acknowledgement')
+
+    def _enhanced(self):
+        return self.acknowledgement_type.data == 'Enhanced'
+
+    @staticmethod
+    def _no_welcome(field):
+        # only Traditional Owners (or people they've given permission to) can
+        # give a Welcome to Country, so an Acknowledgement shouldn't "welcome"
+        if field.data and re.search(r'\bwelcom', field.data, re.IGNORECASE):
+            raise ValidationError('Leave out "welcome" - only Traditional Owners can give '
+                                  'a Welcome to Country')
+
+    def validate_acknowledgement_custodians(self, field):
+        if not self._enhanced():
+            return
+        if self.acknowledgement_city.data == 'Other' and not (field.data or '').strip():
+            raise ValidationError("Enter the Traditional Custodians of your event's location")
+        self._no_welcome(field)
+
+    def validate_acknowledgement_connection(self, field):
+        if not self._enhanced():
+            return
+        if not (field.data or '').strip():
+            raise ValidationError('Say how your event connects to Country')
+        self._no_welcome(field)
+
+    def validate_acknowledgement_commitment(self, field):
+        if self._enhanced():
+            self._no_welcome(field)
 
     def validate_ticket_types(self, field):
         rows = [entry.form for entry in field.entries if not entry.form.is_blank()]

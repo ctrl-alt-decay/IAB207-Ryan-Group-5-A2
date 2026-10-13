@@ -205,7 +205,7 @@
                radio (see "Acknowledgement of Country" in style.css). That only
                works because each radio input sits directly before its label and
                the blocks it controls - don't wrap the inputs in other elements. #}
-            <div class="ack-heading">
+            <div class="ack-heading scroll-target" id="ackSection">
                 <h2 class="section-heading mb-0" id="ackHeading">Acknowledgement of Country</h2>
                 <div class="info-icon" tabindex="0" role="button"
                     aria-label="About Acknowledgement of Country" aria-describedby="ackInfo">
@@ -219,13 +219,14 @@
                             Australians that reconciliation depends on.</p>
                         <p class="mb-0"><strong>Not a Welcome to Country</strong> Anyone, of any
                             background, can give an Acknowledgement of Country. A Welcome to Country can
-                            only be delivered by a Traditional Owner or Elder of that specific Country,
-                            formally welcoming visitors onto their land.</p>
+                            only be given by Traditional Owners, or Aboriginal and Torres Strait Islander
+                            people they've given permission to, because only Traditional Custodians can
+                            welcome visitors onto their Country.</p>
                     </div>
                 </div>
             </div>
             <p class="text-muted">Choose whether your event page includes an Acknowledgement of
-                Country. Enhanced is tailored to the capital city you pick.</p>
+                Country. Enhanced helps you write one that fits your event.</p>
 
             <div class="ack-picker" role="group" aria-labelledby="ackHeading">
                 {% for choice in form.acknowledgement_type %}
@@ -239,25 +240,97 @@
                     {{ form.GENERIC_ACK_PREVIEW }}
                 </div>
 
-                {# shown when Enhanced is checked. Every city has its own preview,
-                   shown only while that city is checked. #}
+                {# shown when Enhanced is checked: a guided builder. The creator
+                   answers a few short prompts and the statement is put together
+                   from their answers (views.compose_acknowledgement), so it fits
+                   their event rather than being a fixed paragraph. Each city's
+                   box (custodians + source) shows only while that city is checked. #}
                 <fieldset class="ack-enhanced">
-                    <legend class="event-filter-label">{{ form.acknowledgement_city.label.text }}<span
+                    <legend class="event-filter-label">1. {{ form.acknowledgement_city.label.text }}<span
                             class="event-form-required">*</span></legend>
-                    <div class="ack-picker">
-                        {% for choice in form.acknowledgement_city %}
-                        {{ choice(class="ack-radio") }}
-                        {{ choice.label(class="ack-pill") }}
-                        <div class="ack-preview ack-city-preview">
-                            <span class="event-filter-label">Preview</span>
-                            {{ form.ENHANCED_ACK_PREVIEW.format(choice.data) }}
+                    <div class="row g-4">
+                        <div class="col-12 col-lg-8">
+                            <div class="ack-picker">
+                                {% for choice in form.acknowledgement_city %}
+                                {{ choice(class="ack-radio") }}
+                                {{ choice.label(class="ack-pill") }}
+                                <div class="ack-preview ack-city-preview">
+                                    {% if choice.data == 'Other' %}
+                                    Find out whose Country your event is on using the
+                                    <a href="https://aiatsis.gov.au/explore/map-indigenous-australia" target="_blank" rel="noopener">AIATSIS Map of Indigenous Australia</a>,
+                                    <a href="https://aiatsis.gov.au/whose-country" target="_blank" rel="noopener">Whose Country am I on?</a>
+                                    and <a href="https://knowyourcountry.org.au/how-to-know-your-country" target="_blank" rel="noopener">Know Your Country</a>,
+                                    or your local council or Aboriginal Land Council. Then enter them below.
+                                    {% else %}
+                                    <span class="event-filter-label">Traditional Custodians</span>
+                                    {{ form.CAPITAL_CUSTODIANS[choice.data] }}
+                                    <small class="d-block text-muted">Source: {{ form.CUSTODIAN_SOURCES[choice.data] }}</small>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {{ errors(form.acknowledgement_city) }}
+
+                            <label class="event-filter-label mt-3" for="ackCustodians">Traditional Custodians
+                                <span class="text-muted fw-normal">(needed for "Other" - otherwise only to be more specific)</span></label>
+                            {{ form.acknowledgement_custodians(class="form-control" ~ invalid(form.acknowledgement_custodians),
+                                id="ackCustodians", placeholder="Kaurna people") }}
+                            {{ errors(form.acknowledgement_custodians) }}
+
+                            <label class="event-filter-label mt-3" for="ackConnection">2. {{ form.acknowledgement_connection.label.text }}<span
+                                    class="event-form-required">*</span></label>
+                            {{ form.acknowledgement_connection(class="form-control" ~ invalid(form.acknowledgement_connection),
+                                id="ackConnection", rows="3",
+                                placeholder="We cook with native ingredients grown on this land, like finger lime and lemon myrtle.") }}
+                            <small class="text-muted d-block">Think about the ingredients, the river, the seasons, or people
+                                sharing food here for thousands of years.</small>
+                            {{ errors(form.acknowledgement_connection) }}
+
+                            <label class="event-filter-label mt-3" for="ackCommitment">3. {{ form.acknowledgement_commitment.label.text }}
+                                <span class="text-muted fw-normal">(optional)</span></label>
+                            {{ form.acknowledgement_commitment(class="form-control" ~ invalid(form.acknowledgement_commitment),
+                                id="ackCommitment", placeholder="We buy from First Nations suppliers.") }}
+                            {{ errors(form.acknowledgement_commitment) }}
+
+                            <div class="form-check mt-3">
+                                {{ form.acknowledgement_elders(class="form-check-input", id="ackElders") }}
+                                <label class="form-check-label" for="ackElders">{{ form.acknowledgement_elders.label.text }}</label>
+                            </div>
                         </div>
-                        {% endfor %}
+
+                        <div class="col-12 col-lg-4">
+                            <div class="alert alert-warning small mb-0" role="note">
+                                <p class="fw-bold mb-2"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Avoid</p>
+                                <p class="mb-2">Saying "welcome". Only Traditional Owners, or people they've given
+                                    permission to, give a Welcome to Country.</p>
+                                <p class="mb-2">Vague wording like "the Aboriginal people of this land" when the
+                                    nation can be named.</p>
+                                <p class="mb-2">Treating maps or postcodes as exact. Boundaries can be contested -
+                                    if you're unsure, acknowledge "the Traditional Custodians" rather than guess.</p>
+                                <p class="mb-0">Copy-pasting the same words for every event.</p>
+                            </div>
+                        </div>
                     </div>
-                    {{ errors(form.acknowledgement_city) }}
                 </fieldset>
             </div>
             {{ errors(form.acknowledgement_type) }}
+
+            {# "Preview acknowledgement": posts the form back (to this section) so the
+               server can show the statement the answers above would give. Nothing is
+               checked or saved. formnovalidate skips the browser's required checks. #}
+            <div class="mt-3">
+                <button type="submit" name="preview_ack" value="1" class="btn btn-outline-secondary btn-sm"
+                    formaction="{{ request.path }}#ackSection" formnovalidate>Preview acknowledgement</button>
+            </div>
+            {% if ack_preview %}
+            <div class="ack-preview d-block mt-3" role="status">
+                <span class="event-filter-label">Preview - not saved yet</span>
+                {{ ack_preview }}
+                {% if not editing %}
+                <small class="d-block text-muted mt-1">If you'd chosen an image, choose it again before saving.</small>
+                {% endif %}
+            </div>
+            {% endif %}
 
             <!-- ==== Ticket Types ============================== -->
             <h2 class="section-heading mt-4">Ticket Types<span class="event-form-required">*</span></h2>
