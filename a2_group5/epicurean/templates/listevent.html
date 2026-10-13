@@ -245,7 +245,9 @@
                    from their answers (views.compose_acknowledgement), so it fits
                    their event rather than being a fixed paragraph. Each city's
                    box (custodians + source) shows only while that city is checked. #}
-                <fieldset class="ack-enhanced">
+                {# event-form-card: the builder sits in its own card, like the other
+                   form sections, so its steps read as one group #}
+                <fieldset class="ack-enhanced event-form-card">
                     <legend class="event-filter-label">1. {{ form.acknowledgement_city.label.text }}<span
                             class="event-form-required">*</span></legend>
                     <div class="row g-4">
