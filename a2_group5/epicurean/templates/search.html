@@ -1,13 +1,17 @@
-{# Search & filter results (route main.search, #16 #17). Reached from the
-   navbar search bar (base_epicurean.html) and the homepage filter dropdowns
-   (index.html) - both plain GET forms, so a search is just a URL
+{# Search results (route main.search): reached from the navbar search bar (#17)
+   in base_epicurean.html and the homepage filter dropdowns (#16) in index.html -
+   both plain GET forms, so a search is just a URL
    (e.g. /search?q=ramen&dietary=Vegan) and this page works with no
    JavaScript. Same card-grid layout as a category page (events.html), most
-   liked first, paginated - plus a "refine your search" panel so the filters
-   can be narrowed further without going back to the homepage.
+   liked first, paginated - plus a "refine your search" form so the keywords
+   and filters can be changed without going back to the homepage.
+   The keywords and location are always showing; the dropdown filters sit in an
+   "Advanced search" section (a plain <details>/<summary>, no JavaScript) that
+   opens by itself when a filter is in use (filters_active), so what's narrowing
+   the results is always visible.
    dietary_options / seasonal_options / proficiency_options (from EventForm in
-   forms.py) are passed in by main.search so this file doesn't duplicate that
-   list a third time. #}
+   forms.py) are passed in by main.search so this file doesn't keep its own
+   copy of those lists. #}
 {% extends "base_epicurean.html" %}
 {% from "_event_macros.html" import event_grid %}
 {% from "bootstrap5/pagination.html" import render_pagination %}
@@ -40,52 +44,56 @@
     </div>
 
     <!-- ==== Refine your search ============================== -->
-    {# Same idea as the homepage filters: a plain GET form back to this same
-       page, so changing a filter here narrows the results further without
-       losing the free-text search. Each dropdown's current value is echoed
-       back with `selected`, and the free-text/location inputs keep whatever
-       was typed, so refining feels like adjusting one search rather than
-       starting over. #}
+    {# A plain GET form back to this same page. The keyword and location inputs
+       keep whatever was typed, and each dropdown's current value is echoed
+       back with `selected`, so refining feels like adjusting one search
+       rather than starting over. #}
     <div class="event-section-px py-3">
-        <form method="get" action="{{ url_for('main.search') }}" class="row g-2 align-items-end">
-            <div class="col-12 col-md-4">
-                <label for="searchQ" class="event-filter-label">Keywords</label>
-                <input type="text" class="form-control" id="searchQ" name="q"
-                    value="{{ request.args.get('q', '') }}" placeholder="Search events">
+        <form method="get" action="{{ url_for('main.search') }}">
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-md-6">
+                    <label for="searchQ" class="event-filter-label">Keywords</label>
+                    <input type="text" class="form-control" id="searchQ" name="q"
+                        value="{{ request.args.get('q', '') }}" placeholder="Search events">
+                </div>
+                <div class="col-12 col-md-6">
+                    <label for="searchLocation" class="event-filter-label">Location</label>
+                    <input type="text" class="form-control" id="searchLocation" name="location"
+                        value="{{ request.args.get('location', '') }}" placeholder="Choose a location">
+                </div>
             </div>
-            <div class="col-12 col-md-4">
-                <label for="searchLocation" class="event-filter-label">Location</label>
-                <input type="text" class="form-control" id="searchLocation" name="location"
-                    value="{{ request.args.get('location', '') }}" placeholder="Choose a location">
-            </div>
-            <div class="col-12 col-sm-4 col-md-4">
-                <label for="selectDietary" class="event-filter-label">Dietary Preference</label>
-                <select class="form-select" id="selectDietary" name="dietary">
-                    <option value="None">None</option>
-                    {% for option in dietary_options if option != 'None' %}
-                    <option {{ 'selected' if request.args.get('dietary') == option }}>{{ option }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-12 col-sm-4 col-md-4">
-                <label for="selectSeasonal" class="event-filter-label">Seasonal / Cultural Options</label>
-                <select class="form-select" id="selectSeasonal" name="seasonal">
-                    <option value="None">None</option>
-                    {% for option in seasonal_options if option != 'None' %}
-                    <option {{ 'selected' if request.args.get('seasonal') == option }}>{{ option }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-12 col-sm-4 col-md-4">
-                <label for="selectProficiency" class="event-filter-label">Proficiency Filter</label>
-                <select class="form-select" id="selectProficiency" name="proficiency">
-                    <option value="None">None</option>
-                    {% for option in proficiency_options if option != 'None' %}
-                    <option {{ 'selected' if request.args.get('proficiency') == option }}>{{ option }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-12 mt-2">
+
+            <details class="mt-3"{{ ' open' if filters_active }}>
+                <summary class="event-filter-label">Advanced search</summary>
+                <div class="row g-2 mt-1">
+                    <div class="col-12 col-md-4">
+                        <label for="selectDietary" class="event-filter-label">Dietary Preference</label>
+                        <select class="form-select" id="selectDietary" name="dietary">
+                            {% for option in dietary_options %}
+                            <option{{ ' selected' if request.args.get('dietary') == option }}>{{ option }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label for="selectSeasonal" class="event-filter-label">Seasonal / Cultural Options</label>
+                        <select class="form-select" id="selectSeasonal" name="seasonal">
+                            {% for option in seasonal_options %}
+                            <option{{ ' selected' if request.args.get('seasonal') == option }}>{{ option }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label for="selectProficiency" class="event-filter-label">Proficiency Filter</label>
+                        <select class="form-select" id="selectProficiency" name="proficiency">
+                            {% for option in proficiency_options %}
+                            <option{{ ' selected' if request.args.get('proficiency') == option }}>{{ option }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </details>
+
+            <div class="mt-3">
                 <button type="submit" class="btn btn-primary">Apply Filters</button>
                 <a href="{{ url_for('main.search') }}" class="btn btn-outline-secondary">Clear</a>
             </div>

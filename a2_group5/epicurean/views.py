@@ -133,7 +133,11 @@ def index():
         # repeat_ids: cards already on the page, which mustn't repeat its id
         sections.append(dict(heading=heading, events=events + repeats,
                              repeat_ids={event.id for event in repeats}, slug=slug))
-    return render_template('index.html', sections=sections, liked_ids=_liked_event_ids())
+    # the filter dropdowns' options come from EventForm, so the homepage, the
+    # search results page and Create Event can never get out of sync
+    return render_template('index.html', sections=sections, liked_ids=_liked_event_ids(),
+                           dietary_options=EventForm.DIETARY, seasonal_options=EventForm.SEASONAL,
+                           proficiency_options=EventForm.PROFICIENCY)
 
 
 # One category's events, most liked first, EVENTS_PER_PAGE to a page
@@ -147,9 +151,9 @@ def category(slug):
                            liked_ids=_liked_event_ids())
 
 
-# ---- Search & filtering (#16, #17) ---------------------------------------
-# The navbar search bar (base_epicurean.html) and the homepage filter
-# dropdowns (index.html) both post here as plain GET forms - no JavaScript,
+# ---- Keyword search (#17) and filters (#16) -------------------------------
+# The navbar search bar (#17, base_epicurean.html) and the homepage filter
+# dropdowns (#16, index.html) both post here as plain GET forms - no JavaScript,
 # so a search is just a shareable, bookmarkable URL
 # (e.g. /search?q=ramen&dietary=Vegan). Query params:
 #   q                                - free text: matched against the title,
@@ -171,6 +175,28 @@ FILTER_PARAMS = {
 }
 
 
+LIKE_ESCAPE = '\\'   # the escape character used in the ilike(...) calls below
+
+
+def _contains(text):
+    """'%text%' for ilike, with any % or _ the user typed matched literally.
+    In a LIKE pattern % means "any amount of anything" and _ means "any one
+    character", so typed unescaped they would match far too much (searching
+    just % would return every event). The escape character itself is escaped
+    first, so a typed backslash is matched literally too. Use it with
+    column.ilike(_contains(text), escape=LIKE_ESCAPE)."""
+    for special in (LIKE_ESCAPE, '%', '_'):
+        text = text.replace(special, LIKE_ESCAPE + special)
+    return '%{}%'.format(text)
+
+
+def _filter_value(args, param):
+    """The chosen value for one of the dropdown filters, or '' if it's missing
+    or left on 'None' (which means "don't filter on this one")."""
+    value = (args.get(param) or '').strip()
+    return '' if value == 'None' else value
+
+
 def _search_query(args):
     """The Event select for a search/filter request, built from `args`
     (request.args): upcoming and not cancelled, like every other listing page,
@@ -180,17 +206,19 @@ def _search_query(args):
 
     text = (args.get('q') or '').strip()
     if text:
-        like = '%{}%'.format(text)
+        pattern = _contains(text)
         query = query.where(db.or_(
-            Event.title.ilike(like), Event.description.ilike(like), Event.venue.ilike(like)))
+            Event.title.ilike(pattern, escape=LIKE_ESCAPE),
+            Event.description.ilike(pattern, escape=LIKE_ESCAPE),
+            Event.venue.ilike(pattern, escape=LIKE_ESCAPE)))
 
     location = (args.get('location') or '').strip()
     if location:
-        query = query.where(Event.venue.ilike('%{}%'.format(location)))
+        query = query.where(Event.venue.ilike(_contains(location), escape=LIKE_ESCAPE))
 
     for param, column in FILTER_PARAMS.items():
-        value = (args.get(param) or '').strip()
-        if value and value != 'None':
+        value = _filter_value(args, param)
+        if value:
             query = query.where(column == value)
 
     return query.order_by(Event.likes.desc(), Event.event_date, Event.event_time, Event.id)
@@ -198,20 +226,25 @@ def _search_query(args):
 
 def _has_search_criteria(args):
     """True if the request actually asked for anything (so the page can tell
-    "no events listed yet" apart from "nothing matched your search")."""
-    return any((args.get(key) or '').strip() for key in ('q', 'location', *FILTER_PARAMS))
+    "no events listed yet" apart from "nothing matched your search"). A
+    dropdown left on 'None' isn't a criterion."""
+    return (any((args.get(key) or '').strip() for key in ('q', 'location'))
+            or any(_filter_value(args, param) for param in FILTER_PARAMS))
 
 
-# Search & filter results (#16, #17): reached from the navbar search bar and
-# the homepage filter dropdowns. Same layout as a category page - most liked
-# first, paginated - plus a "refine your search" panel so the filters can be
-# narrowed further without going back to the homepage.
+# Search results: reached from the navbar search bar (#17) and the homepage
+# filter dropdowns (#16). Same layout as a category page - most liked first,
+# paginated, and a page number past the end is a 404 like the category pages -
+# plus a "refine your search" panel so the keywords and filters can be changed
+# without going back to the homepage. filters_active tells the page to open
+# its Advanced search section, so the filters narrowing the results stay visible.
 @main_bp.route('/search')
 def search():
-    events = db.paginate(_search_query(request.args), per_page=EVENTS_PER_PAGE, error_out=False)
+    events = db.paginate(_search_query(request.args), per_page=EVENTS_PER_PAGE, error_out=True)
     return render_template(
         'search.html', events=events, liked_ids=_liked_event_ids(),
         has_criteria=_has_search_criteria(request.args),
+        filters_active=any(_filter_value(request.args, param) for param in FILTER_PARAMS),
         dietary_options=EventForm.DIETARY, seasonal_options=EventForm.SEASONAL,
         proficiency_options=EventForm.PROFICIENCY)
 
