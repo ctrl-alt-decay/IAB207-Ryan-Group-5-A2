@@ -170,16 +170,18 @@
                         </thead>
                         <tbody>
                             {% for ticket in event.ticket_types %}
+                            {# data-label: on phones each row becomes a stacked card and
+                               style.css shows these as the labels (the header row is hidden) #}
                             <tr>
-                                <td>{{ ticket.name }}</td>
-                                <td>${{ '%.2f'|format(ticket.price) }}</td>
-                                <td>{{ ticket.description or '' }}</td>
-                                <td class="text-nowrap">
+                                <td data-label="Ticket Type" class="ticket-type-name">{{ ticket.name }}</td>
+                                <td data-label="Price">${{ '%.2f'|format(ticket.price) }}</td>
+                                <td data-label="Description">{{ ticket.description or '' }}</td>
+                                <td data-label="Available" class="text-nowrap">
                                     {% if ticket.tickets_left %}{{ ticket.tickets_left }} of {{ ticket.capacity }} left
                                     {% else %}<span class="text-muted">Sold out</span>{% endif %}
                                 </td>
                                 {% if can_buy %}
-                                <td>
+                                <td data-label="Quantity">
                                     {% if ticket.tickets_left %}
                                     {# the browser's own number box (its arrows are the stepper);
                                        max stops it at the tickets left #}
