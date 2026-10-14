@@ -77,9 +77,9 @@
 
         <!-- ==== Event sections ============================== -->
         {# Recently Added (newest 4), then Popular, This Weekend and Kid Friendly
-           (top 8 by likes each). Upcoming, non-cancelled events only. Sections
+           (top 10 by likes each). Upcoming, non-cancelled events only. Sections
            prefer events not shown above them, and only repeat one to fill up to
-           8 (main.index); a repeated card leaves out its id, since the first
+           10 (main.index); a repeated card leaves out its id, since the first
            one already has it. Empty sections are skipped. #}
         {% for section in sections if section.events %}
         {{ section_heading(section.heading,

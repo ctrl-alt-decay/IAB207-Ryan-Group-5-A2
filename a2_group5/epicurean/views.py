@@ -24,10 +24,12 @@ EVENT_UPLOAD_DIR = os.path.join('uploads', 'events')
 
 # Homepage: Recently Added shows the newest few (so the team and the marker can
 # find what they just created); each category section shows its top few.
+# The card grid is 5 a row from 1400px wide and 4 below that, so the section
+# and page sizes are multiples of 5 (and of 2, for the 2-a-row tablet grid).
 RECENTLY_ADDED_SIZE = 4
-SECTION_SIZE = 8
+SECTION_SIZE = 10
 # Category pages ("Explore more events") and search results: events per page
-EVENTS_PER_PAGE = 12
+EVENTS_PER_PAGE = 20
 # an event needs at least this many likes to count as Popular
 POPULAR_MIN_LIKES = 100
 # a ticket type with any of these in its name counts as a kids' ticket

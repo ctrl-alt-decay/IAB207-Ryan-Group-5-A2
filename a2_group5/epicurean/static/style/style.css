@@ -108,6 +108,19 @@
     cursor: pointer;
 }
 
+/* On phones the hamburger sits on the logo's row, at the right, instead of on
+   a third row of its own under the search bar - the sticky header is two rows
+   (about 100px) instead of three (147px). The navbar is sticky, so it's the
+   positioning parent; the opened links still drop down below the search bar. */
+@media (max-width: 767.98px) {
+    .navbar-toggler {
+        position: absolute;
+        top: 0.5rem;
+        right: 1rem;
+        padding: 0.125rem 0.5rem;
+    }
+}
+
 @media (min-width: 768px) {
     .nav-toggle {
         display: none;
@@ -139,6 +152,15 @@
 
 /* ============================ Event cards ============================= */
 /* The clickable event tiles in the three sections on the home page */
+
+/* Bootstrap's columns stop at 4 a row (col-lg-3), which makes very wide cards
+   on big screens - 5 a row from 1400px (Bootstrap's xxl breakpoint) */
+@media (min-width: 1400px) {
+    .event-grid-col {
+        flex: 0 0 auto;
+        width: 20%;
+    }
+}
 
 .event-card {
     border: none;
@@ -1165,6 +1187,71 @@ html {
     width: 5.5rem;
 }
 
+/* On phones the event page's ticket table would need sideways scrolling to
+   reach Available and Quantity, so each row becomes a stacked card instead:
+   the header row is hidden and every cell shows its own label (data-label in
+   viewitem.html) beside the value. It's still the one table inside the one
+   Checkout form, so the quantity boxes are only there once. */
+@media (max-width: 767.98px) {
+    #purchaseTicketTable thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+    }
+
+    #purchaseTicketTable,
+    #purchaseTicketTable tbody,
+    #purchaseTicketTable tr,
+    #purchaseTicketTable td {
+        display: block;
+        width: 100%;
+    }
+
+    #purchaseTicketTable tr {
+        margin-bottom: 0.75rem;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid;
+        border-radius: 0.5rem;
+    }
+
+    #purchaseTicketTable td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.35rem 0;
+        border: none;
+        text-align: right;
+    }
+
+    #purchaseTicketTable td::before {
+        content: attr(data-label);
+        flex-shrink: 0;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        text-align: left;
+    }
+
+    /* the ticket's name is the card's heading, so it needs no label */
+    #purchaseTicketTable td.ticket-type-name {
+        font-weight: 700;
+        font-size: 1.05rem;
+        text-align: left;
+    }
+
+    #purchaseTicketTable td.ticket-type-name::before {
+        content: none;
+    }
+
+    /* a tier that's sold out has no quantity box - don't show an empty label */
+    #purchaseTicketTable td[data-label="Quantity"]:empty::before {
+        content: none;
+    }
+}
+
 /* Checkout screen (#21): a panel over the event page, shown when main.checkout
    renders it. No JavaScript - the dimmed backdrop is a link back to the event,
    and the page behind is `inert`. Tall panels scroll inside the overlay. */
@@ -1678,6 +1765,22 @@ body:has(.checkout-overlay) {
    each cell's own background, so the stripe is set on the cells' variable. */
 .ticket-type-table tbody tr:nth-child(even) > * {
     --bs-table-bg: #f8f9fa;
+}
+
+/* the event page's ticket rows as stacked cards on phones */
+@media (max-width: 767.98px) {
+    #purchaseTicketTable tr {
+        border-color: #e2e6ea;
+    }
+
+    #purchaseTicketTable td::before {
+        color: #6c757d;
+    }
+
+    /* the table's row striping only greys the cells, not the card's padding */
+    #purchaseTicketTable tbody tr:nth-child(even) > * {
+        --bs-table-bg: transparent;
+    }
 }
 
 .ticket-row {
