@@ -237,7 +237,7 @@
                 {# shown when Generic is checked #}
                 <div class="ack-preview ack-generic">
                     <span class="event-filter-label">Preview</span>
-                    {{ form.GENERIC_ACK_PREVIEW }}
+                    {{ form.GENERIC_ACK_PREVIEW.format(eventname=form.title) }}
                 </div>
 
                 {# shown when Enhanced is checked: a guided builder. The creator

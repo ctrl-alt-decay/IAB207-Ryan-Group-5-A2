@@ -147,7 +147,6 @@ class EventForm(FlaskForm):
     # put together from their answers (views.compose_acknowledgement).
     CAPITAL_CITIES = ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide',
                       'Hobart', 'Darwin', 'Canberra', 'Other']
-    GENERIC_ACK_PREVIEW = 'GENERIC ACKNOWLEDGEMENT OF COUNTRY PLACEHOLDER TEXT'
     # PLACEHOLDERS - to be filled in from research: each capital's Traditional
     # Custodians as they should be named in a statement ("the ... people"),
     # and the source that name came from, so the claim can be checked.
@@ -155,6 +154,113 @@ class EventForm(FlaskForm):
                           for city in CAPITAL_CITIES if city != 'Other'}
     CUSTODIAN_SOURCES = {city: '[source - placeholder]'
                          for city in CAPITAL_CITIES if city != 'Other'}
+    GENERIC_ACK_PREVIEW = """The organisers of {eventname} would like to acknowledge and pay 
+    respects to the Traditional Owners of the land we gather and connect on. We also recognise 
+    the ongoing connection between Indigenous peoples and their Country that has never been ceded.
+      Always was and always will be Aboriginal land."""
+    # ENHANCED_ACK_PREVIEW = 'ENHANCED ACKNOWLEDGEMENT OF COUNTRY PLACEHOLDER TEXT for {}'
+    ENHANCED_ACK_PREVIEW = {
+        'Brisbane-AoC' : """The organisers of {eventname} acknowledge and pay their respects to the 
+        traditional owners of Meanjin (Brisbane), the Turrbal and Jagera peoples. 
+        We recognise and appreciate that these lands have forever been a place of community 
+        and are now home to a multitude of culinary experiences. While we enjoy the flavourful 
+        journey of the present day, we also pay homage to the ever present and ever lasting cultures 
+        that cultivated the lands and waters we derive our ingredients from. The Turrbal and Jagera 
+        communities have been discovering, innovating and connecting over food for millenia using 
+        native flora and fauna including pencil yams, zamia nuts, goannas, and scrub turkeys. 
+        We are ever grateful to Indigenous peoples for their deep respect and responsibility of the 
+        land that was never ceded.""",
+
+        'Sydney-AoC' : """The organisers of {eventname} acknowledge and pay their respects to the 
+        traditional owners of Warrang (or Cadi), the Gadigal people. We recognise and appreciate 
+        that these lands have forever been a place of community and are now home to a multitude 
+        of culinary experiences. While we enjoy the flavourful journey of the present day, we 
+        also pay homage to the ever present and ever lasting cultures that cultivated the lands 
+        and waters we derive our ingredients from. The Gadigal people cultivated their meals 
+        through fishing in the cove and other nearby waterways, in which they sustained plentiful 
+        fish populations by using shells to indicate to others when it was best for an area to be 
+        left to replenish itself after being fished from. These early practices of sustainability 
+        have been upheld by Indigenous populations for thousands of years, to which we are ever 
+        thankful. """,
+
+        'Canberra-AoC' : """The organisers of {eventname} acknowledge and pay their respects to the 
+        traditional owners of Canberra, the Ngambri and Ngunnawal peoples. We recognise and 
+        appreciate that these lands have forever been a place of community and are now home to a 
+        multitude of culinary experiences. While we enjoy the flavourful journey of the present 
+        day, we also pay homage to the ever present and ever lasting cultures that cultivated the 
+        lands and waters we derive our ingredients from. A key ingredient used by the Ngambri was 
+        the murnong (yam daisy). Murnong would be collected by the Ngambri and Ngunnawal using yam 
+        sticks and dillybags. It would also be prepared alongside other plants like bulrushes and 
+        apple berries, as well as meat from witchetty grubs and brolgas. We pay our respects to 
+        the culture of the Ngambri and Ngunnawal peoples that lives and breathes alongside their 
+        Country.""", 
+
+        'Melbourne-AoC' : """The organisers of {eventname} acknowledge and pay their respects to the 
+        traditional owners of Naarm, the Wurundjeri and Boon Wurrung peoples. We recognise and 
+        appreciate that these lands have forever been a place of community and are now home to a 
+        multitude of culinary experiences. While we enjoy the flavourful journey of the present 
+        day, we also pay homage to the ever present and ever lasting cultures that cultivated the 
+        lands and waters we derive our ingredients from. Traditionally, the Wurundjeri and Boon 
+        Wurrung peoples lived in accordance with the seasons to find food. Yam daisies would be 
+        bitter in the winter but sweet by spring and in the wetter seasons, the creeks were 
+        abundant with eel and ducks. They also made use of both the meat and furs of possums 
+        for food and clothing, getting the most out of the animal. We acknowledge and pay our 
+        respects to the Elders of the past, present and future who continue to maintain their 
+        people’s connections to the lands and waters of Naarm.""",
+
+        'Darwin-AoC' : """The organisers of {eventname} acknowledge and pay their respects to 
+        the traditional owners of Gulumoerrgin, the Larrakia people. We recognise and appreciate 
+        that these lands have forever been a place of community and are now home to a multitude 
+        of culinary experiences. While we enjoy the flavourful journey of the present day, we also 
+        pay homage to the ever present and ever lasting cultures that cultivated the lands and 
+        waters we derive our ingredients from. The mangroves of Gulumoerrgin have served as a 
+        core food source for the Larrakia people for millenia. There they would seek out mangrove 
+        worms, longbums (telescopic snails), mussels, and periwinkles.The worms and longbums had 
+        to be specially prepared to avoid illness and this is a technique the Larrakia still 
+        practise to this day. We acknowledge the Larrakia people’s ongoing connection to their 
+        Country and the fact it has never been ceded.""",
+
+        'Perth-AoC' : """The organisers of {eventname} acknowledge and pay their respects to the 
+        traditional owners of Boorloo, the Whadjuk Noongar people. We recognise and appreciate 
+        that these lands have forever been a place of community and are now home to a multitude 
+        of culinary experiences. While we enjoy the flavourful journey of the present day, we 
+        also pay homage to the ever present and ever lasting cultures that cultivated the lands 
+        and waters we derive our ingredients from. The lands and waterways of Boorloo are 
+        expansive and home to a variety of flora and fauna. Through their connection and 
+        history with their Country, the Whadjuk Noongar would travel with the many seasons 
+        the area experienced in order to find food. During the hot and windy months in the 
+        grasslands, wattle seeds would be used to make damper and mallee fowl eggs were in 
+        abundance. Then, as the weather cooled off and got wetter, zamia palm nuts, frogs and 
+        kangaroos became more prevalent in the Whadjuk Noongar diet. We pay our respects to the 
+        Elders, past and present, of the Whadjuk Noongar and their everlasting connection to 
+        Boorloo.""",
+
+        'Adelaide-AoC' : """The organisers of {eventname} acknowledge and pay their respects to 
+        the traditional owners of Tarndanya, the Kaurna people. We recognise and appreciate that 
+        these lands have forever been a place of community and are now home to a multitude of 
+        culinary experiences. While we enjoy the flavourful journey of the present day, we also 
+        pay homage to the ever present and ever lasting cultures that cultivated the lands and 
+        waters we derive our ingredients from. The sand dunes of Tarndanya’s coastline are the 
+        edible garden of the Kaurna people. When in season, the dunes produced small fruit-like 
+        plants such as mantarri and wadni that could be eaten. Away from the coast, tarnta tutha 
+        (kangaroo grass) was harvested using fire by the Kaurna to turn into damper and, as the 
+        rainy season came, yam daisies would be collected to eat. We acknowledge and pass on our 
+        respects to the Kaurna people and their enduring connection to the lands and waters of 
+        Tarndanya. """,
+
+        'Hobart-AoC' : """The organisers of {eventname} acknowledge and pay their respects to the
+          traditional owners of Nipaluna, the Palawa people. We recognise and appreciate that 
+          these lands have forever been a place of community and are now home to a multitude of 
+          culinary experiences. While we enjoy the flavourful journey of the present day, we also 
+          pay homage to the ever present and ever lasting cultures that cultivated the lands and 
+          waters we derive our ingredients from. The Palawa people commonly used mutton birds as
+            their main source of protein, as well as wallaby - which would be cooked over fire. 
+            The sea provided oysters which would pair tastily with the native pepper berry and 
+            blue-gum honey, which added a fruity and spicy taste to the meal. We recognise and 
+            appreciate the strong identity of the Palawa people is everlasting, much like their 
+            connection to their Country of Nipaluna.""",
+        'Other-AoC': ''
+    }
 
     title = StringField("Event Title", validators=[
         DataRequired('Enter an event title'), Length(max=150)])
