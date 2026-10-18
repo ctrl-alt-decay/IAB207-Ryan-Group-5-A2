@@ -5,7 +5,8 @@
    JavaScript. Same card-grid layout as a category page (events.html), most
    liked first, paginated - plus a "refine your search" form so the keywords
    and filters can be changed without going back to the homepage.
-   The keywords and location are always showing; the dropdown filters sit in an
+   The keywords, location and From / To dates (#38, <input type="date"> boxes
+   that send YYYY-MM-DD) are always showing; the dropdown filters sit in an
    "Advanced search" section (a plain <details>/<summary>, no JavaScript) that
    opens by itself when a filter is in use (filters_active), so what's narrowing
    the results is always visible.
@@ -36,11 +37,14 @@
             {{ events.total }} event{{ 's' if events.total != 1 }} found, most liked first
             {%- if events.pages > 1 %} - page {{ events.page }} of {{ events.pages }}{% endif %}
             {% elif has_criteria %}
-            No events matched your search. Try different keywords or clear a filter below.
+            No events matched your search. Try different keywords or dates, or clear a filter below.
             {% else %}
             No events have been listed yet.
             {% endif %}
         </p>
+        {% if date_problem %}
+        <p class="text-danger mb-0" role="alert">{{ date_problem }}</p>
+        {% endif %}
     </div>
 
     <!-- ==== Refine your search ============================== -->
@@ -60,6 +64,16 @@
                     <label for="searchLocation" class="event-filter-label">Location</label>
                     <input type="text" class="form-control" id="searchLocation" name="location"
                         value="{{ request.args.get('location', '') }}" placeholder="Choose a location">
+                </div>
+                <div class="col-12 col-md-6">
+                    <label for="searchDateFrom" class="event-filter-label">From date</label>
+                    <input type="date" class="form-control" id="searchDateFrom" name="date_from"
+                        value="{{ date_from }}">
+                </div>
+                <div class="col-12 col-md-6">
+                    <label for="searchDateTo" class="event-filter-label">To date</label>
+                    <input type="date" class="form-control" id="searchDateTo" name="date_to"
+                        value="{{ date_to }}">
                 </div>
             </div>
 
