@@ -8,6 +8,7 @@ from flask import (Blueprint, render_template, request, redirect, url_for, flash
                    current_app, abort)
 from flask_login import login_required, current_user
 from flask_wtf.csrf import generate_csrf
+from sqlalchemy import false
 from werkzeug.utils import secure_filename
 
 from . import db
@@ -165,6 +166,13 @@ def category(slug):
 #   dietary, seasonal, proficiency   - exact match against the matching Event
 #                                       column; missing or 'None' means no
 #                                       filter on that one
+#   date_from, date_to               - the date range (#38), YYYY-MM-DD as sent
+#                                       by <input type="date">: events on or
+#                                       after date_from and on or before
+#                                       date_to. Either can be left out for an
+#                                       open-ended range; an unreadable date is
+#                                       ignored, and a date_to before date_from
+#                                       matches nothing (see _date_range)
 # TODO (AI-enhanced discovery): `q` currently does a plain case-insensitive
 # substring match. The brief's AI-enhanced discovery requirement belongs here -
 # e.g. ranking/matching with sentence-transformers embeddings over the title +
@@ -199,12 +207,51 @@ def _filter_value(args, param):
     return '' if value == 'None' else value
 
 
+def _parse_date(args, param):
+    """The date typed into the `param` box (YYYY-MM-DD, which is what
+    <input type="date"> sends), or None if it's missing or not a real date
+    (e.g. a hand-edited URL like ?date_from=banana or 2026-02-31)."""
+    value = (args.get(param) or '').strip()
+    try:
+        return datetime.strptime(value, '%Y-%m-%d').date()
+    except ValueError:
+        return None
+
+
+def _date_range(args):
+    """(start, end, problem) for the date_from / date_to boxes. start and end
+    are dates or None (no limit on that side). problem is a short message for
+    the page when the range can't be used, else None:
+      - a date that couldn't be read is ignored, and the page says so;
+      - an end date before the start date can never match anything, so
+        _search_query returns no events and the page explains why."""
+    start, end = _parse_date(args, 'date_from'), _parse_date(args, 'date_to')
+    unreadable = [label for param, label, parsed in
+                  (('date_from', 'From', start), ('date_to', 'To', end))
+                  if (args.get(param) or '').strip() and parsed is None]
+    if unreadable:
+        return start, end, ("The {} date wasn't a valid date, so it was ignored."
+                            .format(' and '.join(unreadable)))
+    if start and end and end < start:
+        return start, end, 'The To date is before the From date, so no events can match.'
+    return start, end, None
+
+
 def _search_query(args):
     """The Event select for a search/filter request, built from `args`
     (request.args): upcoming and not cancelled, like every other listing page,
-    narrowed by whichever of q / location / dietary / seasonal / proficiency
-    were actually given."""
+    narrowed by whichever of q / location / dietary / seasonal / proficiency /
+    date_from / date_to were actually given."""
     query = db.select(Event).where(_upcoming())
+
+    start, end, _problem = _date_range(args)
+    if start and end and end < start:
+        query = query.where(false())     # an impossible range matches nothing
+    else:
+        if start:
+            query = query.where(Event.event_date >= start)
+        if end:
+            query = query.where(Event.event_date <= end)
 
     text = (args.get('q') or '').strip()
     if text:
@@ -230,7 +277,8 @@ def _has_search_criteria(args):
     """True if the request actually asked for anything (so the page can tell
     "no events listed yet" apart from "nothing matched your search"). A
     dropdown left on 'None' isn't a criterion."""
-    return (any((args.get(key) or '').strip() for key in ('q', 'location'))
+    return (any((args.get(key) or '').strip()
+                for key in ('q', 'location', 'date_from', 'date_to'))
             or any(_filter_value(args, param) for param in FILTER_PARAMS))
 
 
@@ -243,9 +291,14 @@ def _has_search_criteria(args):
 @main_bp.route('/search')
 def search():
     events = db.paginate(_search_query(request.args), per_page=EVENTS_PER_PAGE, error_out=True)
+    start, end, date_problem = _date_range(request.args)
     return render_template(
         'search.html', events=events, liked_ids=_liked_event_ids(),
         has_criteria=_has_search_criteria(request.args),
+        # the dates to echo back into the two date boxes (only readable ones)
+        date_from=start.isoformat() if start else '',
+        date_to=end.isoformat() if end else '',
+        date_problem=date_problem,
         filters_active=any(_filter_value(request.args, param) for param in FILTER_PARAMS),
         dietary_options=EventForm.DIETARY, seasonal_options=EventForm.SEASONAL,
         proficiency_options=EventForm.PROFICIENCY)
