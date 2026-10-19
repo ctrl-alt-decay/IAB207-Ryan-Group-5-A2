@@ -237,7 +237,8 @@
                 {# shown when Generic is checked #}
                 <div class="ack-preview ack-generic">
                     <span class="event-filter-label">Preview</span>
-                    {{ form.GENERIC_ACK_PREVIEW.format(eventname=form.title) }}
+                    {# ack_text fills in the event name typed above ("this event" until there is one) #}
+                    {{ form.GENERIC_ACK_PREVIEW|ack_text(form.title.data) }}
                 </div>
 
                 {# shown when Enhanced is checked: a guided builder. The creator
@@ -264,8 +265,10 @@
                                     and <a href="https://knowyourcountry.org.au/how-to-know-your-country" target="_blank" rel="noopener">Know Your Country</a>,
                                     or your local council or Aboriginal Land Council. Then enter them below.
                                     {% else %}
-                                    <span class="event-filter-label">Traditional Custodians</span>
-                                    {{ form.CAPITAL_CUSTODIANS[choice.data] }}
+                                    {# the city's written statement, which names its Traditional
+                                       Custodians - the creator's own answers are added after it #}
+                                    <span class="event-filter-label">Your acknowledgement starts with</span>
+                                    {{ form.ENHANCED_ACK_PREVIEW[choice.data ~ '-AoC']|ack_text(form.title.data) }}
                                     <small class="d-block text-muted">Source: {{ form.CUSTODIAN_SOURCES[choice.data] }}</small>
                                     {% endif %}
                                 </div>
@@ -276,8 +279,8 @@
                             <label class="event-filter-label mt-3" for="ackCustodians">Traditional Custodians</label>
                             {{ form.acknowledgement_custodians(class="form-control" ~ invalid(form.acknowledgement_custodians),
                                 id="ackCustodians", placeholder="e.g. Kaurna people") }}
-                            <small class="text-muted d-block">Needed if you chose Other. Otherwise, only fill this in
-                                to be more specific than the city's.</small>
+                            <small class="text-muted d-block">Needed if you chose Other. For a capital, leave it blank
+                                to use the city's statement above, or fill it in to name more specific custodians.</small>
                             {{ errors(form.acknowledgement_custodians) }}
 
                             <label class="event-filter-label mt-3" for="ackConnection">2. {{ form.acknowledgement_connection.label.text }}<span
