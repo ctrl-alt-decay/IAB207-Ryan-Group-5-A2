@@ -147,11 +147,6 @@ class EventForm(FlaskForm):
     # put together from their answers (views.compose_acknowledgement).
     CAPITAL_CITIES = ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide',
                       'Hobart', 'Darwin', 'Canberra', 'Other']
-    # PLACEHOLDERS - to be filled in from research: the source each capital's
-    # statement below (ENHANCED_ACK_PREVIEW) took its Traditional Custodians
-    # from, so the claim can be checked.
-    CUSTODIAN_SOURCES = {city: '[source - placeholder]'
-                         for city in CAPITAL_CITIES if city != 'Other'}
     # GENERIC_ACK_PREVIEW and each city's ENHANCED_ACK_PREVIEW ('<City>-AoC')
     # are shown through views.ack_text, which fills in {eventname} and tidies
     # the line breaks. A capital's statement opens its Enhanced acknowledgement,

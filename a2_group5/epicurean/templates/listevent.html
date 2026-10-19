@@ -268,9 +268,7 @@
                                     {# the city's written statement, which names its Traditional
                                        Custodians - the creator's own answers are added after it #}
                                     <span class="event-filter-label">Your acknowledgement starts with</span>
-                                    {{ form.ENHANCED_ACK_PREVIEW[choice.data ~ '-AoC']|ack_text(form.title.data) }}
-                                    <small class="d-block text-muted">Source: {{ form.CUSTODIAN_SOURCES[choice.data] }}</small>
-                                    {% endif %}
+                                    {{ form.ENHANCED_ACK_PREVIEW[choice.data ~ '-AoC']|ack_text(form.title.data) }}                                    {% endif %}
                                 </div>
                                 {% endfor %}
                             </div>
