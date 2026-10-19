@@ -173,7 +173,8 @@ def about():
 # so a search is just a shareable, bookmarkable URL
 # (e.g. /search?q=ramen&dietary=Vegan). Query params:
 #   q                                - free text: matched against the title,
-#                                       description and venue
+#                                       description, venue and city (so
+#                                       'Townsville' finds events near it)
 #   dietary, seasonal, proficiency   - exact match against the matching Event
 #                                       column; missing or 'None' means no
 #                                       filter on that one
@@ -270,7 +271,8 @@ def _search_query(args):
         query = query.where(db.or_(
             Event.title.ilike(pattern, escape=LIKE_ESCAPE),
             Event.description.ilike(pattern, escape=LIKE_ESCAPE),
-            Event.venue.ilike(pattern, escape=LIKE_ESCAPE)))
+            Event.venue.ilike(pattern, escape=LIKE_ESCAPE),
+            Event.city.ilike(pattern, escape=LIKE_ESCAPE)))
 
     for param, column in FILTER_PARAMS.items():
         value = _filter_value(args, param)
