@@ -174,8 +174,6 @@ def about():
 # (e.g. /search?q=ramen&dietary=Vegan). Query params:
 #   q                                - free text: matched against the title,
 #                                       description and venue
-#   location                         - the search bar's second field: matched
-#                                       against the venue only
 #   dietary, seasonal, proficiency   - exact match against the matching Event
 #                                       column; missing or 'None' means no
 #                                       filter on that one
@@ -253,7 +251,7 @@ def _date_range(args):
 def _search_query(args):
     """The Event select for a search/filter request, built from `args`
     (request.args): upcoming and not cancelled, like every other listing page,
-    narrowed by whichever of q / location / dietary / seasonal / proficiency /
+    narrowed by whichever of q / dietary / seasonal / proficiency /
     date_from / date_to were actually given."""
     query = db.select(Event).where(_upcoming())
 
@@ -274,10 +272,6 @@ def _search_query(args):
             Event.description.ilike(pattern, escape=LIKE_ESCAPE),
             Event.venue.ilike(pattern, escape=LIKE_ESCAPE)))
 
-    location = (args.get('location') or '').strip()
-    if location:
-        query = query.where(Event.venue.ilike(_contains(location), escape=LIKE_ESCAPE))
-
     for param, column in FILTER_PARAMS.items():
         value = _filter_value(args, param)
         if value:
@@ -291,7 +285,7 @@ def _has_search_criteria(args):
     "no events listed yet" apart from "nothing matched your search"). A
     dropdown left on 'None' isn't a criterion."""
     return (any((args.get(key) or '').strip()
-                for key in ('q', 'location', 'date_from', 'date_to'))
+                for key in ('q', 'date_from', 'date_to'))
             or any(_filter_value(args, param) for param in FILTER_PARAMS))
 
 

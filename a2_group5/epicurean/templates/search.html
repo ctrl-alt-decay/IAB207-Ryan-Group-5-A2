@@ -5,7 +5,7 @@
    JavaScript. Same card-grid layout as a category page (events.html), most
    liked first, paginated - plus a "refine your search" form so the keywords
    and filters can be changed without going back to the homepage.
-   The keywords, location and From / To dates (#38, <input type="date"> boxes
+   The keywords and From / To dates (#38, <input type="date"> boxes
    that send YYYY-MM-DD) are always showing; the dropdown filters sit in an
    "Advanced search" section (a plain <details>/<summary>, no JavaScript) that
    opens by itself when a filter is in use (filters_active), so what's narrowing
@@ -48,22 +48,17 @@
     </div>
 
     <!-- ==== Refine your search ============================== -->
-    {# A plain GET form back to this same page. The keyword and location inputs
-       keep whatever was typed, and each dropdown's current value is echoed
+    {# A plain GET form back to this same page. The keyword input
+       keeps whatever was typed, and each dropdown's current value is echoed
        back with `selected`, so refining feels like adjusting one search
        rather than starting over. #}
     <div class="event-section-px py-3">
         <form method="get" action="{{ url_for('main.search') }}">
             <div class="row g-2 align-items-end">
-                <div class="col-12 col-md-6">
+                <div class="col-12">
                     <label for="searchQ" class="event-filter-label">Keywords</label>
                     <input type="text" class="form-control" id="searchQ" name="q"
                         value="{{ request.args.get('q', '') }}" placeholder="Search events">
-                </div>
-                <div class="col-12 col-md-6">
-                    <label for="searchLocation" class="event-filter-label">Location</label>
-                    <input type="text" class="form-control" id="searchLocation" name="location"
-                        value="{{ request.args.get('location', '') }}" placeholder="Choose a location">
                 </div>
                 <div class="col-12 col-md-6">
                     <label for="searchDateFrom" class="event-filter-label">From date</label>
