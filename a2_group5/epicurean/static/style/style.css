@@ -108,6 +108,15 @@
     cursor: pointer;
 }
 
+/* Logout is a form button (it must be a POST), made to look like the other
+   navbar links */
+.nav-link-button {
+    border: 0;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+}
+
 /* On phones the hamburger sits on the logo's row, at the right, instead of on
    a third row of its own under the search bar - the sticky header is two rows
    (about 100px) instead of three (147px). The navbar is sticky, so it's the

@@ -155,8 +155,11 @@ def remove_picture():
     return redirect(url_for('auth.account'))
 
 
+# POST-only (#27), so logging out takes a button press on this site: a plain
+# link or an image on another site can't log someone out. The navbar and the
+# account page post here with a small form carrying the CSRF token.
 # @login_required sends anonymous visitors to /login instead of erroring.
-@auth_bp.route('/logout')
+@auth_bp.route('/logout', methods=['POST'])
 @login_required
 def logout():
     logout_user()

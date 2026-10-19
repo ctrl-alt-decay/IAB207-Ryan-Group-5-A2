@@ -84,7 +84,13 @@
                 {{ render_nav_item('main.history', 'History', _use_li=True) }}
                 {% if current_user.is_authenticated %}
                 {{ render_nav_item('auth.account', current_user.first_name, _use_li=True) }}
-                {{ render_nav_item('auth.logout', 'Logout', _use_li=True) }}
+                {# logging out is a POST (#27): a form whose button looks like the other links #}
+                <li class="nav-item">
+                    <form method="post" action="{{ url_for('auth.logout') }}" class="m-0">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="nav-link nav-link-button">Logout</button>
+                    </form>
+                </li>
                 {% else %}
                 {{ render_nav_item('auth.login', 'Login', _use_li=True) }}
                 {{ render_nav_item('auth.register', 'Sign Up', _use_li=True) }}
