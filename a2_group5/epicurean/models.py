@@ -44,6 +44,7 @@ class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(150), nullable=False)
     description = db.Column(db.Text, nullable=False)
+    description_embedding = db.Column(db.Text)
     venue = db.Column(db.String(255), nullable=False)   # name and street address
     # The major city closest to the venue, e.g. 'Townsville, QLD' (EventForm.CITIES),
     # so events can be found by city even when they're in a suburb or nearby town.

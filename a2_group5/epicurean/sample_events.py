@@ -54,6 +54,7 @@ from . import db
 from .models import User, Event, TicketType, Booking
 
 
+
 # The events are shared out between the group's three test accounts (all with
 # password 'Password123'). They're created here if they don't exist yet.
 ORGANISERS = [

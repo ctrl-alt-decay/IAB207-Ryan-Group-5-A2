@@ -16,6 +16,10 @@ from .models import Event, TicketType, Booking, Like, Comment, Order, orders_fro
 from .forms import (OrderForm, EventForm, EditEventForm, CancelEventForm, LikeForm,
                     CommentForm)
 
+from . import encoder
+import json
+import numpy as np
+
 # Public site pages, events and booking. Endpoints are referenced as
 # 'main.<function>' in url_for().
 main_bp = Blueprint('main', __name__)
@@ -290,18 +294,48 @@ def _has_search_criteria(args):
 # its Advanced search section, so the filters narrowing the results stay visible.
 @main_bp.route('/search')
 def search():
-    events = db.paginate(_search_query(request.args), per_page=EVENTS_PER_PAGE, error_out=True)
-    start, end, date_problem = _date_range(request.args)
-    return render_template(
-        'search.html', events=events, liked_ids=_liked_event_ids(),
-        has_criteria=_has_search_criteria(request.args),
-        # the dates to echo back into the two date boxes (only readable ones)
-        date_from=start.isoformat() if start else '',
-        date_to=end.isoformat() if end else '',
-        date_problem=date_problem,
-        filters_active=any(_filter_value(request.args, param) for param in FILTER_PARAMS),
-        dietary_options=EventForm.DIETARY, seasonal_options=EventForm.SEASONAL,
-        proficiency_options=EventForm.PROFICIENCY)
+    if request.args['q'] and request.args['q'] != "":
+        if 'use_ai' in request.args:
+            print('Semantic search selected.')
+            query_embedding = encoder.encode(request.args['q'])
+            events = db.session.scalars(db.select(Event)).all()
+            results = []
+            for event in events:
+                event_embedding = np.array(json.loads(event.description_embedding))
+                score = cosine_similarity(query_embedding, event_embedding)
+                results.append([event, score])
+
+            results.sort(key = lambda x : x[1], reverse = True)
+
+            events =  [x[0] for x in results]
+
+            start, end, date_problem = _date_range(request.args)
+
+            return render_template(
+                'search.html', events=events, liked_ids=_liked_event_ids(),
+                has_criteria=_has_search_criteria(request.args),
+                # the dates to echo back into the two date boxes (only readable ones)
+                date_from=start.isoformat() if start else '',
+                date_to=end.isoformat() if end else '',
+                date_problem=date_problem,
+                filters_active=any(_filter_value(request.args, param) for param in FILTER_PARAMS),
+                dietary_options=EventForm.DIETARY, seasonal_options=EventForm.SEASONAL,
+                proficiency_options=EventForm.PROFICIENCY)
+
+        else:
+            events = db.paginate(_search_query(request.args), per_page=EVENTS_PER_PAGE, error_out=True)
+            start, end, date_problem = _date_range(request.args)
+            return render_template(
+                'search.html', events=events, liked_ids=_liked_event_ids(),
+                has_criteria=_has_search_criteria(request.args),
+                # the dates to echo back into the two date boxes (only readable ones)
+                date_from=start.isoformat() if start else '',
+                date_to=end.isoformat() if end else '',
+                date_problem=date_problem,
+                filters_active=any(_filter_value(request.args, param) for param in FILTER_PARAMS),
+                dietary_options=EventForm.DIETARY, seasonal_options=EventForm.SEASONAL,
+                proficiency_options=EventForm.PROFICIENCY)
+    return redirect(url_for('main.index'))
 
 
 def local_path(path):
@@ -362,8 +396,12 @@ def create_event():
         return render_template('listevent.html', form=form,
                                ack_preview=_acknowledgement_preview(form))
     if form.validate_on_submit():
+        embedding = encoder.encode(form.description.data)
+        embedding_text = json.dumps(embedding.tolist())
+
         event = Event(owner_id=current_user.id,
-                      image_filename=_save_event_image(form.image.data))
+                      image_filename=_save_event_image(form.image.data), 
+                      description_embedding=embedding_text)
         _apply_event_details(event, form)
         _apply_ticket_rows(event, form)
         db.session.add(event)
@@ -824,3 +862,6 @@ def order_confirmation(order_number):
     if not lines:
         abort(404)
     return render_template('order_confirmation.html', order=Order(lines))
+
+def cosine_similarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))

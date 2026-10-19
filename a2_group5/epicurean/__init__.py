@@ -3,10 +3,21 @@ from flask import Flask, render_template
 from flask_bootstrap import Bootstrap5
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from sentence_transformers import SentenceTransformer
 
 # Shared database handle. Created unbound so models.py can import it without an
 # app existing yet; create_app() binds it with db.init_app(app).
 db = SQLAlchemy()
+
+try:
+    encoder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", local_files_only=True )
+    print("Loaded local AI model")
+except Exception:
+    print("Local AI model not found. Downloading...")
+    encoder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+    print("Downloaded and loaded AI model")
+
+print(f"\nencoder string representation:\n{encoder}")
 
 def add_missing_columns():
     """db.create_all() only creates missing *tables*, so a model column added
