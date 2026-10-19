@@ -1869,3 +1869,117 @@ body:has(.checkout-overlay) {
 .epicurean-footer {
     background-color: #f8f9fa;
 }
+
+
+/* ======================== About page ======================= */
+
+/* Banner: the photo is cropped to fill a fixed height and darkened at the
+   bottom-left so the white headline stays readable over it */
+.about-hero {
+    position: relative;
+    color: #fff;
+}
+
+.about-hero-img {
+    display: block;
+    width: 100%;
+    height: 320px;
+    object-fit: cover;
+}
+
+.about-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.15));
+}
+
+.about-hero-text {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 2rem;
+    z-index: 1;
+}
+
+.about-hero-text h1 {
+    max-width: 18em;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.about-hero-text p {
+    max-width: 36em;
+    margin-bottom: 0;
+    font-size: 1.1rem;
+}
+
+@media (min-width: 768px) {
+    .about-hero-img {
+        height: 440px;
+    }
+
+    .about-hero-text h1 {
+        font-size: 3rem;
+    }
+}
+
+.about-mission {
+    max-width: 48rem;
+    font-size: 1.1rem;
+}
+
+/* Discover / Host / Connect: stacked on phones, three across from md up */
+.about-features {
+    display: grid;
+    gap: 2rem;
+    margin: 3rem 0;
+}
+
+@media (min-width: 768px) {
+    .about-features {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.about-feature-icon {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    color: #5f8fd0;
+}
+
+/* Numbers strip: two a row on phones, four from md up */
+.about-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    padding: 2rem 1rem;
+    border-radius: 0.75rem;
+    background-color: #f8f9fa;
+    text-align: center;
+}
+
+@media (min-width: 768px) {
+    .about-stats {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.about-stat-value {
+    display: block;
+    font-size: 2.25rem;
+    font-weight: 700;
+}
+
+.about-stat-label {
+    color: #6c757d;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.about-cta {
+    margin-top: 3rem;
+    text-align: center;
+}

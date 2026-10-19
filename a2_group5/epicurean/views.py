@@ -154,6 +154,19 @@ def category(slug):
                            liked_ids=_liked_event_ids())
 
 
+# About page (linked from the footer, #30). The numbers strip is live from the
+# database, so it grows as people list events and book tickets.
+@main_bp.route('/about')
+def about():
+    stats = [
+        ('Events listed', db.session.scalar(db.select(db.func.count(Event.id)))),
+        ('Cities', db.session.scalar(db.select(db.func.count(db.distinct(Event.city))))),
+        ('Likes', db.session.scalar(db.select(db.func.coalesce(db.func.sum(Event.likes), 0)))),
+        ('Tickets booked', db.session.scalar(db.select(db.func.coalesce(db.func.sum(Booking.quantity), 0)))),
+    ]
+    return render_template('about.html', stats=stats)
+
+
 # ---- Keyword search (#17) and filters (#16) -------------------------------
 # The navbar search bar (#17, base_epicurean.html) and the homepage filter
 # dropdowns (#16, index.html) both post here as plain GET forms - no JavaScript,

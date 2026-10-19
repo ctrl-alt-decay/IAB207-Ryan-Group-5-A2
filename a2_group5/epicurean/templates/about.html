@@ -1,0 +1,69 @@
+{# About page (route main.about, linked from the footer). A photo banner with the
+   headline, what Epicurean is for, three things you can do, live numbers from
+   the database (views.about) and links to get started. #}
+{% extends "base_epicurean.html" %}
+
+{% block title %}About - Epicurean{% endblock %}
+{% block description %}About Epicurean, the place to find and host food events across Australia{% endblock %}
+
+{% block content %}
+
+<!-- ==== Banner: photo with the headline over it ============================== -->
+<section class="about-hero">
+    <img src="{{ url_for('static', filename='img/about-hero.webp') }}" class="about-hero-img" alt="">
+    <div class="about-hero-text event-section-px">
+        <h1>Bringing people together around the table</h1>
+        <p>Epicurean is where food lovers find, book and host food events across Australia.</p>
+    </div>
+</section>
+
+<div class="event-section-px py-5">
+
+    <!-- ==== Mission ============================== -->
+    <section class="about-mission">
+        <h2 class="page-heading">Our mission</h2>
+        <p>Good food is better shared. From cooking classes and market tours to tastings and
+            long-table dinners, Epicurean brings local food events into one place, so it's easy to
+            find something worth going to and easy to put on something of your own.</p>
+    </section>
+
+    <!-- ==== What you can do ============================== -->
+    <section class="about-features">
+        <div class="about-feature">
+            <i class="fa fa-search about-feature-icon" aria-hidden="true"></i>
+            <h3 class="section-heading">Discover</h3>
+            <p>Browse events by city, date, diet and skill level, from kids' classes to chef's tables.</p>
+        </div>
+        <div class="about-feature">
+            <i class="fa fa-cutlery about-feature-icon" aria-hidden="true"></i>
+            <h3 class="section-heading">Host</h3>
+            <p>List your own event in minutes, set your ticket types and see who's coming.</p>
+        </div>
+        <div class="about-feature">
+            <i class="fa fa-comments about-feature-icon" aria-hidden="true"></i>
+            <h3 class="section-heading">Connect</h3>
+            <p>Like the events you love, ask questions in the comments and keep track of your bookings.</p>
+        </div>
+    </section>
+
+    <!-- ==== Live numbers from the database ============================== -->
+    <section class="about-stats" aria-label="Epicurean in numbers">
+        {% for label, value in stats %}
+        <div class="about-stat">
+            <span class="about-stat-value">{{ '{:,}'.format(value) }}</span>
+            <span class="about-stat-label">{{ label }}</span>
+        </div>
+        {% endfor %}
+    </section>
+
+    <!-- ==== Get started ============================== -->
+    <section class="about-cta">
+        <h2 class="page-heading">Find your next table</h2>
+        <div>
+            <a href="{{ url_for('main.search') }}" class="btn btn-primary text-nowrap mx-2 mb-2">Browse events</a>
+            <a href="{{ url_for('main.create_event') }}" class="btn btn-secondary text-nowrap mx-2 mb-2">Create an event</a>
+        </div>
+    </section>
+
+</div>
+{% endblock %}
