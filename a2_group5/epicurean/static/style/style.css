@@ -277,10 +277,80 @@
     padding: 0;
 }
 
-/* show the buttons while something in the card has keyboard focus too */
-.event-card:focus-within .event-card-actions {
+/* show the buttons while something in the card has keyboard focus too, or
+   while its share menu is open */
+.event-card:focus-within .event-card-actions,
+.event-card-actions:has(.event-share[open]) {
     opacity: 1;
     transform: translateY(0);
+}
+
+/* Share menu: the share circle is the <summary> of a <details>; opening it
+   shows a small panel above the buttons */
+.event-share {
+    position: relative;
+}
+
+.event-share > summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+.event-share > summary::-webkit-details-marker {
+    display: none;
+}
+
+.event-share-menu {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 0.4rem);
+    width: 10.5rem;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    background-color: #fff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.event-share-copy {
+    display: block;
+    width: 100%;
+    padding: 0.35rem 0.5rem;
+    border: 0;
+    border-radius: 0.35rem;
+    background-color: #f1f3f5;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: left;
+}
+
+.event-share-copy:hover {
+    background-color: #e2e6ea;
+}
+
+.event-share-copy .fa {
+    margin-right: 0.3rem;
+}
+
+.event-share-socials {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 0.5rem;
+}
+
+.event-share-socials a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    color: #333;
+    font-size: 1rem;
+}
+
+.event-share-socials a:hover {
+    background-color: #f1f3f5;
+    text-decoration: none;
 }
 
 
