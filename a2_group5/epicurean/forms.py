@@ -147,13 +147,11 @@ class EventForm(FlaskForm):
     # put together from their answers (views.compose_acknowledgement).
     CAPITAL_CITIES = ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide',
                       'Hobart', 'Darwin', 'Canberra', 'Other']
-    # PLACEHOLDERS - to be filled in from research: each capital's Traditional
-    # Custodians as they should be named in a statement ("the ... people"),
-    # and the source that name came from, so the claim can be checked.
-    CAPITAL_CUSTODIANS = {city: '[{} Traditional Custodians - placeholder]'.format(city)
-                          for city in CAPITAL_CITIES if city != 'Other'}
-    CUSTODIAN_SOURCES = {city: '[source - placeholder]'
-                         for city in CAPITAL_CITIES if city != 'Other'}
+    # GENERIC_ACK_PREVIEW and each city's ENHANCED_ACK_PREVIEW ('<City>-AoC')
+    # are shown through views.ack_text, which fills in {eventname} and tidies
+    # the line breaks. A capital's statement opens its Enhanced acknowledgement,
+    # with the creator's answers added after it; 'Other' has none - the
+    # creator types the custodians in (views.compose_acknowledgement).
     GENERIC_ACK_PREVIEW = """The organisers of {eventname} would like to acknowledge and pay 
     respects to the Traditional Owners of the land we gather and connect on. We also recognise 
     the ongoing connection between Indigenous peoples and their Country that has never been ceded.

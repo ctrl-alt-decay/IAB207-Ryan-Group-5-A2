@@ -641,21 +641,39 @@ def post_comment(event_id):
     return redirect(comments_section)
 
 
-def compose_acknowledgement(ack_type, city, custodians, connection, commitment, elders):
+@main_bp.app_template_filter('ack_text')
+def ack_text(statement, event_title=None):
+    """One of the written statements in EventForm (GENERIC_ACK_PREVIEW or a
+    city's ENHANCED_ACK_PREVIEW) ready to show: {eventname} filled in with the
+    event's title ("this event" before it has one), and the line breaks and
+    indentation from the source file collapsed to single spaces. Also a
+    template filter: {{ form.GENERIC_ACK_PREVIEW|ack_text(form.title.data) }}."""
+    title = (event_title or '').strip() or 'this event'
+    # replace, not str.format: a title with { or } in it mustn't break it
+    return ' '.join((statement or '').replace('{eventname}', title).split())
+
+
+def compose_acknowledgement(ack_type, city, custodians, connection, commitment, elders,
+                            event_title=None):
     """The Acknowledgement of Country statement for these answers, or None for
-    'None'. Generic is the fixed statement (PLACEHOLDER wording for now).
-    Enhanced is put together from the builder's answers: the Traditional
-    Custodians (typed in, or the chosen capital's), how the event connects to
-    Country, an optional commitment, and respects to Elders."""
+    'None'. Generic is the written generic statement. Enhanced is put together
+    from the builder's answers:
+      - the opening: the chosen capital's written statement, which names its
+        Traditional Custodians (ENHANCED_ACK_PREVIEW) - or, for 'Other' or when
+        the creator typed the custodians in, a sentence naming those;
+      - then how the event connects to Country and the optional commitment;
+      - then respects to Elders, if ticked and the opening doesn't already."""
     if ack_type == 'Generic':
-        return EventForm.GENERIC_ACK_PREVIEW
+        return ack_text(EventForm.GENERIC_ACK_PREVIEW, event_title)
     if ack_type != 'Enhanced':
         return None
-    custodians = (custodians or '').strip() or EventForm.CAPITAL_CUSTODIANS.get(city, '')
-    custodians = re.sub(r'^the\s+', '', custodians, flags=re.IGNORECASE)   # "the" is added below
-    if custodians:
+    custodians = re.sub(r'^the\s+', '', (custodians or '').strip(), flags=re.IGNORECASE)
+    written = EventForm.ENHANCED_ACK_PREVIEW.get('{}-AoC'.format(city), '')
+    if custodians:   # "the" is added here
         parts = ['We acknowledge the {}, the Traditional Custodians of the land where this '
                  'event takes place.'.format(custodians)]
+    elif written:
+        parts = [ack_text(written, event_title)]
     else:
         parts = ['We acknowledge the Traditional Custodians of the land where this event '
                  'takes place.']
@@ -663,7 +681,7 @@ def compose_acknowledgement(ack_type, city, custodians, connection, commitment, 
         answer = (answer or '').strip()
         if answer:
             parts.append(answer if answer[-1] in '.!?' else answer + '.')
-    if elders:
+    if elders and 'elders' not in parts[0].lower():
         parts.append('We pay our respects to their Elders past and present.')
     return ' '.join(parts)
 
@@ -673,7 +691,7 @@ def _acknowledgement_statement(event):
     return compose_acknowledgement(
         event.acknowledgement_type, event.acknowledgement_city,
         event.acknowledgement_custodians, event.acknowledgement_connection,
-        event.acknowledgement_commitment, event.acknowledgement_elders)
+        event.acknowledgement_commitment, event.acknowledgement_elders, event.title)
 
 
 def _acknowledgement_preview(form):
@@ -682,7 +700,8 @@ def _acknowledgement_preview(form):
     statement = compose_acknowledgement(
         form.acknowledgement_type.data, form.acknowledgement_city.data,
         form.acknowledgement_custodians.data, form.acknowledgement_connection.data,
-        form.acknowledgement_commitment.data, form.acknowledgement_elders.data)
+        form.acknowledgement_commitment.data, form.acknowledgement_elders.data,
+        form.title.data)
     return statement or 'No Acknowledgement of Country will be shown on your event page.'
 
 
