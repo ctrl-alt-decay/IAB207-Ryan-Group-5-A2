@@ -137,7 +137,7 @@
     </footer>
 
     <!-- ==== Scripts ============================== -->
-    <!-- jQuery only: the password toggle below, the Create Event date picker and
+    <!-- jQuery only: the password toggle and Copy link below, the Create Event date picker and
          the account page's picture preview need it. Bootstrap's own JavaScript
          (and Popper) was removed - the menu and message close work with CSS now. -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
@@ -155,6 +155,17 @@
                           'aria-label': show ? 'Hide password' : 'Show password',
                           'title': show ? 'Hide password' : 'Show password'});
             $(this).find('i').toggleClass('fa-eye fa-eye-slash');
+        });
+
+        // Copy link in an event card's share menu: copies the address in
+        // data-copy-link, and the button says "Copied!" for a moment.
+        $(document).on('click', '[data-copy-link]', function () {
+            var $button = $(this);
+            navigator.clipboard.writeText($button.data('copy-link')).then(function () {
+                var original = $button.html();
+                $button.html('<i class="fa fa-check" aria-hidden="true"></i> Copied!');
+                setTimeout(function () { $button.html(original); }, 1500);
+            });
         });
     </script>
 

@@ -52,15 +52,17 @@
                     <i class="fa {{ 'fa-heart' if liked else 'fa-heart-o' }}" aria-hidden="true"></i>
                 </button>
             </form>
-            {# Share menu: a <details>, so clicking the icon opens and closes it
-               with no JavaScript. Copy link is for show, and the social icons
-               only open each site's homepage. #}
+            {# Share menu: a <details>, so clicking the icon opens and closes it.
+               Copy link copies the event's full address (script in
+               base_epicurean.html); the social icons only open each site's
+               homepage. #}
             <details class="event-share">
                 <summary class="event-icon-btn event-icon-btn--share" title="Share" aria-label="Share {{ event.title }}">
                     <i class="fa fa-share-alt" aria-hidden="true"></i>
                 </summary>
                 <div class="event-share-menu">
-                    <button type="button" class="event-share-copy">
+                    <button type="button" class="event-share-copy"
+                        data-copy-link="{{ url_for('main.event_details', event_id=event.id, _external=True) }}">
                         <i class="fa fa-link" aria-hidden="true"></i> Copy link
                     </button>
                     <div class="event-share-socials">
