@@ -1,8 +1,12 @@
 # import flask - from 'package' import 'Class'
-from flask import Flask, render_template
+import os
+import secrets
+
+from flask import Flask, render_template, flash, redirect, request, url_for
 from flask_bootstrap import Bootstrap5
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from flask_wtf.csrf import CSRFProtect, CSRFError
 
 # Shared database handle. Created unbound so models.py can import it without an
 # app existing yet; create_app() binds it with db.init_app(app).
@@ -31,14 +35,37 @@ def add_missing_columns():
     db.session.commit()
 
 
+def _secret_key(app):
+    """The key Flask signs sessions and CSRF tokens with (#27), so it isn't
+    written in the code: the EPICUREAN_SECRET_KEY environment variable if it's
+    set, otherwise a random key made the first time the app runs and kept in
+    instance/secret_key (instance/ is gitignored), so logins survive restarts."""
+    key = os.environ.get('EPICUREAN_SECRET_KEY')
+    if key:
+        return key
+    path = os.path.join(app.instance_path, 'secret_key')
+    if os.path.exists(path):
+        with open(path) as f:
+            return f.read().strip()
+    os.makedirs(app.instance_path, exist_ok=True)
+    key = secrets.token_hex(32)
+    with open(path, 'w') as f:
+        f.write(key)
+    return key
+
+
 # create a function that creates a web application
 # a web server will run this web application
 def create_app():
   
     app = Flask(__name__)  # this is the name of the module/package that is calling this app
-    # Should be set to false in a production environment
-    app.debug = True
-    app.secret_key = 'somesecretkey'
+    # Debug mode is off unless asked for (#27): set FLASK_DEBUG=1 before
+    # `python main.py` to get the debugger and auto-reload while developing.
+    # It's never switched on in the code, so the submitted app runs without it.
+    app.secret_key = _secret_key(app)
+    # Every POST must carry the form's CSRF token (#27) - forms from forms.py add
+    # it with hidden_tag(), and hand-written ones with csrf_token()
+    CSRFProtect(app)
     # set the app configuration data 
     # A relative sqlite path lands in the instance/ folder (Flask-SQLAlchemy 3.x):
     # a2_group5/instance/sitedata.sqlite. The URL is fixed once init_app runs -
@@ -81,11 +108,20 @@ def create_app():
 
     # Custom error pages (brief item 9). Registered on the app rather than a
     # blueprint so they catch errors from every route.
-    # Note: while app.debug is True, crashes show Flask's debugger instead of
-    # the 500 page. The 500 page appears once debug is switched off.
+    # Note: with FLASK_DEBUG=1, crashes show Flask's debugger instead of the
+    # 500 page.
     @app.errorhandler(404)
     def not_found(error):
         return render_template('404.html'), 404
+
+    # A form posted without a valid CSRF token - usually one left open so long
+    # its token expired. Go back to that page with a message, not an error page.
+    @app.errorhandler(CSRFError)
+    def csrf_error(error):
+        flash('That form had expired, so nothing was changed. Please try again.', 'danger')
+        back = request.referrer or ''
+        on_site = back.startswith(request.host_url)
+        return redirect(back if on_site else url_for('main.index'))
 
     @app.errorhandler(500)
     def server_error(error):

@@ -82,7 +82,11 @@
                 </div>
 
                 <div class="event-form-actions mt-4">
-                    <a class="btn btn-primary text-nowrap mx-2" href="{{ url_for('auth.logout') }}">Logout</a>
+                    {# logging out is a POST (#27), so it's a small form #}
+                    <form method="post" action="{{ url_for('auth.logout') }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-primary text-nowrap mx-2">Logout</button>
+                    </form>
                 </div>
             </div>
         </div>
