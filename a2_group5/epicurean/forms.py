@@ -159,18 +159,18 @@ class EventForm(FlaskForm):
     # ENHANCED_ACK_PREVIEW = 'ENHANCED ACKNOWLEDGEMENT OF COUNTRY PLACEHOLDER TEXT for {}'
     ENHANCED_ACK_PREVIEW = {
         'Brisbane-AoC' : """The organisers of {eventname} acknowledge and pay their respects to the 
-        traditional owners of Meanjin (Brisbane), the Turrbal and Jagera peoples. 
+        Traditional Owners and Custodians of Meanjin (Brisbane). 
         We recognise and appreciate that these lands have forever been a place of community 
         and are now home to a multitude of culinary experiences. While we enjoy the flavourful 
         journey of the present day, we also pay homage to the ever present and ever lasting cultures 
-        that cultivated the lands and waters we derive our ingredients from. The Turrbal and Jagera 
-        communities have been discovering, innovating and connecting over food for millenia using 
+        that cultivated the lands and waters we derive our ingredients from. Its First Nations 
+        communities have been discovering, innovating and connecting over food for millennia using 
         native flora and fauna including pencil yams, zamia nuts, goannas, and scrub turkeys. 
         We are ever grateful to Indigenous peoples for their deep respect and responsibility of the 
         land that was never ceded.""",
 
         'Sydney-AoC' : """The organisers of {eventname} acknowledge and pay their respects to the 
-        traditional owners of Warrang (or Cadi), the Gadigal people. We recognise and appreciate 
+        Traditional Owners of Warrang (or Cadi), the Gadigal people. We recognise and appreciate 
         that these lands have forever been a place of community and are now home to a multitude 
         of culinary experiences. While we enjoy the flavourful journey of the present day, we 
         also pay homage to the ever present and ever lasting cultures that cultivated the lands 
@@ -182,19 +182,19 @@ class EventForm(FlaskForm):
         thankful. """,
 
         'Canberra-AoC' : """The organisers of {eventname} acknowledge and pay their respects to the 
-        traditional owners of Canberra, the Ngambri and Ngunnawal peoples. We recognise and 
+        Traditional Custodians of Canberra, the Ngunnawal people. We recognise and 
         appreciate that these lands have forever been a place of community and are now home to a 
         multitude of culinary experiences. While we enjoy the flavourful journey of the present 
         day, we also pay homage to the ever present and ever lasting cultures that cultivated the 
-        lands and waters we derive our ingredients from. A key ingredient used by the Ngambri was 
-        the murnong (yam daisy). Murnong would be collected by the Ngambri and Ngunnawal using yam 
+        lands and waters we derive our ingredients from. A key ingredient used by the Ngunnawal was 
+        the murnong (yam daisy). Murnong would be collected by the Ngunnawal using yam 
         sticks and dillybags. It would also be prepared alongside other plants like bulrushes and 
         apple berries, as well as meat from witchetty grubs and brolgas. We pay our respects to 
-        the culture of the Ngambri and Ngunnawal peoples that lives and breathes alongside their 
+        the culture of the Ngunnawal people that lives and breathes alongside their 
         Country.""", 
 
         'Melbourne-AoC' : """The organisers of {eventname} acknowledge and pay their respects to the 
-        traditional owners of Naarm, the Wurundjeri and Boon Wurrung peoples. We recognise and 
+        Traditional Owners of Naarm, the Wurundjeri and Boon Wurrung peoples. We recognise and 
         appreciate that these lands have forever been a place of community and are now home to a 
         multitude of culinary experiences. While we enjoy the flavourful journey of the present 
         day, we also pay homage to the ever present and ever lasting cultures that cultivated the 
@@ -207,19 +207,19 @@ class EventForm(FlaskForm):
         people’s connections to the lands and waters of Naarm.""",
 
         'Darwin-AoC' : """The organisers of {eventname} acknowledge and pay their respects to 
-        the traditional owners of Gulumoerrgin, the Larrakia people. We recognise and appreciate 
+        the Traditional Owners of Gulumoerrgin, the Larrakia people. We recognise and appreciate 
         that these lands have forever been a place of community and are now home to a multitude 
         of culinary experiences. While we enjoy the flavourful journey of the present day, we also 
         pay homage to the ever present and ever lasting cultures that cultivated the lands and 
         waters we derive our ingredients from. The mangroves of Gulumoerrgin have served as a 
-        core food source for the Larrakia people for millenia. There they would seek out mangrove 
-        worms, longbums (telescopic snails), mussels, and periwinkles.The worms and longbums had 
+        core food source for the Larrakia people for millennia. There they would seek out mangrove 
+        worms, longbums (telescopic snails), mussels, and periwinkles. The worms and longbums had 
         to be specially prepared to avoid illness and this is a technique the Larrakia still 
         practise to this day. We acknowledge the Larrakia people’s ongoing connection to their 
         Country and the fact it has never been ceded.""",
 
         'Perth-AoC' : """The organisers of {eventname} acknowledge and pay their respects to the 
-        traditional owners of Boorloo, the Whadjuk Noongar people. We recognise and appreciate 
+        Traditional Owners of Boorloo, the Whadjuk Noongar people. We recognise and appreciate 
         that these lands have forever been a place of community and are now home to a multitude 
         of culinary experiences. While we enjoy the flavourful journey of the present day, we 
         also pay homage to the ever present and ever lasting cultures that cultivated the lands 
@@ -234,7 +234,7 @@ class EventForm(FlaskForm):
         Boorloo.""",
 
         'Adelaide-AoC' : """The organisers of {eventname} acknowledge and pay their respects to 
-        the traditional owners of Tarndanya, the Kaurna people. We recognise and appreciate that 
+        the Traditional Owners of Tarndanya, the Kaurna people. We recognise and appreciate that 
         these lands have forever been a place of community and are now home to a multitude of 
         culinary experiences. While we enjoy the flavourful journey of the present day, we also 
         pay homage to the ever present and ever lasting cultures that cultivated the lands and 
@@ -247,16 +247,16 @@ class EventForm(FlaskForm):
         Tarndanya. """,
 
         'Hobart-AoC' : """The organisers of {eventname} acknowledge and pay their respects to the
-          traditional owners of Nipaluna, the Palawa people. We recognise and appreciate that 
+          Traditional Owners of nipaluna (Hobart), the muwinina people. We recognise and appreciate that 
           these lands have forever been a place of community and are now home to a multitude of 
           culinary experiences. While we enjoy the flavourful journey of the present day, we also 
           pay homage to the ever present and ever lasting cultures that cultivated the lands and 
-          waters we derive our ingredients from. The Palawa people commonly used mutton birds as
+          waters we derive our ingredients from. The palawa people commonly used mutton birds as
             their main source of protein, as well as wallaby - which would be cooked over fire. 
             The sea provided oysters which would pair tastily with the native pepper berry and 
             blue-gum honey, which added a fruity and spicy taste to the meal. We recognise and 
-            appreciate the strong identity of the Palawa people is everlasting, much like their 
-            connection to their Country of Nipaluna.""",
+            appreciate the strong identity of the palawa people is everlasting, much like their 
+            connection to their Country of nipaluna.""",
         'Other-AoC': ''
     }
 
