@@ -1,28 +1,18 @@
-{# Event details page (route main.event_details, #20). One template for every
-   event, filled from its database row by the view. Tickets are bought from the
-   ticket table - a quantity for each ticket type, then Checkout (#21) - and
-   logged-in visitors can post comments (#23). #}
 {% extends "base_epicurean.html" %}
-{% from "_event_macros.html" import status_badge %}
+{% from "_event_macros.html" import status_badge, price_label %}
 
 {% block title %}{{ 'Checkout - ' if checkout }}{{ event.title }} - Epicurean{% endblock %}
 {% block description %}{{ event.title }} at {{ event.venue }}{% endblock %}
 
-{# a user's profile picture, or the default avatar #}
 {% macro avatar(user, alt) -%}
-<img src="{{ url_for('static', filename=('uploads/profile/' ~ user.profile_image) if user.profile_image else 'img/user_account.png') }}"
+<img src="{{ url_for('static', filename=user.avatar_path) }}"
     class="img-fluid avatar-icon rounded-circle" alt="{{ alt }}">
 {%- endmacro %}
 
 {% block content %}
-    {# inert while the checkout screen is open: the page behind it can't be
-       clicked or tabbed into (an HTML attribute - no JavaScript) #}
     <div class="container-fluid px-3 px-md-5 py-4 py-md-5"{{ ' inert' if checkout }}>
-    {# capped width, so a wide screen doesn't stretch the title/overview column
-       into a mostly empty band between it and the info card #}
+    {# capped so wide screens don't leave a big empty gap #}
     <div class="event-page">
-        <!-- ==== Event banner ============================== -->
-        <!-- Full-width photo with the status badge underneath -->
         <div class="row">
             <div class="col-12">
                 <img src="{{ url_for('static', filename=event.image_path) }}" class="img-fluid event-banner-img rounded" alt="{{ event.title }}">
@@ -30,7 +20,6 @@
         </div>
         <div class="row py-2">
             <div class="col-12">
-                <!-- Same badge styles as the event cards on the home page -->
                 {{ status_badge(event.effective_status) }}
             </div>
         </div>
@@ -39,15 +28,11 @@
         <div class="alert alert-danger" role="alert">This event has been cancelled.</div>
         {% endif %}
 
-        {# Header, info card and overview in a CSS grid (see "Event details layout"
-           in style.css). Wide screens: title + overview on the left, info card
-           on the right spanning both. Narrower: one column, with the info card
-           between the title and the overview so it's seen before the long text. #}
+        {# Narrow screens put the info card between title and overview so it's seen first #}
         <div class="event-detail-layout">
             <div class="event-detail-header">
                 <h1 class="page-heading">{{ event.title }}</h1>
 
-                <!-- Event publisher -->
                 <div class="row align-items-center py-2">
                     <div class="col-auto">
                         {{ avatar(event.owner, 'Event publisher avatar') }}
@@ -58,14 +43,10 @@
                 </div>
             </div>
 
-            <!-- Everything needed to decide on tickets, in one card -->
             <div class="event-detail-info">
                 <div class="event-sidebar-sticky">
                     <div class="event-form-card">
-                        <div class="price-heading" id="sidebarFromPrice">
-                            {% if event.from_price is not none %}From ${{ '%.2f'|format(event.from_price) }}
-                            {% else %}Tickets coming soon{% endif %}
-                        </div>
+                        <div class="price-heading">{{ price_label(event) }}</div>
                         <dl class="event-info-list">
                             <div class="event-info-item">
                                 <dt><i class="fa fa-map-marker event-meta-icon" aria-hidden="true"></i> Venue</dt>
@@ -98,19 +79,15 @@
                                 <dd>{{ event.proficiency or 'Any' }}</dd>
                             </div>
                             {% if event.ticket_types %}
-                            {% set capacity = event.ticket_types|sum(attribute='capacity') %}
                             <div class="event-info-item">
                                 <dt><i class="fa fa-ticket event-meta-icon" aria-hidden="true"></i> Tickets left</dt>
-                                <dd>{{ capacity - event.tickets_sold }} of {{ capacity }}</dd>
+                                <dd>{{ event.capacity - event.tickets_sold }} of {{ event.capacity }}</dd>
                             </div>
                             {% endif %}
                         </dl>
-                        <!-- Jumps to the Tickets table (a plain link - the smooth
-                             scroll is CSS scroll-behavior, no JavaScript) -->
-                        <a class="btn btn-primary w-100" href="#ticketsSection" id="getTicketsBtn">Get Tickets</a>
+                        <a class="btn btn-primary w-100" href="#ticketsSection">Get Tickets</a>
 
-                        {# Only the owner sees these - and main.edit_event and
-                           main.cancel_event check ownership again on the server #}
+                        {# cosmetic - the routes check ownership too #}
                         {% if is_owner and event.status != 'Cancelled' %}
                         <div class="event-owner-actions">
                             <a class="btn btn-outline-secondary btn-sm"
@@ -129,33 +106,23 @@
 
                 {% if acknowledgement %}
                 <h2 class="section-heading pt-2">Acknowledgement of Country</h2>
-                {# Generic is placeholder wording for now; Enhanced is put together
-                   from the creator's answers (views.compose_acknowledgement, #6) #}
                 <p class="ack-preview d-block">{{ acknowledgement }}</p>
                 {% endif %}
             </div>
         </div>
 
-        <!-- ==== Tickets ============================== -->
         <h2 class="section-heading scroll-target pt-3" id="ticketsSection">Tickets</h2>
         <div class="row py-1">
             <div class="col-12 col-lg-8 mx-auto">
-                {# Logged-in visitors buy from the table while the event is on sale:
-                   the whole table is one form with a quantity box per ticket type,
-                   and Checkout opens the checkout screen (main.checkout) for every
-                   type with more than 0 - so no JavaScript. sale_message says why an
-                   event isn't on sale (Cancelled / Inactive / Sold Out - #25). The
-                   server checks all of this again at checkout and booking. #}
+                {# The server re-checks everything at checkout and booking. #}
                 {% set can_buy = current_user.is_authenticated and not sale_message %}
-                {# why a purchase was refused (main.checkout / main.book_tickets),
-                   shown here by the form rather than at the top of the page #}
                 {% for message in get_flashed_messages(category_filter=['ticket-error']) %}
                 <div class="alert alert-danger" role="alert">{{ message }}</div>
                 {% endfor %}
                 {% if event.ticket_types %}
                 {% if can_buy %}
-                {# a GET form: it only opens the checkout screen - nothing is booked yet #}
-                <form method="get" action="{{ url_for('main.checkout', event_id=event.id) }}" id="ticketOrderForm">
+                {# GET - only opens the checkout screen, nothing is booked yet #}
+                <form method="get" action="{{ url_for('main.checkout', event_id=event.id) }}">
                 {% endif %}
                 <div class="table-responsive">
                     <table class="table ticket-type-table" id="purchaseTicketTable">
@@ -170,11 +137,10 @@
                         </thead>
                         <tbody>
                             {% for ticket in event.ticket_types %}
-                            {# data-label: on phones each row becomes a stacked card and
-                               style.css shows these as the labels (the header row is hidden) #}
+                            {# data-label is shown as the field label on phones #}
                             <tr>
                                 <td data-label="Ticket Type" class="ticket-type-name">{{ ticket.name }}</td>
-                                <td data-label="Price">${{ '%.2f'|format(ticket.price) }}</td>
+                                <td data-label="Price">{{ ticket.price|money }}</td>
                                 <td data-label="Description">{{ ticket.description or '' }}</td>
                                 <td data-label="Available" class="text-nowrap">
                                     {% if ticket.tickets_left %}{{ ticket.tickets_left }} of {{ ticket.capacity }} left
@@ -183,8 +149,6 @@
                                 {% if can_buy %}
                                 <td data-label="Quantity">
                                     {% if ticket.tickets_left %}
-                                    {# the browser's own number box (its arrows are the stepper);
-                                       max stops it at the tickets left #}
                                     <input type="number" name="qty-{{ ticket.id }}" class="form-control ticket-quantity-input"
                                         value="0" min="0" max="{{ ticket.tickets_left }}" step="1"
                                         aria-label="Number of {{ ticket.name }} tickets">
@@ -206,8 +170,6 @@
                 <p class="text-muted text-center">No tickets are on sale for this event yet.</p>
                 {% endif %}
                 <div class="text-center">
-                    {# Buying needs an account (#5). The real check is on the server
-                       (main.book_tickets); this just shows logged-out visitors the way in. #}
                     {% if sale_message %}
                     <p class="text-muted mb-0">{{ sale_message }}</p>
                     {% elif not current_user.is_authenticated and event.ticket_types %}
@@ -220,11 +182,7 @@
             </div>
         </div>
 
-        <!-- ==== Comments ============================== -->
         <h2 class="section-heading scroll-target pt-3" id="comments">Comments</h2>
-        {# Posting needs an account (#23): logged-in visitors get the form, which
-           posts to main.post_comment (login required there too); everyone else
-           gets a way in. Everyone can read the comments below, newest first. #}
         {% for message in get_flashed_messages(category_filter=['comment-error']) %}
         <div class="alert alert-danger" role="alert">{{ message }}</div>
         {% endfor %}
@@ -235,10 +193,9 @@
                 {{ avatar(current_user, 'Your avatar') }}
             </div>
             <div class="col">
-                {# plain divs, not .row - Bootstrap 5 stretches anything placed
-                   directly in a .row to full width #}
+                {# not .row - Bootstrap 5 stretches direct children of .row to full width #}
                 <div class="py-1">
-                    <textarea class="form-control" id="enterComment" name="body" rows="3"
+                    <textarea class="form-control" name="body" rows="3"
                         maxlength="{{ comment_form.MAX_LENGTH }}" required
                         placeholder="Write a comment..." aria-label="Write a comment"></textarea>
                 </div>
@@ -259,8 +216,6 @@
             </div>
             <div class="col">
                 <div>
-                    {# the commenter's name, then when it was posted - posted_at is
-                       stored in UTC, and local_time shows it in Brisbane time #}
                     <strong>{{ comment.user.first_name }} {{ comment.user.last_name }}</strong>
                     <span class="text-muted small ms-1">{{ comment.posted_at|local_time }}</span>
                 </div>
@@ -275,13 +230,7 @@
     </div>
     </div>
 
-    <!-- ==== Checkout (#21) ============================== -->
-    {# Shown over the event page when main.checkout renders it (Checkout under the
-       ticket table opens it). No JavaScript: Cancel and the dimmed backdrop are plain
-       links back to the event page, and Confirm posts to main.book_tickets,
-       which checks the order again. The payment options are a demo - they sit
-       outside the Confirm form and have no names, so nothing typed into them is
-       sent anywhere, and none is required. #}
+    {# The payment options are a demo: outside the form and unnamed, so nothing is sent. #}
     {% if checkout %}
     {% set back_to_tickets = url_for('main.event_details', event_id=event.id) ~ '#ticketsSection' %}
     <div class="checkout-overlay" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle">
@@ -289,7 +238,6 @@
         <div class="checkout-panel">
             <h2 class="page-heading mb-3" id="checkoutTitle">Checkout</h2>
             <div class="row g-4">
-                <!-- Order summary: on the right from lg, first on smaller screens -->
                 <div class="col-12 col-lg-5 order-lg-2">
                     <div class="event-form-card checkout-summary">
                         <h3 class="checkout-subheading">Your order</h3>
@@ -298,16 +246,15 @@
                             {{ event.event_date.strftime('%a %d/%m/%Y') }} at {{ event.event_time.strftime('%H:%M') }}<br>
                             {{ event.venue }}
                         </p>
-                        {# one line per ticket type: "2 × Adult ($45.00 each)  $90.00" #}
                         <dl class="checkout-lines">
                             {% for ticket, quantity, line_total in checkout.lines %}
                             <div>
                                 <dt>{{ quantity }} &times; {{ ticket.name }}
-                                    <span class="text-muted small d-block">${{ '%.2f'|format(ticket.price) }} each</span></dt>
-                                <dd>${{ '%.2f'|format(line_total) }}</dd>
+                                    <span class="text-muted small d-block">{{ ticket.price|money }} each</span></dt>
+                                <dd>{{ line_total|money }}</dd>
                             </div>
                             {% endfor %}
-                            <div class="checkout-total"><dt>Total</dt><dd>${{ '%.2f'|format(checkout.total) }}</dd></div>
+                            <div class="checkout-total"><dt>Total</dt><dd>{{ checkout.total|money }}</dd></div>
                         </dl>
                         <form method="post" action="{{ url_for('main.book_tickets', event_id=event.id) }}"
                             class="checkout-actions">
@@ -321,7 +268,6 @@
                     </div>
                 </div>
 
-                <!-- Payment options (demo) -->
                 <div class="col-12 col-lg-7 order-lg-1">
                     <fieldset class="checkout-payment">
                         <legend class="checkout-subheading">Payment</legend>
@@ -329,7 +275,6 @@
                             <i class="fa fa-info-circle" aria-hidden="true"></i>
                             Demo only - nothing here is required, sent or saved. Please don't enter real card details.
                         </p>
-                        {# the chosen option's extra details are shown by CSS (:has) #}
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="payment_method" id="payCard" checked autofocus>
                             <label class="form-check-label" for="payCard">
@@ -383,5 +328,4 @@
     {% endif %}
 
 
-    <!-- ==== Footer ============================== -->
 {% endblock %}

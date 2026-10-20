@@ -1,20 +1,18 @@
-{# Error page for HTTP 500 (registered in create_app in __init__.py; brief item 9).
-   Extends the normal layout so the navbar still works from here. #}
 {% extends "base_epicurean.html" %}
 
-{% block title %}Something Went Wrong - Epicurean{% endblock %}
-{% block description %}Error 500{% endblock %}
+{% block title %}{{ title }} - Epicurean{% endblock %}
+{% block description %}Error {{ code }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid px-3 px-md-5 py-4 py-md-5">
 
-    <h1 class="page-heading">Something Went Wrong</h1>
+    <h1 class="page-heading">{{ title }}</h1>
 
     <div class="row">
         <div class="col-12 col-lg-8 col-xl-7">
             <div class="event-form-card">
-                <p class="text-muted mb-1">Error 500</p>
-                <p class="mb-0">Sorry, something went wrong on our end. Please try again in a moment.</p>
+                <p class="text-muted mb-1">Error {{ code }}</p>
+                <p class="mb-0">{{ message }}</p>
 
                 <div class="event-form-actions mt-4">
                     <a class="btn btn-primary text-nowrap mx-2" href="{{ url_for('main.index') }}">Back to Home</a>

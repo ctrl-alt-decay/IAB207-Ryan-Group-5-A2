@@ -1,30 +1,8 @@
-{# Sign-up page (route auth.register). The field() macro below renders one
-   labelled input plus its validation errors in the A1 .event-form-row layout. #}
 {% extends "base_epicurean.html" %}
+{% from "_form_macros.html" import field %}
 
 {% block title %}Sign Up - Epicurean{% endblock %}
 {% block description %}Create an Epicurean account{% endblock %}
-
-{% macro field(f, id, placeholder='', required=False, toggle=False) %}
-<div class="event-form-row">
-    <label class="event-form-label" for="{{ id }}">{{ f.label.text }}{% if required %}<span
-            class="event-form-required">*</span>{% endif %}</label>
-    <div class="event-form-field">
-        {% if toggle %}<div class="input-group has-validation">{% endif %}
-        {{ f(class="form-control" ~ (" is-invalid" if f.errors else ""), id=id, placeholder=placeholder) }}
-        {% if toggle %}
-        <button class="btn btn-outline-secondary" type="button" data-password-toggle="{{ id }}"
-            aria-label="Show password" aria-pressed="false" title="Show password">
-            <i class="fa fa-eye" aria-hidden="true"></i>
-        </button>
-        {% endif %}
-        {% for error in f.errors %}
-        <div class="invalid-feedback">{{ error }}</div>
-        {% endfor %}
-        {% if toggle %}</div>{% endif %}
-    </div>
-</div>
-{% endmacro %}
 
 {% block content %}
 <div class="container-fluid px-3 px-md-5 py-4 py-md-5">
@@ -36,7 +14,6 @@
 
         <div class="event-form-columns">
 
-            <!-- Left: who you are -->
             <div class="event-form-col">
                 <h2 class="section-heading">Your Details</h2>
                 {{ field(form.first_name, 'registerFirstName', 'First name', True) }}
@@ -44,7 +21,6 @@
                 {{ field(form.email, 'registerEmail', 'you@example.com', True) }}
             </div>
 
-            <!-- Right: account security -->
             <div class="event-form-col">
                 <h2 class="section-heading">Contact &amp; Password</h2>
                 {{ field(form.contact_number, 'registerContact', 'e.g. 0400 123 456', True) }}

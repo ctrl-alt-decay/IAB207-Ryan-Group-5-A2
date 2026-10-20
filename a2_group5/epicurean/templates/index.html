@@ -1,13 +1,5 @@
-{# Homepage (route main.index, #15). A hero banner, then Recently Added and the
-   category sections from the database (see CATEGORIES in views.py), each card
-   the event_card macro linking to that event's page. Each category heading has
-   an "Explore more events" link to its full, paginated page (main.category).
-   The filters (#16) submit as a plain GET form to main.search, and the search
-   bar (#17) in base_epicurean.html does the same - so results are a shareable
-   URL and neither needs JavaScript.
-   No JavaScript on this page. #}
 {% extends "base_epicurean.html" %}
-{% from "_event_macros.html" import section_heading, event_grid %}
+{% from "_event_macros.html" import section_heading, event_grid, filter_selects %}
 
 {% block title %}Epicurean{% endblock %}
 {% block description %}Epicurean Home Page{% endblock %}
@@ -15,10 +7,6 @@
 {% block content %}
 
 
-    <!-- ==== Hero banner ============================== -->
-    {# Eventbrite-style: rounded photo with an off-white gradient over its left side
-       and the text on top (on phones the gradient runs up from the bottom and
-       the text sits at the bottom). CSS only - see "Hero banner" in style.css.#}
     <div class="event-section-px pt-3">
         <section class="site-hero" aria-labelledby="siteHeroTitle">
             <img src="{{ url_for('static', filename='img/homepage_feast.jpg') }}" class="site-hero-img"
@@ -33,41 +21,9 @@
 
     <div class="container-fluid pt-4">
 
-        <!-- ==== Filters ============================== -->
-        <!-- A plain GET form to main.search (#16): picking a filter and
-             pressing "Apply Filters" sends the browser to e.g.
-             /search?dietary=Vegan&seasonal=None&proficiency=None, so main.search
-             filters the same way the navbar search does. The options come from
-             EventForm in forms.py (via main.index), so they always match the
-             Event columns exactly (e.g. 'Gluten-Free'); each <option>'s text is
-             its value, and "None" means "don't filter on this one" (views.py
-             skips it). -->
         <form method="get" action="{{ url_for('main.search') }}">
         <div class="row event-section-px py-1">
-            <div class="col-12 col-sm-4 mb-2 mb-sm-0">
-                <label for="selectDietary" class="event-filter-label">Dietary Preference</label>
-                <select class="form-select" id="selectDietary" name="dietary">
-                    {% for option in dietary_options %}
-                    <option>{{ option }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-12 col-sm-4 mb-2 mb-sm-0">
-                <label for="selectSeasonal" class="event-filter-label">Seasonal / Cultural Options</label>
-                <select class="form-select" id="selectSeasonal" name="seasonal">
-                    {% for option in seasonal_options %}
-                    <option>{{ option }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-12 col-sm-4 mb-2 mb-sm-0">
-                <label for="selectProficiency" class="event-filter-label">Proficiency Filter</label>
-                <select class="form-select" id="selectProficiency" name="proficiency">
-                    {% for option in proficiency_options %}
-                    <option>{{ option }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+            {{ filter_selects('col-12 col-sm-4 mb-2 mb-sm-0') }}
             <div class="col-12 mt-2">
                 <button type="submit" class="btn btn-primary">Apply Filters</button>
             </div>
@@ -75,12 +31,6 @@
         </form>
 
 
-        <!-- ==== Event sections ============================== -->
-        {# Recently Added (newest 4), then Popular, This Weekend and Kid Friendly
-           (top 10 by likes each). Upcoming, non-cancelled events only. Sections
-           prefer events not shown above them, and only repeat one to fill up to
-           10 (main.index); a repeated card leaves out its id, since the first
-           one already has it. Empty sections are skipped. #}
         {% for section in sections if section.events %}
         {{ section_heading(section.heading,
                            url_for('main.category', slug=section.slug) if section.slug else None,
@@ -93,5 +43,4 @@
     </div>
 
 
-    <!-- ==== Footer ============================== -->
 {% endblock %}

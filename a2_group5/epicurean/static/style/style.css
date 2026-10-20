@@ -1,17 +1,8 @@
-/* =======================================================================
-   Epicurean - site stylesheet
-
-   How this file is organised:
-     1. Every rule is grouped with the part of the site it belongs to, under
-        a heading comment like the one below.
-     2. All colours live together in the Colours region at the very bottom,
-        in the same group order. So a class can appear twice: once here for
-        its size and layout, once down there for its colours.
-   ======================================================================= */
+/* Layout lives in each section; all colours are in the Colours region at the
+   bottom, so a class can show up twice. */
 
 
 /* ============================== Navbar ============================== */
-/* Logo on the left, split search bar in the middle, page links on the right */
 
 .epicurean-logo {
     display: inline-flex;
@@ -24,18 +15,16 @@
     width: auto;
 }
 
-/* Bootstrap 5's navbar has no side padding (Bootstrap 4's did) - put it back */
+/* BS5 dropped the navbar side padding BS4 had */
 .epicurean-navbar {
     padding: 0.5rem 1rem;
 }
 
-/* On mobile the search bar gets its own full-width line */
 .event-search-form {
     flex: 1 1 100%;
     margin: 0.5rem 0;
 }
 
-/* From tablet up it sits inline and grows to fill the toolbar */
 @media (min-width: 768px) {
     .event-search-form {
         flex: 1 1 auto;
@@ -51,7 +40,6 @@
     overflow: hidden;
 }
 
-/* One half of the split bar: keyword on the left, location on the right */
 .event-search-segment {
     display: flex;
     align-items: center;
@@ -73,11 +61,6 @@
     background: transparent;
 }
 
-.event-search-divider {
-    width: 1px;
-    margin: 0.5rem 0;
-}
-
 .event-search-submit {
     display: flex;
     align-items: center;
@@ -88,9 +71,7 @@
 }
 
 
-/* The hamburger menu without JavaScript (see base_epicurean.html). The
-   checkbox is hidden but still focusable; its label is the hamburger button,
-   and a ticked box shows the links. From md the links always show. */
+/* CSS-only hamburger. The checkbox is hidden but still focusable. */
 .nav-toggle {
     position: absolute;
     width: 1px;
@@ -108,10 +89,16 @@
     cursor: pointer;
 }
 
-/* On phones the hamburger sits on the logo's row, at the right, instead of on
-   a third row of its own under the search bar - the sticky header is two rows
-   (about 100px) instead of three (147px). The navbar is sticky, so it's the
-   positioning parent; the opened links still drop down below the search bar. */
+/* logout has to be a POST button - make it look like a link */
+.nav-link-button {
+    border: 0;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+}
+
+/* Phones: hamburger on the logo row to save a row of sticky header.
+   The navbar is sticky so it's the positioning parent. */
 @media (max-width: 767.98px) {
     .navbar-toggler {
         position: absolute;
@@ -129,8 +116,6 @@
 
 
 /* ========================== Flashed messages ========================== */
-/* The x closes a message without JavaScript: it's the label of a hidden
-   checkbox just before the message, and a ticked box hides the message. */
 
 .alert-dismiss-toggle {
     position: absolute;
@@ -151,10 +136,8 @@
 
 
 /* ============================ Event cards ============================= */
-/* The clickable event tiles in the three sections on the home page */
 
-/* Bootstrap's columns stop at 4 a row (col-lg-3), which makes very wide cards
-   on big screens - 5 a row from 1400px (Bootstrap's xxl breakpoint) */
+/* 5 a row from xxl - Bootstrap stops at 4 */
 @media (min-width: 1400px) {
     .event-grid-col {
         flex: 0 0 auto;
@@ -171,18 +154,15 @@
     transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-/* Lifts the card slightly on hover */
 .event-card:hover {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
     transform: translateY(-3px);
 }
 
-/* Positioning parent for the favourite/share buttons sitting over the photo */
 .event-card-img-wrap {
     position: relative;
 }
 
-/* Fixed height keeps every card the same size, whatever the photo shape is */
 .event-card-img {
     width: 100%;
     height: 180px;
@@ -203,7 +183,6 @@
     font-weight: 600;
 }
 
-/* Truncates to one line so a long venue name never wraps or breaks card height */
 .event-card-location {
     font-size: 0.85rem;
     white-space: nowrap;
@@ -224,9 +203,7 @@
     margin-right: 0.3rem;
 }
 
-/* Favourite/share circles over the photo, hidden until the card is hovered.
-   z-index lifts them above the card's stretched-link (z-index 1), which
-   would otherwise swallow their clicks. */
+/* z-index beats the card's stretched-link (z 1), which would eat the clicks */
 .event-card-actions {
     position: absolute;
     z-index: 2;
@@ -260,24 +237,85 @@
     transform: scale(1.08);
 }
 
-/* The like heart is the submit button of a small form (event_card in
-   _event_macros.html). .is-liked marks an event the logged-in user has liked:
-   it gets the filled heart icon and stays red (Colours region). */
 .event-icon-btn--favourite {
     cursor: pointer;
     padding: 0;
 }
 
-/* show the buttons while something in the card has keyboard focus too */
-.event-card:focus-within .event-card-actions {
+.event-card:focus-within .event-card-actions,
+.event-card-actions:has(.event-share[open]) {
     opacity: 1;
     transform: translateY(0);
 }
 
+.event-share {
+    position: relative;
+}
+
+.event-share > summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+.event-share > summary::-webkit-details-marker {
+    display: none;
+}
+
+.event-share-menu {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 0.4rem);
+    width: 10.5rem;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    background-color: #fff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.event-share-copy {
+    display: block;
+    width: 100%;
+    padding: 0.35rem 0.5rem;
+    border: 0;
+    border-radius: 0.35rem;
+    background-color: #f1f3f5;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: left;
+}
+
+.event-share-copy:hover {
+    background-color: #e2e6ea;
+}
+
+.event-share-copy .fa {
+    margin-right: 0.3rem;
+}
+
+.event-share-socials {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 0.5rem;
+}
+
+.event-share-socials a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    color: #333;
+    font-size: 1rem;
+}
+
+.event-share-socials a:hover {
+    background-color: #f1f3f5;
+    text-decoration: none;
+}
+
 
 /* =========================== Status badges ============================ */
-/* Coloured pill showing whether an event is open, sold out, cancelled and
-   so on. Used on the event cards, the view-item page and the history table. */
 
 .event-status {
     display: inline-block;
@@ -289,7 +327,6 @@
     letter-spacing: 0.03em;
 }
 
-/* Smaller version for the bottom-right corner of an event card */
 .event-status--sm {
     padding: 0.2em 0.6em;
     font-size: 0.7em;
@@ -298,18 +335,9 @@
 
 
 /* ============================= Hero banner ============================= */
-/* Homepage banner in Eventbrite's style: a rounded photo with an off-white
-   gradient over one side and the text on the pale part (colours in the
-   Colours region).
-
-   The photo has the EPICUREAN logo printed in it (about 34-66% across and
-   36-55% down the image), so the fade and the text are kept clear of it:
-     - phones: the fade rises from the bottom but stops just below the logo,
-       and the text sits in that bottom strip
-     - md and up: the fade covers only the left third, the text is limited to
-       that strip, and the photo is framed a little left of centre (20%) so the
-       logo always starts right of the fade, however wide the banner is
-   If the photo is ever replaced with one without the logo, these limits can go. */
+/* The photo has the EPICUREAN logo baked in (~34-66% across, 36-55% down),
+   so the fade and text are kept clear of it. Drop these limits if the photo
+   is ever swapped for one without the logo. */
 
 .site-hero {
     position: relative;
@@ -344,7 +372,6 @@
     padding: 1.25rem;
 }
 
-/* grows with the screen, from 1.4rem on phones to 2.25rem on wide screens */
 .site-hero-title {
     font-size: clamp(1.4rem, 2.6vw, 2.25rem);
     font-weight: 700;
@@ -366,7 +393,7 @@
         object-position: 20% center;
     }
 
-    /* stays inside the pale left strip, clear of the logo */
+    /* keep clear of the logo */
     .site-hero-text {
         max-width: 29%;
         padding: 2rem 0 2rem 2.5rem;
@@ -375,9 +402,7 @@
 
 
 /* ======================== Page layout & headings ======================= */
-/* Shared spacing, headings and image sizes used across the pages */
 
-/* Side padding for the home page sections, widening on bigger screens */
 .event-section-px {
     padding-left: 1rem;
     padding-right: 1rem;
@@ -397,8 +422,6 @@
     }
 }
 
-/* Banner photo at the top of the view-item page. The height is fixed and the
-   photo is cropped to fill it, so every event page's banner is the same size. */
 .event-banner-img {
     width: 100%;
     height: 220px;
@@ -417,7 +440,6 @@
     }
 }
 
-/* Small caps caption above a filter dropdown or a picker field */
 .event-filter-label {
     display: block;
     margin-bottom: 0.35rem;
@@ -427,8 +449,7 @@
     letter-spacing: 0.04em;
 }
 
-/* Bootstrap 5 underlines every link. The A1 design (built on Bootstrap 4)
-   only underlined plain text links on hover - keep that look. */
+/* BS5 underlines every link; A1 only underlined text links on hover */
 a {
     text-decoration: none;
 }
@@ -444,7 +465,6 @@ a.btn:hover,
     text-decoration: none;
 }
 
-/* "Get Tickets" and other in-page links glide instead of jumping (no JS) */
 html {
     scroll-behavior: smooth;
 }
@@ -455,8 +475,6 @@ html {
     }
 }
 
-/* A homepage section's heading row: the heading on the left, its "Explore
-   more events" link on the right (wraps underneath on narrow screens) */
 .event-section-heading {
     display: flex;
     flex-wrap: wrap;
@@ -470,53 +488,39 @@ html {
     white-space: nowrap;
 }
 
-/* Section heading above a row of cards, e.g. "Popular", "This Weekend" */
 .event-heading {
     font-size: 1.5rem;
     font-weight: 700;
     margin-bottom: 1rem;
 }
 
-/* Main title of a page, e.g. "Booking History", "Create Event" */
 .page-heading {
     font-size: 1.75rem;
     font-weight: 700;
     margin-bottom: 1rem;
 }
 
-/* Secondary heading within a page, e.g. "Overview", "Comments" */
 .section-heading {
     font-size: 1.25rem;
     font-weight: 700;
     margin-bottom: 1rem;
 }
 
-/* Name of a single item in a list or table row */
 .entry-title {
     font-size: 1.25rem;
     font-weight: 700;
 }
 
-/* Standalone price display, e.g. the "From $25.00" line in the sidebar */
 .price-heading {
     font-size: 1.5rem;
     font-weight: 700;
 }
 
-/* Icon + text line, e.g. the venue and date rows on the view-item page */
-.event-meta-line {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-/* Fixed width keeps the text lined up whichever icon is used */
 .event-meta-icon {
     width: 1.1em;
     text-align: center;
 }
 
-/* Sidebar that stays put below the navbar while the main column scrolls */
 .event-sidebar-sticky {
     position: sticky;
     top: 90px;
@@ -524,17 +528,13 @@ html {
 
 /* ---- Event details layout (view-item page) ------------------------------ */
 
-/* Caps the page width so on a wide screen the title/overview column doesn't
-   stretch into a mostly empty band between its short content and the info
-   card - which is what caused the big gap at full width */
+/* capped so wide screens don't leave a big empty gap beside the info card */
 .event-page {
     max-width: 1320px;
     margin-left: auto;
     margin-right: auto;
 }
 
-/* Phones and tablets: one column, info card between the title and the
-   overview, so everything needed to buy is near the top */
 .event-detail-layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -548,9 +548,7 @@ html {
 .event-detail-info { grid-area: info; }
 .event-detail-body { grid-area: body; }
 
-/* From 992px: title and overview on the left, the info card on the right
-   running down beside both. The 1fr second row takes any extra height when
-   the card is the taller side, so no gap opens under the title. */
+/* the 1fr row soaks up extra height when the card is taller, so no gap under the title */
 @media (min-width: 992px) {
     .event-detail-layout {
         grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
@@ -562,12 +560,10 @@ html {
     }
 }
 
-/* Keeps the line breaks the owner typed into the description */
 .event-description {
     white-space: pre-line;
 }
 
-/* Edit / Cancel under Get Tickets, shown to the event's owner only */
 .event-owner-actions {
     display: flex;
     gap: 0.5rem;
@@ -578,7 +574,6 @@ html {
     flex: 1 1 0;
 }
 
-/* One compact label/value line per detail in the info card */
 .event-info-list {
     margin: 0.75rem 0 1rem;
 }
@@ -629,12 +624,10 @@ html {
     text-align: right;
 }
 
-/* View / Edit / Cancel on the My Events rows (history page) */
 .owner-actions .btn + .btn {
     margin-left: 0.25rem;
 }
 
-/* on the cards they share the width */
 .owner-actions--card {
     display: flex;
     gap: 0.5rem;
@@ -648,13 +641,11 @@ html {
     margin-left: 0;
 }
 
-/* Anchor target for the "Get Tickets" button. The offset stops the sticky
-   navbar covering the heading once the page has scrolled to it. */
+/* offset so the sticky navbar doesn't cover the heading */
 .scroll-target {
     scroll-margin-top: 100px;
 }
 
-/* Small square event photo inside a table row, e.g. the history table */
 .history-table-thumb {
     width: 64px;
     height: 64px;
@@ -662,7 +653,6 @@ html {
     border-radius: 0.5rem;
 }
 
-/* Profile picture, used for the event publisher and every comment */
 .avatar-icon {
     width: 48px;
     height: 48px;
@@ -671,11 +661,8 @@ html {
 
 
 /* ========================= Create Event form ========================== */
-/* Two-column form layout: label on the left, field on the right */
 
-/* White card container. Started as the form wrapper, and is reused for the
-   price and filters boxes in the view-item sidebar - same box, different
-   contents. */
+/* also reused for the boxes in the view-item sidebar */
 .event-form-card {
     border: none;
     border-radius: 0.5rem;
@@ -683,15 +670,12 @@ html {
     padding: 1.25rem 1rem;
 }
 
-/* Wider padding only once there's room for it - on a phone 2rem each side
-   took a big bite out of the fields */
 @media (min-width: 768px) {
     .event-form-card {
         padding: 1.5rem 2rem;
     }
 }
 
-/* Two side-by-side field groups; stacks into one column on mobile */
 .event-form-columns {
     display: flex;
     flex-direction: column;
@@ -704,8 +688,6 @@ html {
     }
 }
 
-/* --xl (Create Event): stays one column until 1200px. Side by side any earlier,
-   each field would be squeezed next to its 220px label. */
 @media (min-width: 1200px) {
     .event-form-columns--xl {
         flex-direction: row;
@@ -713,8 +695,6 @@ html {
     }
 }
 
-/* While the columns are stacked, the first column's last row still needs its
-   divider to separate it from the second column's first row */
 @media (max-width: 767.98px) {
     .event-form-col:not(:last-child) > .event-form-row:last-child {
         border-bottom: 1px dashed #e2e6ea;
@@ -727,9 +707,7 @@ html {
     }
 }
 
-/* The two columns are stretched to equal height by the flex row above.
-   Making each column a flex column with space-between spreads its own rows
-   out to fill that height, instead of leaving a gap under the shorter one. */
+/* spread rows out so the shorter column has no gap at the bottom */
 .event-form-col {
     flex: 1 1 0;
     min-width: 0;
@@ -738,7 +716,6 @@ html {
     justify-content: space-between;
 }
 
-/* One field: label left, input right. Stacks to label-above-input on mobile. */
 .event-form-row {
     display: flex;
     flex-direction: column;
@@ -762,8 +739,7 @@ html {
     font-weight: 600;
 }
 
-/* the fixed 220px label width only applies side by side - in the stacked
-   mobile layout a flex-basis would become the label's height instead */
+/* side by side only - stacked, flex-basis would set the height instead */
 @media (min-width: 768px) {
     .event-form-label {
         flex: 0 0 220px;
@@ -776,13 +752,11 @@ html {
     min-width: 0;
 }
 
-/* The red asterisk marking a required field */
 .event-form-required {
     margin-left: 0.15rem;
 }
 
-/* Two fields sharing one row, e.g. Event Date + Event Time. On phones they
-   stack, since side by side each is too narrow to show "dd/mm/yyyy". */
+/* stacked on phones - too narrow for "dd/mm/yyyy" otherwise */
 .event-form-row--split {
     gap: 1rem;
 }
@@ -798,8 +772,6 @@ html {
     min-width: 0;
 }
 
-/* Centred row of buttons at the bottom of the form. It has no label to line
-   up with, so it skips the label-left/field-right layout. */
 .event-form-actions {
     display: flex;
     justify-content: center;
@@ -814,11 +786,8 @@ html {
 
 
 /* ====================== Acknowledgement of Country ===================== */
-/* Create Event. Everything here is CSS only - no JavaScript. */
 
-/* Heading with the info icon beside it. Also the positioning parent for the
-   tooltip, so the tooltip spans the section's width instead of hanging off
-   the small icon, where it would run off the edge of a phone screen. */
+/* tooltip anchors to the heading, not the icon, so it doesn't run off phone screens */
 .ack-heading {
     position: relative;
     display: flex;
@@ -835,9 +804,7 @@ html {
     cursor: help;
 }
 
-/* Hidden until the icon is hovered or focused (Tab, or a tap on touch screens).
-   visibility is switched off after a short delay rather than instantly, so the
-   pointer can move from the icon onto the tooltip without it vanishing. */
+/* delayed visibility so the pointer can move onto the tooltip */
 .info-tooltip {
     position: absolute;
     top: 100%;
@@ -867,8 +834,6 @@ html {
     margin-bottom: 0.5rem;
 }
 
-/* A row of options styled as pill buttons. The real radio inputs are hidden
-   but still focusable, so the keyboard (Tab, then arrow keys) works as normal. */
 .ack-picker {
     position: relative;
     display: flex;
@@ -877,9 +842,8 @@ html {
     gap: 0.5rem;
 }
 
-/* top/left pin the hidden inputs beside the pills. Without them they sit in
-   the middle of the row's box, which grows when a preview or the city list
-   opens, and focusing one could scroll the page away from the pills. */
+/* pin the hidden inputs, otherwise focusing one can scroll the page when a
+   preview opens and the row grows */
 .ack-radio {
     position: absolute;
     top: 0;
@@ -900,7 +864,6 @@ html {
     user-select: none;
 }
 
-/* Previews and the city list each take a full row, hidden by default */
 .ack-preview,
 .ack-enhanced {
     display: none;
@@ -919,19 +882,15 @@ html {
     margin-top: 0.5rem;
 }
 
-/* Each city's preview sits right after that city's pill in the HTML (so the
-   rule below can reach it); order moves them all below the row of pills */
+/* previews follow their pill in the HTML so the sibling rule works; order moves them below */
 .ack-city-preview {
     order: 1;
 }
 
-/* The builder's example answers ("e.g. ...") read as examples, not text
-   already filled in (colour in the Colours region) */
 .ack-enhanced .form-control::placeholder {
     font-style: italic;
 }
 
-/* The show/hide rules: a checked radio reveals the blocks that follow it */
 .ack-radio[value="Generic"]:checked ~ .ack-generic,
 .ack-radio[value="Enhanced"]:checked ~ .ack-enhanced,
 .ack-radio:checked + .ack-pill + .ack-city-preview {
@@ -940,20 +899,16 @@ html {
 
 
 /* ========================= Date & time pickers ======================== */
-/* Both fields are readonly: a calendar or a spinner is the only way to fill
-   them in, so nothing invalid can be typed into them. */
 
 .event-form-picker-input,
 .event-form-date-addon {
     cursor: pointer;
 }
 
-/* Positioning parent for the time popover below */
 .event-time-picker {
     position: relative;
 }
 
-/* Hidden until the JS adds the .show class */
 .event-time-popover {
     position: absolute;
     top: calc(100% + 0.5rem);
@@ -985,7 +940,6 @@ html {
     gap: 0.75rem;
 }
 
-/* One column of the spinner: up arrow, number, down arrow */
 .event-time-spinner {
     display: flex;
     flex-direction: column;
@@ -1013,7 +967,6 @@ html {
     padding-bottom: 0.1rem;
 }
 
-/* Round tick to the right of the minutes: fills in the time and closes */
 .event-time-confirm {
     display: flex;
     align-items: center;
@@ -1028,8 +981,6 @@ html {
 
 
 /* ============================ Ticket tables =========================== */
-/* One shared table style, used by the Create Event ticket types, the
-   view-item ticket purchase table, and the booking history table */
 
 .ticket-type-table th {
     font-size: 0.8rem;
@@ -1044,14 +995,12 @@ html {
     vertical-align: middle;
 }
 
-/* Bootstrap 5 cells are padded .5rem; keep Bootstrap 4's roomier .75rem */
+/* BS4's roomier cell padding */
 .ticket-type-table > :not(caption) > * > * {
     padding: 0.75rem;
 }
 
 /* ---- Create Event: the ticket type rows ---------------------------------- */
-/* Each row is a Bootstrap .row.gx-2. Below 992px (lg) it's a bordered card with
-   a label on every field; from lg it's one line under .ticket-editor-head. */
 
 .ticket-row {
     margin: 0 0 0.75rem;
@@ -1073,12 +1022,10 @@ html {
     letter-spacing: 0.04em;
 }
 
-/* Remove sits bottom-right of the card */
 .ticket-remove-col {
     text-align: right;
 }
 
-/* Column headings, styled like the other tables' headers */
 .ticket-editor-head {
     padding-bottom: 0.5rem;
     border-bottom: 2px solid;
@@ -1100,8 +1047,7 @@ html {
         margin-bottom: 0;
     }
 
-    /* the headings row names the columns now, so the per-field labels are
-       hidden visually but still read out by screen readers */
+    /* visually hidden, still read by screen readers */
     .ticket-field-label {
         position: absolute;
         width: 1px;
@@ -1111,13 +1057,12 @@ html {
         white-space: nowrap;
     }
 
-    /* fixed width, so row 1 (which has no Remove button) lines up with the rest */
+    /* fixed so row 1 (no Remove) lines up */
     .ticket-remove-col {
         flex: 0 0 7rem;
         max-width: 7rem;
     }
 
-    /* centre the small button against the taller inputs beside it */
     .ticket-remove-btn {
         margin-top: 0.2rem;
     }
@@ -1128,10 +1073,8 @@ html {
 }
 
 /* ---- Create Event: adding and removing ticket rows, CSS only ----------- */
-/* Rows 2+ are hidden until their checkbox in .ticket-add is ticked. :has() is
-   needed because the checkboxes come after the rows, so Tab reaches them
-   after the rows. One rule per extra row - keep in step with
-   EventForm.TICKET_ROWS in forms.py. */
+/* :has() because the checkboxes come after the rows (for Tab order).
+   One rule per extra row - keep in sync with EventForm.TICKET_ROWS. */
 .ticket-row-extra {
     display: none;
 }
@@ -1148,7 +1091,6 @@ html {
     position: relative;
 }
 
-/* The checkboxes are hidden but stay focusable, so Tab then Space works */
 .ticket-row-toggle {
     position: absolute;
     top: 0;
@@ -1160,7 +1102,6 @@ html {
     pointer-events: none;
 }
 
-/* Only the first unticked checkbox shows its Add button... */
 .ticket-add-btn,
 .ticket-add-limit {
     display: none;
@@ -1170,28 +1111,22 @@ html {
     display: inline-block;
 }
 
-/* ...later unticked ones are hidden completely, which also takes their
-   checkboxes out of the Tab order */
+/* display:none also drops them from the Tab order */
 .ticket-row-toggle:not(:checked) ~ .ticket-row-toggle:not(:checked),
 .ticket-row-toggle:not(:checked) ~ .ticket-row-toggle:not(:checked) + .ticket-add-btn {
     display: none;
 }
 
-/* Every row added: no Add button left, so say why */
 .ticket-add:not(:has(.ticket-row-toggle:not(:checked))) .ticket-add-limit {
     display: block;
 }
 
-/* Quantity on the event page: the browser's own number box (no JavaScript) */
 .ticket-quantity-input {
     width: 5.5rem;
 }
 
-/* On phones the event page's ticket table would need sideways scrolling to
-   reach Available and Quantity, so each row becomes a stacked card instead:
-   the header row is hidden and every cell shows its own label (data-label in
-   viewitem.html) beside the value. It's still the one table inside the one
-   Checkout form, so the quantity boxes are only there once. */
+/* Phones: rows become stacked cards with data-label as labels, instead of a
+   sideways-scrolling table. Still one table in one form. */
 @media (max-width: 767.98px) {
     #purchaseTicketTable thead {
         position: absolute;
@@ -1235,7 +1170,6 @@ html {
         text-align: left;
     }
 
-    /* the ticket's name is the card's heading, so it needs no label */
     #purchaseTicketTable td.ticket-type-name {
         font-weight: 700;
         font-size: 1.05rem;
@@ -1246,15 +1180,12 @@ html {
         content: none;
     }
 
-    /* a tier that's sold out has no quantity box - don't show an empty label */
     #purchaseTicketTable td[data-label="Quantity"]:empty::before {
         content: none;
     }
 }
 
-/* Checkout screen (#21): a panel over the event page, shown when main.checkout
-   renders it. No JavaScript - the dimmed backdrop is a link back to the event,
-   and the page behind is `inert`. Tall panels scroll inside the overlay. */
+/* Checkout overlay */
 body:has(.checkout-overlay) {
     overflow: hidden;
 }
@@ -1278,7 +1209,7 @@ body:has(.checkout-overlay) {
     position: relative;   /* above the backdrop */
     width: 100%;
     max-width: 960px;
-    margin: auto;         /* centred, and still scrolls when taller than the screen */
+    margin: auto;
     padding: 1.25rem;
     border-radius: 16px;
 }
@@ -1299,7 +1230,6 @@ body:has(.checkout-overlay) {
     margin-bottom: 0.75rem;
 }
 
-/* Order lines: label left, value right */
 .checkout-lines > div {
     display: flex;
     justify-content: space-between;
@@ -1352,7 +1282,6 @@ body:has(.checkout-overlay) {
     border-radius: 8px;
 }
 
-/* Only the chosen payment option's details show (CSS :has, no JavaScript) */
 .checkout-option-details {
     display: none;
     margin-top: 1rem;
@@ -1366,14 +1295,11 @@ body:has(.checkout-overlay) {
 
 
 /* =============================== Colours =============================== */
-/* Every colour in the site, grouped in the same order as the sections above.
-   Brand blue #a0c1ec and its darker hover shade #86adde are sampled from the
-   Epicurean logo. */
+/* Brand blue #a0c1ec / hover #86adde, sampled from the logo. */
 
 
 /* Navbar */
 
-/* Off-white so it stays distinguishable from the pure-white page background */
 .epicurean-navbar {
     background-color: #f8f9fa;
 }
@@ -1385,10 +1311,6 @@ body:has(.checkout-overlay) {
 
 .event-search-icon {
     color: #888;
-}
-
-.event-search-divider {
-    background-color: #ced4da;
 }
 
 .event-search-submit {
@@ -1407,7 +1329,6 @@ body:has(.checkout-overlay) {
     background-color: #fff;
 }
 
-/* the card title is a link now, but should still look like a plain title */
 .event-card-link,
 .event-card-link:hover {
     color: inherit;
@@ -1443,7 +1364,6 @@ body:has(.checkout-overlay) {
     background-color: #fff;
 }
 
-/* Red on hover, and stays red once liked */
 .event-icon-btn--favourite:hover,
 .event-icon-btn--favourite.is-liked {
     color: #dc3545;
@@ -1474,12 +1394,6 @@ body:has(.checkout-overlay) {
     border: 1px solid #dc3545;
 }
 
-.event-status--ending-soon {
-    color: #4b1d80;
-    background-color: #e7d9f7;
-    border: 1px solid #6f42c1;
-}
-
 .event-status--inactive {
     color: #495057;
     background-color: #e2e3e5;
@@ -1487,13 +1401,9 @@ body:has(.checkout-overlay) {
 }
 
 
-/* Hero banner: the navbar's off-white on the text side, fading to clear
-   before the logo in the photo - rising from the bottom to 44% on phones,
-   and across the left third (clear by 33%) from md. 82% opaque so a little of
-   the photo shows through; any lighter and the heading drops below 3:1
-   contrast over the darkest parts of the photo behind it.
-   Heading in a darker shade of the brand blue (#a0c1ec is too pale to read
-   on off-white: 1.76:1; this is 4.95:1), near-black description. */
+/* Hero banner. 82% opacity is the floor - lighter and the heading drops below
+   3:1 over the dark bits of the photo. #a0c1ec is too pale on off-white
+   (1.76:1), hence the darker heading blue (4.95:1). */
 .site-hero::after {
     background: linear-gradient(to top, rgba(248, 249, 250, 0.82) 30%, rgba(248, 249, 250, 0) 44%);
 }
@@ -1528,7 +1438,6 @@ body:has(.checkout-overlay) {
     color: #1a1a1a;
 }
 
-/* page numbers on the category pages (Bootstrap-Flask render_pagination) */
 .pagination .page-link {
     color: #475569;
 }
@@ -1539,7 +1448,6 @@ body:has(.checkout-overlay) {
     color: #1a1a1a;
 }
 
-/* keyboard focus rings for the CSS-only menu toggle and the like heart */
 .nav-toggle:focus-visible + .navbar-toggler,
 .event-icon-btn--favourite:focus-visible {
     box-shadow: 0 0 0 0.2rem rgba(134, 173, 222, 0.8);
@@ -1631,7 +1539,7 @@ body:has(.checkout-overlay) {
     background-color: #eef4fc;
 }
 
-/* dark text on the brand blue - white text on it would be too faint to read */
+/* white on brand blue is too faint */
 .ack-radio:checked + .ack-pill {
     background-color: #a0c1ec;
     border-color: #86adde;
@@ -1648,7 +1556,6 @@ body:has(.checkout-overlay) {
     border-left-color: #a0c1ec;
 }
 
-/* lighter than Bootstrap's placeholder grey, so examples don't look filled in */
 .ack-enhanced .form-control::placeholder {
     color: #adb5bd;
 }
@@ -1656,7 +1563,7 @@ body:has(.checkout-overlay) {
 
 /* Date & time pickers */
 
-/* Bootstrap greys out readonly fields; these are readonly by design, not disabled */
+/* readonly by design, so undo the greyed-out look */
 .event-form-picker-input[readonly] {
     background-color: #fff;
 }
@@ -1683,7 +1590,7 @@ body:has(.checkout-overlay) {
     color: #86adde;
 }
 
-/* dark tick on the brand blue - a white one would be too faint to see */
+/* white on brand blue is too faint */
 .event-time-confirm {
     background-color: #a0c1ec;
     color: #1a1a1a;
@@ -1698,8 +1605,7 @@ body:has(.checkout-overlay) {
     box-shadow: 0 0 0 0.2rem rgba(134, 173, 222, 0.5);
 }
 
-/* The rules below override the bootstrap-datepicker plugin's own colours so
-   the calendar matches the rest of the site */
+/* bootstrap-datepicker overrides */
 
 .datepicker table tr td.active.active,
 .datepicker table tr td.active:hover.active,
@@ -1729,7 +1635,6 @@ body:has(.checkout-overlay) {
     color: #adb5bd;
 }
 
-/* Month/year banner and the prev/next arrows either side of it */
 .datepicker table tr th.datepicker-switch,
 .datepicker table tr th.prev,
 .datepicker table tr th.next {
@@ -1761,13 +1666,11 @@ body:has(.checkout-overlay) {
     border-bottom: 2px solid #e2e6ea;
 }
 
-/* Reuses the navbar's off-white for a subtle row stripe. Bootstrap 5 paints
-   each cell's own background, so the stripe is set on the cells' variable. */
+/* BS5 paints each cell, so the stripe goes on the cell variable */
 .ticket-type-table tbody tr:nth-child(even) > * {
     --bs-table-bg: #f8f9fa;
 }
 
-/* the event page's ticket rows as stacked cards on phones */
 @media (max-width: 767.98px) {
     #purchaseTicketTable tr {
         border-color: #e2e6ea;
@@ -1777,7 +1680,6 @@ body:has(.checkout-overlay) {
         color: #6c757d;
     }
 
-    /* the table's row striping only greys the cells, not the card's padding */
     #purchaseTicketTable tbody tr:nth-child(even) > * {
         --bs-table-bg: transparent;
     }
@@ -1796,8 +1698,7 @@ body:has(.checkout-overlay) {
     border-bottom-color: #e2e6ea;
 }
 
-/* Keyboard focus is on a hidden checkbox, so ring the button it stands for:
-   Add for the next row, or Remove on a row that's already been added */
+/* focus is on the hidden checkbox, so ring the visible button instead */
 .ticket-row-toggle:focus-visible + .ticket-add-btn,
 .ticket-types:has(.ticket-toggle-2:focus-visible) .ticket-row-2 .ticket-remove-btn,
 .ticket-types:has(.ticket-toggle-3:focus-visible) .ticket-row-3 .ticket-remove-btn,
@@ -1807,10 +1708,8 @@ body:has(.checkout-overlay) {
     box-shadow: 0 0 0 0.2rem rgba(134, 173, 222, 0.5);
 }
 
-/* Grey minus, brand-blue plus, matching the site's button colours */
 
 
-/* Checkout screen: dimmed page behind a white panel */
 .checkout-backdrop {
     background-color: rgba(0, 0, 0, 0.55);
 }
@@ -1824,7 +1723,6 @@ body:has(.checkout-overlay) {
     border-top: 1px solid #dee2e6;
 }
 
-/* the "demo only" note: a soft amber so it's noticed but not alarming */
 .checkout-demo-note {
     background-color: #fff8e1;
     border: 1px solid #ffe08a;
@@ -1834,9 +1732,7 @@ body:has(.checkout-overlay) {
 
 /* Buttons */
 
-/* Brand blue instead of Bootstrap's default, to match the search button.
-   Bootstrap 5 colours buttons through these variables, so hover, active,
-   focus and disabled all follow. */
+/* BS5 buttons read these vars, so hover/active/focus/disabled all follow */
 .btn-primary {
     --bs-btn-color: #fff;
     --bs-btn-bg: #a0c1ec;
@@ -1856,7 +1752,116 @@ body:has(.checkout-overlay) {
 
 /* Footer */
 
-/* Reuses the navbar's off-white background */
 .epicurean-footer {
     background-color: #f8f9fa;
+}
+
+
+/* ======================== About page ======================= */
+
+.about-hero {
+    position: relative;
+    color: #fff;
+}
+
+.about-hero-img {
+    display: block;
+    width: 100%;
+    height: 320px;
+    object-fit: cover;
+}
+
+.about-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.15));
+}
+
+.about-hero-text {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 2rem;
+    z-index: 1;
+}
+
+.about-hero-text h1 {
+    max-width: 18em;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.about-hero-text p {
+    max-width: 36em;
+    margin-bottom: 0;
+    font-size: 1.1rem;
+}
+
+@media (min-width: 768px) {
+    .about-hero-img {
+        height: 440px;
+    }
+
+    .about-hero-text h1 {
+        font-size: 3rem;
+    }
+}
+
+.about-mission {
+    max-width: 48rem;
+    font-size: 1.1rem;
+}
+
+.about-features {
+    display: grid;
+    gap: 2rem;
+    margin: 3rem 0;
+}
+
+@media (min-width: 768px) {
+    .about-features {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.about-feature-icon {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    color: #5f8fd0;
+}
+
+.about-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    padding: 2rem 1rem;
+    border-radius: 0.75rem;
+    background-color: #f8f9fa;
+    text-align: center;
+}
+
+@media (min-width: 768px) {
+    .about-stats {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.about-stat-value {
+    display: block;
+    font-size: 2.25rem;
+    font-weight: 700;
+}
+
+.about-stat-label {
+    color: #6c757d;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.about-cta {
+    margin-top: 3rem;
+    text-align: center;
 }
