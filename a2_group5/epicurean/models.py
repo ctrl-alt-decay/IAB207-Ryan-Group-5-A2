@@ -51,6 +51,7 @@ class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(150), nullable=False)
     description = db.Column(db.Text, nullable=False)
+    description_embedding = db.Column(db.Text)
     venue = db.Column(db.String(255), nullable=False)
     # Nearest major city (EventForm.CITIES), so suburb events still show up by city.
     # Empty on events made before this column existed.

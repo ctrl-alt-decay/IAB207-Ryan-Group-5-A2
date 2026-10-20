@@ -5,9 +5,20 @@ from flask import Flask, render_template, flash, redirect, request, url_for
 from flask_bootstrap import Bootstrap5
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from sentence_transformers import SentenceTransformer
 from flask_wtf.csrf import CSRFProtect, CSRFError
 
 db = SQLAlchemy()
+
+try:
+    encoder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", local_files_only=True )
+    print("Loaded local AI model")
+except Exception:
+    print("Local AI model not found. Downloading...")
+    encoder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+    print("Downloaded and loaded AI model")
+
+print(f"\nencoder string representation:\n{encoder}")
 
 def add_missing_columns():
     # create_all() won't add new columns to existing tables, so older databases
@@ -28,6 +39,25 @@ def add_missing_columns():
             db.session.execute(db.text(ddl))
             print(' * Added missing column {}.{}'.format(table.name, column.name))
     db.session.commit()
+
+
+def add_missing_embeddings():
+    """Events made before AI search existed (the sample events, or ones in an
+    older database) have no description_embedding, which AI search needs for
+    every event. This works one out for each, the same way create_event does
+    for a new event. Only fills in missing ones - never changes existing ones."""
+    import json
+    from .models import Event
+    events = db.session.scalars(
+        db.select(Event).where(Event.description_embedding.is_(None))).all()
+    if not events:
+        return
+    vectors = encoder.encode([event.description for event in events])
+    for event, vector in zip(events, vectors):
+        event.description_embedding = json.dumps(vector.tolist())
+    db.session.commit()
+    print(' * Added AI search data for {} older events'.format(len(events)))
+
 
 
 def _secret_key(app):
@@ -97,8 +127,10 @@ def create_app():
                                message='Sorry, something went wrong on our end. '
                                        'Please try again in a moment.'), 500
 
+    # also fills in AI search data for events that don't have it yet
     with app.app_context():
         db.create_all()
         add_missing_columns()
+        add_missing_embeddings()
 
     return app

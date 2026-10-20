@@ -17,8 +17,13 @@
             </ol>
         </nav>
         <h1 class="page-heading mb-1">Search Results</h1>
+        {# AI search (Use AI ticked) passes a plain list, best match first, with
+           no pages; normal search passes a page of results #}
+        {% set ai_results = events.items is not defined %}
         <p class="text-muted mb-0">
-            {% if events.total %}
+            {% if ai_results and events %}
+            {{ events|length }} event{{ 's' if events|length != 1 }} found, best match first
+            {% elif events.total %}
             {{ events.total }} event{{ 's' if events.total != 1 }} found, most liked first
             {%- if events.pages > 1 %} - page {{ events.page }} of {{ events.pages }}{% endif %}
             {% elif has_criteria %}
@@ -66,11 +71,15 @@
         </form>
     </div>
 
-    {% if events.items %}
+    {% if ai_results %}
+    {% if events %}
+    {{ event_grid(events, liked_ids) }}
+    {% endif %}
+    {% elif events.items %}
     {{ event_grid(events.items, liked_ids) }}
     {% endif %}
 
-    {% if events.pages > 1 %}
+    {% if not ai_results and events.pages > 1 %}
     <div class="event-section-px">
         {{ render_pagination(events, align='center') }}
     </div>

@@ -11,13 +11,19 @@ from . import create_app, db
 from .models import Event, TicketType, Booking, Comment
 from .sample_events import add_sample_events, get_organisers
 
+from . import encoder
+import json
+
 
 def seed():
     amity, rukayya, ro = get_organisers()
 
+    embedding = encoder.encode('A relaxed rooftop BBQ with seasonal produce and live music')
+    embedding_text = json.dumps(embedding.tolist())
     bbq = Event(
         title='Summer Rooftop BBQ',
         description='A relaxed rooftop BBQ with seasonal produce and live music.',
+        description_embedding = embedding_text, 
         venue='Rooftop Terrace, 45 Edward St, Brisbane QLD 4000',
         city='Brisbane, QLD',
         event_date=date(2026, 12, 5),
@@ -30,9 +36,12 @@ def seed():
         acknowledgement_type='Generic',
         owner=amity,
     )
+    embedding = encoder.encode('Learn to make fresh pasta from scratch with a local chef.')
+    embedding_text = json.dumps(embedding.tolist())
     pasta = Event(
         title='Handmade Pasta Workshop',
         description='Learn to make fresh pasta from scratch with a local chef.',
+        description_embedding = embedding_text,
         venue='The Kitchen Studio, 7 Gouger Street, Adelaide SA 5000',
         city='Adelaide, SA',
         event_date=date(2026, 11, 21),

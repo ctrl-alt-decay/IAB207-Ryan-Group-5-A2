@@ -12,6 +12,9 @@ from .forms import (OrderForm, EventForm, EditEventForm, CancelEventForm, LikeFo
                     CommentForm)
 from .uploads import EVENT_IMAGES, save_upload, delete_upload
 
+from . import encoder
+import json
+import numpy as np
 main_bp = Blueprint('main', __name__)
 
 # Grid is 5 per row >=1400px, 4 below, 2 on tablet - keep sizes multiples of 5 and 2.
@@ -224,6 +227,48 @@ def _has_search_criteria(args):
 
 @main_bp.route('/search')
 def search():
+    if request.args.get('q') and request.args['q'] != "":
+        if 'use_ai' in request.args:
+            print('Semantic search selected.')
+            query_embedding = encoder.encode(request.args['q'])
+            events = db.session.scalars(db.select(Event)).all()
+            results = []
+            for event in events:
+                event_embedding = np.array(json.loads(event.description_embedding))
+                score = cosine_similarity(query_embedding, event_embedding)
+                results.append([event, score])
+
+            results.sort(key = lambda x : x[1], reverse = True)
+
+            events =  [x[0] for x in results]
+
+            start, end, date_problem = _date_range(request.args)
+
+            return render_template(
+                'search.html', events=events, liked_ids=_liked_event_ids(),
+                has_criteria=_has_search_criteria(request.args),
+                # the dates to echo back into the two date boxes (only readable ones)
+                date_from=start.isoformat() if start else '',
+                date_to=end.isoformat() if end else '',
+                date_problem=date_problem,
+                filters_active=any(_filter_value(request.args, param) for param in FILTER_PARAMS),
+                dietary_options=EventForm.DIETARY, seasonal_options=EventForm.SEASONAL,
+                proficiency_options=EventForm.PROFICIENCY)
+
+        else:
+            events = db.paginate(_search_query(request.args), per_page=EVENTS_PER_PAGE, error_out=True)
+            start, end, date_problem = _date_range(request.args)
+            return render_template(
+                'search.html', events=events, liked_ids=_liked_event_ids(),
+                has_criteria=_has_search_criteria(request.args),
+                # the dates to echo back into the two date boxes (only readable ones)
+                date_from=start.isoformat() if start else '',
+                date_to=end.isoformat() if end else '',
+                date_problem=date_problem,
+                filters_active=any(_filter_value(request.args, param) for param in FILTER_PARAMS),
+                dietary_options=EventForm.DIETARY, seasonal_options=EventForm.SEASONAL,
+                proficiency_options=EventForm.PROFICIENCY)
+    # no keywords (homepage filters, dates only, Browse Events): normal search
     events = db.paginate(_search_query(request.args), per_page=EVENTS_PER_PAGE, error_out=True)
     start, end, date_problem = _date_range(request.args)
     return render_template(
@@ -232,7 +277,6 @@ def search():
         date_from=start.isoformat() if start else '',
         date_to=end.isoformat() if end else '',
         date_problem=date_problem,
-        # keeps Advanced search open so active filters stay visible
         filters_active=any(_filter_value(request.args, param) for param in FILTER_PARAMS))
 
 
@@ -280,8 +324,12 @@ def create_event():
         return render_template('listevent.html', form=form,
                                ack_preview=_acknowledgement_preview(form))
     if form.validate_on_submit():
+        embedding = encoder.encode(form.description.data)
+        embedding_text = json.dumps(embedding.tolist())
+
         event = Event(owner_id=current_user.id,
-                      image_filename=save_upload(form.image.data, EVENT_IMAGES))
+                      image_filename=save_upload(form.image.data, EVENT_IMAGES),
+                      description_embedding=embedding_text)
         _apply_event_details(event, form)
         _apply_ticket_rows(event, form)
         db.session.add(event)
@@ -672,3 +720,6 @@ def order_confirmation(order_number):
     if not lines:
         abort(404)
     return render_template('order_confirmation.html', order=Order(lines))
+
+def cosine_similarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
