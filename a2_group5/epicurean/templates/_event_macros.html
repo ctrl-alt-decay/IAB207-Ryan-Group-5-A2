@@ -1,11 +1,29 @@
-
-
 {# pass effective_status, not the stored event.status #}
 {% macro status_badge(status, small=False) -%}
 {%- set styles = {'Open': 'available', 'Sold Out': 'sold-out',
                   'Cancelled': 'cancelled', 'Inactive': 'inactive'} -%}
 <span class="event-status event-status--{{ styles.get(status, 'inactive') }}{{ ' event-status--sm' if small }} mb-0">{{ status }}</span>
 {%- endmacro %}
+
+
+{% macro price_label(event) -%}
+{% if event.from_price is not none %}From {{ event.from_price|money }}{% else %}Tickets coming soon{% endif %}
+{%- endmacro %}
+
+
+{# dropdowns for SEARCH_FILTERS in views.py, keeping whatever is in the URL selected #}
+{% macro filter_selects(col_class) %}
+{% for param, label, options in search_filters() %}
+<div class="{{ col_class }}">
+    <label for="select{{ param|capitalize }}" class="event-filter-label">{{ label }}</label>
+    <select class="form-select" id="select{{ param|capitalize }}" name="{{ param }}">
+        {% for option in options %}
+        <option{{ ' selected' if request.args.get(param) == option }}>{{ option }}</option>
+        {% endfor %}
+    </select>
+</div>
+{% endfor %}
+{% endmacro %}
 
 
 {% macro section_heading(heading, url=None, first=False) %}
@@ -77,10 +95,7 @@
         <p class="event-card-location mb-2">{{ event.city or event.venue }}</p>
         <div class="mt-auto d-flex justify-content-between align-items-end">
             <div>
-                <p class="event-card-price mb-1">
-                    {% if event.from_price is not none %}From ${{ '%.2f'|format(event.from_price) }}
-                    {% else %}Tickets coming soon{% endif %}
-                </p>
+                <p class="event-card-price mb-1">{{ price_label(event) }}</p>
                 <p class="event-card-likes mb-0"><i class="fa fa-heart" aria-hidden="true"></i> {{ event.likes }} {{ 'like' if event.likes == 1 else 'likes' }}</p>
             </div>
             {{ status_badge(event.effective_status, small=True) }}

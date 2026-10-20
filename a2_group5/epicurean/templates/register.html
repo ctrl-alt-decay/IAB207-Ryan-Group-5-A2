@@ -1,28 +1,8 @@
 {% extends "base_epicurean.html" %}
+{% from "_form_macros.html" import field %}
 
 {% block title %}Sign Up - Epicurean{% endblock %}
 {% block description %}Create an Epicurean account{% endblock %}
-
-{% macro field(f, id, placeholder='', required=False, toggle=False) %}
-<div class="event-form-row">
-    <label class="event-form-label" for="{{ id }}">{{ f.label.text }}{% if required %}<span
-            class="event-form-required">*</span>{% endif %}</label>
-    <div class="event-form-field">
-        {% if toggle %}<div class="input-group has-validation">{% endif %}
-        {{ f(class="form-control" ~ (" is-invalid" if f.errors else ""), id=id, placeholder=placeholder) }}
-        {% if toggle %}
-        <button class="btn btn-outline-secondary" type="button" data-password-toggle="{{ id }}"
-            aria-label="Show password" aria-pressed="false" title="Show password">
-            <i class="fa fa-eye" aria-hidden="true"></i>
-        </button>
-        {% endif %}
-        {% for error in f.errors %}
-        <div class="invalid-feedback">{{ error }}</div>
-        {% endfor %}
-        {% if toggle %}</div>{% endif %}
-    </div>
-</div>
-{% endmacro %}
 
 {% block content %}
 <div class="container-fluid px-3 px-md-5 py-4 py-md-5">

@@ -1,11 +1,11 @@
 {% extends "base_epicurean.html" %}
-{% from "_event_macros.html" import status_badge %}
+{% from "_event_macros.html" import status_badge, price_label %}
 
 {% block title %}{{ 'Checkout - ' if checkout }}{{ event.title }} - Epicurean{% endblock %}
 {% block description %}{{ event.title }} at {{ event.venue }}{% endblock %}
 
 {% macro avatar(user, alt) -%}
-<img src="{{ url_for('static', filename=('uploads/profile/' ~ user.profile_image) if user.profile_image else 'img/user_account.png') }}"
+<img src="{{ url_for('static', filename=user.avatar_path) }}"
     class="img-fluid avatar-icon rounded-circle" alt="{{ alt }}">
 {%- endmacro %}
 
@@ -46,10 +46,7 @@
             <div class="event-detail-info">
                 <div class="event-sidebar-sticky">
                     <div class="event-form-card">
-                        <div class="price-heading" id="sidebarFromPrice">
-                            {% if event.from_price is not none %}From ${{ '%.2f'|format(event.from_price) }}
-                            {% else %}Tickets coming soon{% endif %}
-                        </div>
+                        <div class="price-heading">{{ price_label(event) }}</div>
                         <dl class="event-info-list">
                             <div class="event-info-item">
                                 <dt><i class="fa fa-map-marker event-meta-icon" aria-hidden="true"></i> Venue</dt>
@@ -82,14 +79,13 @@
                                 <dd>{{ event.proficiency or 'Any' }}</dd>
                             </div>
                             {% if event.ticket_types %}
-                            {% set capacity = event.ticket_types|sum(attribute='capacity') %}
                             <div class="event-info-item">
                                 <dt><i class="fa fa-ticket event-meta-icon" aria-hidden="true"></i> Tickets left</dt>
-                                <dd>{{ capacity - event.tickets_sold }} of {{ capacity }}</dd>
+                                <dd>{{ event.capacity - event.tickets_sold }} of {{ event.capacity }}</dd>
                             </div>
                             {% endif %}
                         </dl>
-                        <a class="btn btn-primary w-100" href="#ticketsSection" id="getTicketsBtn">Get Tickets</a>
+                        <a class="btn btn-primary w-100" href="#ticketsSection">Get Tickets</a>
 
                         {# cosmetic - the routes check ownership too #}
                         {% if is_owner and event.status != 'Cancelled' %}
@@ -126,7 +122,7 @@
                 {% if event.ticket_types %}
                 {% if can_buy %}
                 {# GET - only opens the checkout screen, nothing is booked yet #}
-                <form method="get" action="{{ url_for('main.checkout', event_id=event.id) }}" id="ticketOrderForm">
+                <form method="get" action="{{ url_for('main.checkout', event_id=event.id) }}">
                 {% endif %}
                 <div class="table-responsive">
                     <table class="table ticket-type-table" id="purchaseTicketTable">
@@ -144,7 +140,7 @@
                             {# data-label is shown as the field label on phones #}
                             <tr>
                                 <td data-label="Ticket Type" class="ticket-type-name">{{ ticket.name }}</td>
-                                <td data-label="Price">${{ '%.2f'|format(ticket.price) }}</td>
+                                <td data-label="Price">{{ ticket.price|money }}</td>
                                 <td data-label="Description">{{ ticket.description or '' }}</td>
                                 <td data-label="Available" class="text-nowrap">
                                     {% if ticket.tickets_left %}{{ ticket.tickets_left }} of {{ ticket.capacity }} left
@@ -199,7 +195,7 @@
             <div class="col">
                 {# not .row - Bootstrap 5 stretches direct children of .row to full width #}
                 <div class="py-1">
-                    <textarea class="form-control" id="enterComment" name="body" rows="3"
+                    <textarea class="form-control" name="body" rows="3"
                         maxlength="{{ comment_form.MAX_LENGTH }}" required
                         placeholder="Write a comment..." aria-label="Write a comment"></textarea>
                 </div>
@@ -254,11 +250,11 @@
                             {% for ticket, quantity, line_total in checkout.lines %}
                             <div>
                                 <dt>{{ quantity }} &times; {{ ticket.name }}
-                                    <span class="text-muted small d-block">${{ '%.2f'|format(ticket.price) }} each</span></dt>
-                                <dd>${{ '%.2f'|format(line_total) }}</dd>
+                                    <span class="text-muted small d-block">{{ ticket.price|money }} each</span></dt>
+                                <dd>{{ line_total|money }}</dd>
                             </div>
                             {% endfor %}
-                            <div class="checkout-total"><dt>Total</dt><dd>${{ '%.2f'|format(checkout.total) }}</dd></div>
+                            <div class="checkout-total"><dt>Total</dt><dd>{{ checkout.total|money }}</dd></div>
                         </dl>
                         <form method="post" action="{{ url_for('main.book_tickets', event_id=event.id) }}"
                             class="checkout-actions">

@@ -4,7 +4,13 @@ import os
 from . import db
 from datetime import date, datetime
 from flask import current_app
+from flask_bcrypt import generate_password_hash
 from flask_login import UserMixin
+
+
+def hash_password(password):
+    # bcrypt returns bytes
+    return generate_password_hash(password).decode('utf-8')
 
 
 class User(db.Model, UserMixin):
@@ -25,6 +31,17 @@ class User(db.Model, UserMixin):
 
     def __repr__(self):
         return "<User {} {}>".format(self.first_name, self.last_name)
+
+    @property
+    def avatar_path(self):
+        if self.profile_image:
+            return 'uploads/profile/' + self.profile_image
+        return 'img/user_account.png'
+
+    @property
+    def orders(self):
+        newest_first = sorted(self.bookings, key=lambda b: (b.booked_at, b.id), reverse=True)
+        return orders_from(newest_first)
 
 
 # Prices and capacity live on TicketType, not here.
@@ -63,8 +80,6 @@ class Event(db.Model):
     acknowledgement_commitment = db.Column(db.String(255))
     acknowledgement_elders = db.Column(db.Boolean, nullable=False, default=True,
                                        server_default=db.text('1'))
-    # unused
-    acknowledgement_text = db.Column(db.Text)
 
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -92,6 +107,10 @@ class Event(db.Model):
     def from_price(self):
         prices = [t.price for t in self.ticket_types]
         return min(prices) if prices else None
+
+    @property
+    def capacity(self):
+        return sum(t.capacity for t in self.ticket_types)
 
     @property
     def tickets_sold(self):

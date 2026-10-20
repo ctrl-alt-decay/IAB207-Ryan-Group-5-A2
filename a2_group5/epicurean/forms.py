@@ -47,13 +47,13 @@ class RegisterForm(FlaskForm):
     submit = SubmitField("Register")
 
 
-class ProfilePictureForm(FlaskForm):
-    # extension check only, not the actual file contents
-    ALLOWED = ['jpg', 'jpeg', 'png', 'gif']
+# extension check only, not the actual file contents
+IMAGES_ONLY = FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Images only - jpg, jpeg, png or gif')
 
+
+class ProfilePictureForm(FlaskForm):
     picture = FileField("Profile Picture", validators=[
-        FileRequired('Choose an image to upload'),
-        FileAllowed(ALLOWED, 'Images only - jpg, jpeg, png or gif')])
+        FileRequired('Choose an image to upload'), IMAGES_ONLY])
     submit = SubmitField("Upload")
 
 
@@ -234,8 +234,7 @@ class EventForm(FlaskForm):
     title = StringField("Event Title", validators=[
         DataRequired('Enter an event title'), Length(max=150)])
     image = FileField("Event Image", validators=[
-        FileRequired('Choose an image for your event'),
-        FileAllowed(ProfilePictureForm.ALLOWED, 'Images only - jpg, jpeg, png or gif')])
+        FileRequired('Choose an image for your event'), IMAGES_ONLY])
     description = TextAreaField("Description", validators=[
         DataRequired('Describe your event')])
 
@@ -281,8 +280,11 @@ class EventForm(FlaskForm):
 
     submit = SubmitField("Submit")
 
+    # Edit Event sets this so an unchanged past date still saves
+    original_date = None
+
     def validate_event_date(self, field):
-        if field.data and field.data < date.today():
+        if field.data and field.data != self.original_date and field.data < date.today():
             raise ValidationError('The event date cannot be in the past')
 
     def validate_acknowledgement_city(self, field):
@@ -340,18 +342,10 @@ class CommentForm(FlaskForm):
 
     body = TextAreaField("Comment", validators=[
         DataRequired('Write a comment before posting'),
-        Length(max=MAX_LENGTH, message='Comments can be up to 1000 characters')])
+        Length(max=MAX_LENGTH, message='Comments can be up to {} characters'.format(MAX_LENGTH))])
     submit = SubmitField("Post")
 
 
-# Image is optional (keeps the current one), and an already-past date is fine
-# as long as it's unchanged. The route sets original_date before validating.
+# image optional - leaving it empty keeps the current one
 class EditEventForm(EventForm):
-    image = FileField("Event Image", validators=[
-        FileAllowed(ProfilePictureForm.ALLOWED, 'Images only - jpg, jpeg, png or gif')])
-
-    original_date = None
-
-    def validate_event_date(self, field):
-        if field.data and field.data != self.original_date and field.data < date.today():
-            raise ValidationError('The event date cannot be in the past')
+    image = FileField("Event Image", validators=[IMAGES_ONLY])

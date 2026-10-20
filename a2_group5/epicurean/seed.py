@@ -7,46 +7,13 @@ python -m epicurean.sample_events instead.
 from datetime import date, time, datetime
 from decimal import Decimal
 
-from flask_bcrypt import generate_password_hash
-
 from . import create_app, db
-from .models import User, Event, TicketType, Booking, Comment
-from .sample_events import add_sample_events
+from .models import Event, TicketType, Booking, Comment
+from .sample_events import add_sample_events, get_organisers
 
 
-def _hash(password):
-    # bcrypt returns bytes
-    return generate_password_hash(password).decode('utf-8')
-
-
-# all accounts use 'Password123'
 def seed():
-    amity = User(
-        first_name='Amity',
-        last_name='Group5',
-        email='amity@example.com',
-        password_hash=_hash('Password123'),
-        contact_number='0400 111 222',
-        street_address='12 Ann St, Brisbane QLD 4000',
-    )
-    rukayya = User(
-        first_name='Rukayya',
-        last_name='Group5',
-        email='rukayya@example.com',
-        password_hash=_hash('Password123'),
-        contact_number='0400 333 444',
-        street_address='88 Grey St, South Brisbane QLD 4101',
-    )
-    ro = User(
-        first_name='Ro',
-        last_name='Group5',
-        email='ro@example.com',
-        password_hash=_hash('Password123'),
-        contact_number='0400 777 888',
-        street_address='1 Test St, Brisbane QLD 4000',
-    )
-    db.session.add_all([amity, rukayya, ro])
-    db.session.flush()
+    amity, rukayya, ro = get_organisers()
 
     bbq = Event(
         title='Summer Rooftop BBQ',
@@ -78,72 +45,22 @@ def seed():
         acknowledgement_type='None',
         owner=rukayya,
     )
-    db.session.add_all([bbq, pasta])
-    db.session.flush()
-
     bbq_adult = TicketType(event=bbq, name='Adult', price=Decimal('45.00'),
                            capacity=60, description='General admission, 18+')
-    bbq_child = TicketType(event=bbq, name='Child', price=Decimal('20.00'),
-                           capacity=30, description='Ages 5-17')
-    pasta_std = TicketType(event=pasta, name='Adult', price=Decimal('89.50'),
-                           capacity=16, description='Includes all ingredients')
-    pasta_conc = TicketType(event=pasta, name='Student', price=Decimal('69.50'),
-                            capacity=8, description='Valid student ID required')
-    db.session.add_all([bbq_adult, bbq_child, pasta_std, pasta_conc])
-    db.session.flush()
-
-    qty = 2
-    booking = Booking(
-        order_number='EPI-64118',
-        user=ro,
-        event=bbq,
-        ticket_type=bbq_adult,
-        quantity=qty,
-        total_price=bbq_adult.price * qty,
-        booked_at=datetime.utcnow(),
-    )
-    db.session.add(booking)
-
-    comment = Comment(
-        event=bbq,
-        user=amity,
-        body='Booked for me and a friend - looking forward to it!',
-    )
-    db.session.add(comment)
-
+    db.session.add_all([
+        bbq, pasta, bbq_adult,
+        TicketType(event=bbq, name='Child', price=Decimal('20.00'),
+                   capacity=30, description='Ages 5-17'),
+        TicketType(event=pasta, name='Adult', price=Decimal('89.50'),
+                   capacity=16, description='Includes all ingredients'),
+        TicketType(event=pasta, name='Student', price=Decimal('69.50'),
+                   capacity=8, description='Valid student ID required'),
+        Booking(order_number='EPI-64118', user=ro, event=bbq, ticket_type=bbq_adult,
+                quantity=2, total_price=bbq_adult.price * 2, booked_at=datetime.utcnow()),
+        Comment(event=bbq, user=amity,
+                body='Booked for me and a friend - looking forward to it!'),
+    ])
     db.session.commit()
-    return booking
-
-
-def report(booking):
-    # touches every relationship so a broken FK/backref fails loudly
-    print('--- seed summary ---')
-    print('users      :', User.query.count())
-    print('events     :', Event.query.count())
-    print('ticket types:', TicketType.query.count())
-    print('bookings   :', Booking.query.count())
-    print('comments   :', Comment.query.count())
-    print()
-    print('booking.order_number     :', booking.order_number)
-    print('booking.user.first_name  :', booking.user.first_name)
-    print('booking.event.title      :', booking.event.title)
-    print('booking.ticket_type.name :', booking.ticket_type.name)
-    print('booking.total_price      :', booking.total_price)
-    print()
-    for event in Event.query.order_by(Event.event_date).all():
-        print('{} ({} {})'.format(event.title, event.event_date, event.event_time))
-        print('   owner    :', event.owner.first_name, event.owner.last_name)
-        print('   status   :', event.status)
-        print('   tickets  :', ', '.join(
-            '{} ${}'.format(t.name, t.price) for t in event.ticket_types))
-        print('   bookings :', len(event.bookings))
-        for c in event.comments:
-            print('   comment  : {} - "{}"'.format(c.user.first_name, c.body))
-    print()
-    print('amity.events   :', [e.title for e in User.query.filter_by(
-        email='amity@example.com').first().events])
-    print('ro.bookings    :', [b.order_number for b in User.query.filter_by(
-        email='ro@example.com').first().bookings])
 
 
 # WARNING: wipes the real database in instance/.
@@ -152,10 +69,9 @@ def main():
     with app.app_context():
         db.drop_all()
         db.create_all()
-        booking = seed()
-        report(booking)
-        print('\nsample events added:', add_sample_events())
-    print('\nDone. Database seeded.')
+        seed()
+        print('Sample events added:', add_sample_events())
+    print('Done. Database seeded.')
 
 
 if __name__ == '__main__':

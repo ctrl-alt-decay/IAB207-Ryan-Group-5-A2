@@ -1,6 +1,7 @@
 {# Shared by Create and Edit Event (edit passes `event`). #}
 {% extends "base_epicurean.html" %}
 {% set editing = event is defined %}
+{% from "_form_macros.html" import errors, invalid, required_mark %}
 
 {% block title %}{{ 'Edit Event' if editing else 'Create Event' }} - Epicurean{% endblock %}
 {% block description %}Epicurean List Event Page{% endblock %}
@@ -9,15 +10,6 @@
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker3.min.css">
 {% endblock %}
-
-{# d-block: .is-invalid sibling rule doesn't reach file inputs or input groups #}
-{% macro errors(f) %}
-    {% for error in f.errors %}
-    <div class="invalid-feedback d-block">{{ error }}</div>
-    {% endfor %}
-{% endmacro %}
-
-{% macro invalid(f) %}{{ " is-invalid" if f.errors else "" }}{% endmacro %}
 
 {% block content %}
     <div class="container-fluid px-3 px-md-5 py-4 py-md-5">
@@ -44,8 +36,7 @@
                 <div class="event-form-col">
 
                     <div class="event-form-row">
-                        <label class="event-form-label" for="enterEventTitle">Event Title<span
-                                class="event-form-required">*</span></label>
+                        <label class="event-form-label" for="enterEventTitle">Event Title{{ required_mark() }}</label>
                         <div class="event-form-field">
                             {{ form.title(class="form-control" ~ invalid(form.title), id="enterEventTitle",
                                 placeholder="Event title") }}
@@ -54,8 +45,7 @@
                     </div>
 
                     <div class="event-form-row">
-                        <label class="event-form-label" for="enterEventImage">Event Image{% if not editing %}<span
-                                class="event-form-required">*</span>{% endif %}</label>
+                        <label class="event-form-label" for="enterEventImage">Event Image{% if not editing %}{{ required_mark() }}{% endif %}</label>
                         <div class="event-form-field">
                             {% if editing %}
                             <img src="{{ url_for('static', filename=event.image_path) }}"
@@ -69,8 +59,7 @@
                     </div>
 
                     <div class="event-form-row">
-                        <label class="event-form-label" for="enterDescription">Description<span
-                                class="event-form-required">*</span></label>
+                        <label class="event-form-label" for="enterDescription">Description{{ required_mark() }}</label>
                         <div class="event-form-field">
                             {{ form.description(class="form-control" ~ invalid(form.description),
                                 id="enterDescription", rows="6", placeholder="What your event is about!") }}
@@ -110,8 +99,7 @@
                     </div>
 
                     <div class="event-form-row">
-                        <label class="event-form-label" for="enterVenue">Venue / Address<span
-                                class="event-form-required">*</span></label>
+                        <label class="event-form-label" for="enterVenue">Venue / Address{{ required_mark() }}</label>
                         <div class="event-form-field">
                             {{ form.venue(class="form-control" ~ invalid(form.venue), id="enterVenue",
                                 placeholder="The Beer Hall, 14 Warehouse Lane, Fortitude Valley QLD 4006") }}
@@ -120,8 +108,7 @@
                     </div>
 
                     <div class="event-form-row">
-                        <label class="event-form-label" for="selectCity">City<span
-                                class="event-form-required">*</span></label>
+                        <label class="event-form-label" for="selectCity">City{{ required_mark() }}</label>
                         <div class="event-form-field">
                             {{ form.city(class="form-select" ~ invalid(form.city), id="selectCity") }}
                             {{ errors(form.city) }}
@@ -130,8 +117,7 @@
 
                     <div class="event-form-row event-form-row--split">
                         <div class="event-form-subfield">
-                            <label class="event-filter-label" for="enterEventDate">Event Date<span
-                                    class="event-form-required">*</span></label>
+                            <label class="event-filter-label" for="enterEventDate">Event Date{{ required_mark() }}</label>
                             <div class="input-group">
                                 {# text, not date, so the A1 picker can fill in dd/mm/yyyy #}
                                 {{ form.event_date(type="text", class="form-control event-form-picker-input"
@@ -146,8 +132,7 @@
                         </div>
 
                         <div class="event-form-subfield event-time-picker" id="eventTimePicker">
-                            <label class="event-filter-label" for="enterEventTime">Event Time<span
-                                    class="event-form-required">*</span></label>
+                            <label class="event-filter-label" for="enterEventTime">Event Time{{ required_mark() }}</label>
                             {{ form.event_time(type="text", class="form-control event-form-picker-input"
                                 ~ invalid(form.event_time), id="enterEventTime", placeholder="hh:mm",
                                 autocomplete="off", readonly=True) }}
@@ -221,8 +206,7 @@
                 </div>
 
                 <fieldset class="ack-enhanced event-form-card">
-                    <legend class="event-filter-label">1. {{ form.acknowledgement_city.label.text }}<span
-                            class="event-form-required">*</span></legend>
+                    <legend class="event-filter-label">1. {{ form.acknowledgement_city.label.text }}{{ required_mark() }}</legend>
                     <div class="row g-4">
                         <div class="col-12 col-lg-8">
                             <div class="ack-picker">
@@ -238,7 +222,8 @@
                                     or your local council or Aboriginal Land Council. Then enter them below.
                                     {% else %}
                                     <span class="event-filter-label">Your acknowledgement starts with</span>
-                                    {{ form.ENHANCED_ACK_PREVIEW[choice.data ~ '-AoC']|ack_text(form.title.data) }}                                    {% endif %}
+                                    {{ form.ENHANCED_ACK_PREVIEW[choice.data ~ '-AoC']|ack_text(form.title.data) }}
+                                    {% endif %}
                                 </div>
                                 {% endfor %}
                             </div>
@@ -251,8 +236,7 @@
                                 to use the city's statement above, or fill it in to name more specific custodians.</small>
                             {{ errors(form.acknowledgement_custodians) }}
 
-                            <label class="event-filter-label mt-3" for="ackConnection">2. {{ form.acknowledgement_connection.label.text }}<span
-                                    class="event-form-required">*</span></label>
+                            <label class="event-filter-label mt-3" for="ackConnection">2. {{ form.acknowledgement_connection.label.text }}{{ required_mark() }}</label>
                             {{ form.acknowledgement_connection(class="form-control" ~ invalid(form.acknowledgement_connection),
                                 id="ackConnection", rows="3",
                                 placeholder="e.g. We cook with native ingredients grown on this land, like finger lime and lemon myrtle.") }}
@@ -303,7 +287,7 @@
             </div>
             {% endif %}
 
-            <h2 class="section-heading mt-4">Ticket Types<span class="event-form-required">*</span></h2>
+            <h2 class="section-heading mt-4">Ticket Types{{ required_mark() }}</h2>
             <p class="text-muted">Add a row for each type of ticket, up to {{ form.TICKET_ROWS }}.</p>
 
             {# FieldList errors also contain per-row dicts - only show the strings #}

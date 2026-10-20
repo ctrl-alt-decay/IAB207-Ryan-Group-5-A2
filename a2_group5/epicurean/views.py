@@ -1,25 +1,18 @@
-import os
 import re
 import secrets
-import uuid
 from datetime import date, datetime, timedelta, timezone
 
-from flask import (Blueprint, render_template, request, redirect, url_for, flash,
-                   current_app, abort)
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import login_required, current_user
 from flask_wtf.csrf import generate_csrf
-from sqlalchemy import false
-from werkzeug.utils import secure_filename
 
 from . import db
-from .models import Event, TicketType, Booking, Like, Comment, Order, orders_from
+from .models import Event, TicketType, Booking, Like, Comment, Order
 from .forms import (OrderForm, EventForm, EditEventForm, CancelEventForm, LikeForm,
                     CommentForm)
+from .uploads import EVENT_IMAGES, save_upload, delete_upload
 
 main_bp = Blueprint('main', __name__)
-
-# relative to the static folder
-EVENT_UPLOAD_DIR = os.path.join('uploads', 'events')
 
 # Grid is 5 per row >=1400px, 4 below, 2 on tablet - keep sizes multiples of 5 and 2.
 RECENTLY_ADDED_SIZE = 4
@@ -36,6 +29,11 @@ def local_time(value, fmt='%d/%m/%Y, %H:%M'):
     if value is None:
         return ''
     return value.replace(tzinfo=timezone.utc).astimezone(SITE_TIMEZONE).strftime(fmt)
+
+
+@main_bp.app_template_filter('money')
+def money(value):
+    return '${:.2f}'.format(value)
 
 
 def this_weekend(today):
@@ -70,10 +68,12 @@ CATEGORIES = {
 }
 
 
+MOST_LIKED_FIRST = (Event.likes.desc(), Event.event_date, Event.event_time, Event.id)
+
+
 def _category_query(slug):
     heading, rule = CATEGORIES[slug]
-    return (db.select(Event).where(rule(), _upcoming())
-            .order_by(Event.likes.desc(), Event.event_date, Event.event_time, Event.id))
+    return db.select(Event).where(rule(), _upcoming()).order_by(*MOST_LIKED_FIRST)
 
 
 def _liked_event_ids():
@@ -110,9 +110,7 @@ def index():
         # repeats can't reuse the card's HTML id
         sections.append(dict(heading=heading, events=events + repeats,
                              repeat_ids={event.id for event in repeats}, slug=slug))
-    return render_template('index.html', sections=sections, liked_ids=_liked_event_ids(),
-                           dietary_options=EventForm.DIETARY, seasonal_options=EventForm.SEASONAL,
-                           proficiency_options=EventForm.PROFICIENCY)
+    return render_template('index.html', sections=sections, liked_ids=_liked_event_ids())
 
 
 @main_bp.route('/events/<slug>')
@@ -137,11 +135,18 @@ def about():
 
 # TODO: AI-enhanced discovery from the brief goes here (embeddings over
 # title + description?). Plain substring match for now.
-FILTER_PARAMS = {
-    'dietary': Event.dietary_preference,
-    'seasonal': Event.seasonal_cultural,
-    'proficiency': Event.proficiency,
-}
+# (query param, label, column, options) - the homepage and search page both render these
+SEARCH_FILTERS = [
+    ('dietary', 'Dietary Preference', Event.dietary_preference, EventForm.DIETARY),
+    ('seasonal', 'Seasonal / Cultural Options', Event.seasonal_cultural, EventForm.SEASONAL),
+    ('proficiency', 'Proficiency Filter', Event.proficiency, EventForm.PROFICIENCY),
+]
+FILTER_PARAMS = {param: column for param, _, column, _ in SEARCH_FILTERS}
+
+
+@main_bp.app_template_global('search_filters')
+def search_filters():
+    return [(param, label, options) for param, label, _, options in SEARCH_FILTERS]
 
 
 LIKE_ESCAPE = '\\'
@@ -186,7 +191,7 @@ def _search_query(args):
 
     start, end, _problem = _date_range(args)
     if start and end and end < start:
-        query = query.where(false())
+        query = query.where(db.false())
     else:
         if start:
             query = query.where(Event.event_date >= start)
@@ -207,7 +212,7 @@ def _search_query(args):
         if value:
             query = query.where(column == value)
 
-    return query.order_by(Event.likes.desc(), Event.event_date, Event.event_time, Event.id)
+    return query.order_by(*MOST_LIKED_FIRST)
 
 
 def _has_search_criteria(args):
@@ -228,9 +233,7 @@ def search():
         date_to=end.isoformat() if end else '',
         date_problem=date_problem,
         # keeps Advanced search open so active filters stay visible
-        filters_active=any(_filter_value(request.args, param) for param in FILTER_PARAMS),
-        dietary_options=EventForm.DIETARY, seasonal_options=EventForm.SEASONAL,
-        proficiency_options=EventForm.PROFICIENCY)
+        filters_active=any(_filter_value(request.args, param) for param in FILTER_PARAMS))
 
 
 def local_path(path):
@@ -278,7 +281,7 @@ def create_event():
                                ack_preview=_acknowledgement_preview(form))
     if form.validate_on_submit():
         event = Event(owner_id=current_user.id,
-                      image_filename=_save_event_image(form.image.data))
+                      image_filename=save_upload(form.image.data, EVENT_IMAGES))
         _apply_event_details(event, form)
         _apply_ticket_rows(event, form)
         db.session.add(event)
@@ -346,8 +349,8 @@ def edit_event(event_id):
             _apply_event_details(event, form)
             if form.image.data:
                 old_image = event.image_filename
-                event.image_filename = _save_event_image(form.image.data)
-                _delete_uploaded_image(old_image)
+                event.image_filename = save_upload(form.image.data, EVENT_IMAGES)
+                delete_upload(old_image, EVENT_IMAGES)
             _apply_ticket_rows(event, form)
             db.session.commit()
             flash('Your changes to "{}" have been saved.'.format(event.title), 'success')
@@ -456,37 +459,14 @@ def _none_to_null(value):
     return None if value == 'None' else value
 
 
-def _save_event_image(image):
-    ext = secure_filename(image.filename).rsplit('.', 1)[-1].lower()
-    stored_name = '{}.{}'.format(uuid.uuid4().hex, ext)
-    upload_dir = os.path.join(current_app.static_folder, EVENT_UPLOAD_DIR)
-    if not os.path.exists(upload_dir):
-        os.makedirs(upload_dir)
-    image.save(os.path.join(upload_dir, stored_name))
-    return stored_name
-
-
-def _delete_uploaded_image(filename):
-    # never touch img/ - the sample events share those photos
-    if filename:
-        path = os.path.join(current_app.static_folder, EVENT_UPLOAD_DIR,
-                            secure_filename(filename))
-        if os.path.exists(path):
-            os.remove(path)
-
-
 @main_bp.route('/history')
 @login_required
 def history():
-    orders = orders_from(db.session.scalars(
-        db.select(Booking)
-        .where(Booking.user_id == current_user.id)
-        .order_by(Booking.booked_at.desc(), Booking.id.desc())))
     my_events = db.session.scalars(
         db.select(Event)
         .where(Event.owner_id == current_user.id)
         .order_by(Event.event_date.desc(), Event.event_time.desc())).all()
-    return render_template('history.html', orders=orders, my_events=my_events)
+    return render_template('history.html', orders=current_user.orders, my_events=my_events)
 
 
 @main_bp.route('/event/<int:event_id>')
