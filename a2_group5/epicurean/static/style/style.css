@@ -70,6 +70,58 @@
     border: none;
 }
 
+/* AI search switch: the checkbox is hidden but still focusable, and its label
+   is a pill that fills in blue when AI search is on */
+.ai-toggle-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}
+
+.ai-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    align-self: center;
+    flex-shrink: 0;
+    margin: 0 0.4rem;
+    padding: 0.2rem 0.65rem;
+    border: 1px solid #ced4da;
+    border-radius: 2rem;
+    color: #6c757d;
+    background-color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.ai-toggle:hover {
+    border-color: #a0c1ec;
+    color: #3b6fb6;
+}
+
+.ai-toggle-input:checked + .ai-toggle {
+    border-color: #a0c1ec;
+    background-color: #e3eefb;
+    color: #2f5f9e;
+}
+
+.ai-toggle-input:focus-visible + .ai-toggle {
+    outline: 2px solid #86adde;
+    outline-offset: 2px;
+}
+
+/* on the search page, next to a full-size text box */
+.ai-toggle--boxed {
+    margin: 0;
+    padding: 0.375rem 0.85rem;
+    font-size: 0.9rem;
+}
+
 
 /* CSS-only hamburger. The checkbox is hidden but still focusable. */
 .nav-toggle {
