@@ -1,6 +1,3 @@
-{# Account page (route auth.account, login required). Shows current_user's details,
-   live counts from the database, and the profile picture upload/remove forms.
-   The scripts block previews a chosen picture before it is uploaded. #}
 {% extends "base_epicurean.html" %}
 
 {% block title %}My Account - Epicurean{% endblock %}
@@ -13,7 +10,6 @@
 
     <div class="event-form-columns">
 
-        <!-- Left: the account itself -->
         <div class="event-form-col">
             <div class="event-form-card">
                 <h2 class="section-heading">Profile Picture</h2>
@@ -40,8 +36,6 @@
                     <div class="event-form-row">
                         <label class="event-form-label" for="profilePicture">Upload New</label>
                         <div class="event-form-field">
-                            {# Bootstrap 5 styles the browser's own file input - it shows the
-                               chosen filename itself, no JavaScript needed #}
                             {{ picture_form.picture(class="form-control", id="profilePicture") }}
                             <div class="text-muted mt-2"><small>jpg, jpeg, png or gif.</small></div>
                         </div>
@@ -82,7 +76,6 @@
                 </div>
 
                 <div class="event-form-actions mt-4">
-                    {# logging out is a POST (#27), so it's a small form #}
                     <form method="post" action="{{ url_for('auth.logout') }}" class="d-inline">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-primary text-nowrap mx-2">Logout</button>
@@ -91,7 +84,6 @@
             </div>
         </div>
 
-        <!-- Right: what this account is linked to in the database -->
         <div class="event-form-col">
             <div class="event-form-card">
                 <h2 class="section-heading">Your Activity</h2>
@@ -142,14 +134,11 @@
 <script>
     $(function () {
 
-        /* ---- Profile Picture: show the chosen file in place of the placeholder ---- */
-
         $('#profilePicture').on('change', function () {
             var file = this.files && this.files[0];
             if (!file) { return; }
             var $preview = $('#profilePicturePreview');
 
-            // release the previous preview so the browser can free it
             var previous = $preview.data('objectUrl');
             if (previous) { URL.revokeObjectURL(previous); }
 

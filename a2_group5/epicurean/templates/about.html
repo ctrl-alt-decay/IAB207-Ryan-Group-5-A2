@@ -1,6 +1,3 @@
-{# About page (route main.about, linked from the footer). A photo banner with the
-   headline, what Epicurean is for, three things you can do, live numbers from
-   the database (views.about) and links to get started. #}
 {% extends "base_epicurean.html" %}
 
 {% block title %}About - Epicurean{% endblock %}
@@ -8,7 +5,6 @@
 
 {% block content %}
 
-<!-- ==== Banner: photo with the headline over it ============================== -->
 <section class="about-hero">
     <img src="{{ url_for('static', filename='img/about-hero.webp') }}" class="about-hero-img" alt="">
     <div class="about-hero-text event-section-px">
@@ -19,7 +15,6 @@
 
 <div class="event-section-px py-5">
 
-    <!-- ==== Mission ============================== -->
     <section class="about-mission">
         <h2 class="page-heading">Our mission</h2>
         <p>Good food is better shared. From cooking classes and market tours to tastings and
@@ -27,7 +22,6 @@
             find something worth going to and easy to put on something of your own.</p>
     </section>
 
-    <!-- ==== What you can do ============================== -->
     <section class="about-features">
         <div class="about-feature">
             <i class="fa fa-search about-feature-icon" aria-hidden="true"></i>
@@ -46,7 +40,6 @@
         </div>
     </section>
 
-    <!-- ==== Live numbers from the database ============================== -->
     <section class="about-stats" aria-label="Epicurean in numbers">
         {% for label, value in stats %}
         <div class="about-stat">
@@ -56,7 +49,6 @@
         {% endfor %}
     </section>
 
-    <!-- ==== Get started ============================== -->
     <section class="about-cta">
         <h2 class="page-heading">Find your next table</h2>
         <div>

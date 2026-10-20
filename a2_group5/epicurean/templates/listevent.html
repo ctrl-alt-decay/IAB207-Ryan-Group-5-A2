@@ -1,10 +1,4 @@
-{# Create Event page (route main.create_event, form EventForm), also used as the
-   Edit Event page (route main.edit_event, form EditEventForm), which passes the
-   event being edited as `event`. Posts back to the same URL; errors are shown
-   under each field. Ticket rows are added and removed with CSS-only checkboxes
-   (up to EventForm.TICKET_ROWS), and the Acknowledgement of Country options are
-   radios + CSS only. The scripts block runs only the A1 date picker and time
-   spinner. #}
+{# Shared by Create and Edit Event (edit passes `event`). #}
 {% extends "base_epicurean.html" %}
 {% set editing = event is defined %}
 
@@ -12,13 +6,11 @@
 {% block description %}Epicurean List Event Page{% endblock %}
 
 {% block head_extra %}
-    <!-- bootstrap-datepicker (date field only - no time support) -->
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker3.min.css">
 {% endblock %}
 
-{# a field's error messages; d-block so they show even where Bootstrap's
-   .is-invalid sibling rule doesn't reach (file inputs, input groups) #}
+{# d-block: .is-invalid sibling rule doesn't reach file inputs or input groups #}
 {% macro errors(f) %}
     {% for error in f.errors %}
     <div class="invalid-feedback d-block">{{ error }}</div>
@@ -46,11 +38,9 @@
 
             <h2 class="section-heading">Event Details</h2>
 
-            {# --xl: the two columns only sit side by side from 1200px. Any
-               narrower and the fields get squeezed beside their 220px labels. #}
+            {# side by side only from xl - the 220px labels squeeze anything narrower #}
             <div class="event-form-columns event-form-columns--xl">
 
-                <!-- Left: what the event is -->
                 <div class="event-form-col">
 
                     <div class="event-form-row">
@@ -71,8 +61,6 @@
                             <img src="{{ url_for('static', filename=event.image_path) }}"
                                 class="img-fluid event-form-image-preview rounded mb-2" alt="Current image">
                             {% endif %}
-                            {# Bootstrap 5 styles the browser's own file input - it shows the
-                               chosen filename itself, no JavaScript needed #}
                             {{ form.image(class="form-control", id="enterEventImage", accept="image/*") }}
                             <small class="form-text text-muted">jpg, jpeg, png or gif{{
                                 ' - leave empty to keep the current image' if editing }}</small>
@@ -92,7 +80,6 @@
 
                 </div>
 
-                <!-- Right: filters, when/where -->
                 <div class="event-form-col">
 
                     <div class="event-form-row">
@@ -132,8 +119,6 @@
                         </div>
                     </div>
 
-                    {# the major city closest to the venue, so the event can be found by
-                       city - e.g. an event in Maleny is listed under Sunshine Coast #}
                     <div class="event-form-row">
                         <label class="event-form-label" for="selectCity">City<span
                                 class="event-form-required">*</span></label>
@@ -148,8 +133,7 @@
                             <label class="event-filter-label" for="enterEventDate">Event Date<span
                                     class="event-form-required">*</span></label>
                             <div class="input-group">
-                                {# type="text" overrides WTForms' native date input so the
-                                   A1 date picker can fill it in dd/mm/yyyy #}
+                                {# text, not date, so the A1 picker can fill in dd/mm/yyyy #}
                                 {{ form.event_date(type="text", class="form-control event-form-picker-input"
                                     ~ invalid(form.event_date), id="enterEventDate", placeholder="dd/mm/yyyy",
                                     autocomplete="off", readonly=True) }}
@@ -199,12 +183,9 @@
 
             </div>
 
-            <!-- ==== Acknowledgement of Country ============================== -->
-            {# No JavaScript: the info tooltip opens on hover/focus, and the previews
-               and city list are revealed by CSS sibling selectors on the checked
-               radio (see "Acknowledgement of Country" in style.css). That only
-               works because each radio input sits directly before its label and
-               the blocks it controls - don't wrap the inputs in other elements. #}
+            {# CSS sibling selectors on the checked radio drive all of this, so each
+               radio must sit directly before its label and the blocks it controls.
+               Don't wrap the inputs. #}
             <div class="ack-heading scroll-target" id="ackSection">
                 <h2 class="section-heading mb-0" id="ackHeading">Acknowledgement of Country</h2>
                 <div class="info-icon" tabindex="0" role="button"
@@ -234,20 +215,11 @@
                 {{ choice.label(class="ack-pill") }}
                 {% endfor %}
 
-                {# shown when Generic is checked #}
                 <div class="ack-preview ack-generic">
                     <span class="event-filter-label">Preview</span>
-                    {# ack_text fills in the event name typed above ("this event" until there is one) #}
                     {{ form.GENERIC_ACK_PREVIEW|ack_text(form.title.data) }}
                 </div>
 
-                {# shown when Enhanced is checked: a guided builder. The creator
-                   answers a few short prompts and the statement is put together
-                   from their answers (views.compose_acknowledgement), so it fits
-                   their event rather than being a fixed paragraph. Each city's
-                   box (custodians + source) shows only while that city is checked. #}
-                {# event-form-card: the builder sits in its own card, like the other
-                   form sections, so its steps read as one group #}
                 <fieldset class="ack-enhanced event-form-card">
                     <legend class="event-filter-label">1. {{ form.acknowledgement_city.label.text }}<span
                             class="event-form-required">*</span></legend>
@@ -265,8 +237,6 @@
                                     and <a href="https://knowyourcountry.org.au/how-to-know-your-country" target="_blank" rel="noopener">Know Your Country</a>,
                                     or your local council or Aboriginal Land Council. Then enter them below.
                                     {% else %}
-                                    {# the city's written statement, which names its Traditional
-                                       Custodians - the creator's own answers are added after it #}
                                     <span class="event-filter-label">Your acknowledgement starts with</span>
                                     {{ form.ENHANCED_ACK_PREVIEW[choice.data ~ '-AoC']|ack_text(form.title.data) }}                                    {% endif %}
                                 </div>
@@ -321,9 +291,7 @@
             </div>
             {{ errors(form.acknowledgement_type) }}
 
-            {# "Preview acknowledgement": posts the form back (to this section) so the
-               server can show the statement the answers above would give. Nothing is
-               checked or saved. formnovalidate skips the browser's required checks. #}
+            {# formnovalidate so the preview skips the browser's required checks #}
             <div class="mt-3">
                 <button type="submit" name="preview_ack" value="1" class="btn btn-outline-secondary btn-sm"
                     formaction="{{ request.path }}#ackSection" formnovalidate>Preview acknowledgement</button>
@@ -335,32 +303,20 @@
             </div>
             {% endif %}
 
-            <!-- ==== Ticket Types ============================== -->
             <h2 class="section-heading mt-4">Ticket Types<span class="event-form-required">*</span></h2>
             <p class="text-muted">Add a row for each type of ticket, up to {{ form.TICKET_ROWS }}.</p>
 
-            {# FieldList errors mix per-row dicts with messages from
-               validate_ticket_types; only the messages belong here #}
+            {# FieldList errors also contain per-row dicts - only show the strings #}
             {% for error in form.ticket_types.errors if error is string %}
             <div class="invalid-feedback d-block mb-2">{{ error }}</div>
             {% endfor %}
 
-            {# Add/remove rows without JavaScript. Every row is rendered; rows 2+ are
-               hidden until their "included" checkbox (in .ticket-add below the
-               rows) is ticked. "Add Ticket Type" is the label of the first
-               unticked checkbox, and each row's Remove button is the label of
-               that row's checkbox. The show/hide rules are in style.css
-               (Ticket Types section).
-
-               Layout (Bootstrap grid): from 992px (lg) each ticket is one line
-               under a row of column headings. Below that each ticket becomes
-               its own bordered card with a visible label on every field - name
-               and price/capacity share a line from 576px (sm), and on phones
-               only price and capacity share one. #}
+            {# CSS-only add/remove: rows 2+ show when their "included" checkbox is ticked.
+               "Add Ticket Type" labels the first unticked box, Remove labels the row's own. #}
             {% set examples = ['e.g. Adult', 'e.g. Child', 'e.g. Senior', 'e.g. Student',
                                'e.g. Concession', 'e.g. VIP'] %}
             <div class="ticket-types">
-                {# visual only - every field below has its own label #}
+                {# visual only - each field has its own label #}
                 <div class="row gx-2 ticket-editor-head d-none d-lg-flex" aria-hidden="true">
                     <div class="col-lg-3">Ticket Type</div>
                     <div class="col-lg-2">Price ($)</div>
@@ -377,7 +333,6 @@
                         <label class="ticket-field-label" for="{{ row.name.id }}">Ticket Type<span
                                 class="visually-hidden"> {{ n }}</span></label>
                         {{ row.name(class="form-control" ~ invalid(row.name), placeholder=examples[loop.index0]) }}
-                        {# Edit only: which existing ticket type this row is (empty for new rows) #}
                         {{ row.ticket_id() }}
                         {{ errors(row.name) }}
                     </div>
@@ -403,8 +358,7 @@
                         {{ errors(row.description) }}
                     </div>
                     {% if loop.first %}
-                    {# the first row is always included. The column stays at lg so
-                       its fields line up with the rows below, which have Remove. #}
+                    {# row 1 is always included; keep it at lg so it lines up with the Remove rows #}
                     <div class="col-lg-auto ticket-remove-col d-none d-lg-block">
                         <input type="hidden" name="{{ row.included.name }}" value="y">
                     </div>
@@ -419,8 +373,7 @@
                 </div>
                 {% endfor %}
 
-                {# One checkbox + Add label per extra row, as siblings so the CSS
-                   can show only the first unticked one's label #}
+                {# must be siblings so the CSS can find the first unticked one #}
                 <div class="ticket-add">
                     {% for entry in form.ticket_types.entries[1:] %}
                     {{ entry.form.included(class="ticket-row-toggle ticket-toggle-" ~ (loop.index + 1),
@@ -442,42 +395,32 @@
         </form>
     </div>
 
-    <!-- ==== Footer ============================== -->
 {% endblock %}
 
 {% block scripts %}
-    <!-- bootstrap-datepicker plugin, used by the Event Date field below -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js"></script>
 
-    <!-- ====Page scripts ============================== -->
-    <!-- date picker and time spinner -->
     <script>
         $(function () {
 
-            /* ---- Event Date: calendar picker -------------------- */
-
             var $eventDate = $('#enterEventDate').datepicker({
                 format: 'dd/mm/yyyy',
-                weekStart: 1,           // weeks start on Monday
-                startDate: new Date(),  // an event cannot be listed in the past
+                weekStart: 1,
+                startDate: new Date(),
                 todayHighlight: true,
                 autoclose: true,
                 clearBtn: true,
                 orientation: 'bottom auto'
             });
 
-            // The calendar icon opens the same picker as clicking the field
             $('#enterEventDateAddon').on('click', function () {
                 $eventDate.datepicker('show');
             });
 
 
-            /* ---- Event Time: hour/minute spinner -------------------- */
-
-            var hour = 9;     // the time the spinner starts on
+            var hour = 9;
             var minute = 0;
 
-            // Turns 9 into "09" so the time always shows two digits
             function twoDigits(number) {
                 if (number < 10) {
                     return '0' + number;
@@ -485,20 +428,17 @@
                 return '' + number;
             }
 
-            // Copies the current hour and minute into the popover
             function showTime() {
                 $('#eventTimeHourValue').text(twoDigits(hour));
                 $('#eventTimeMinuteValue').text(twoDigits(minute));
             }
             showTime();
 
-            // Clicking the field opens / closes the popover
             $('#enterEventTime').on('click', function (event) {
                 event.stopPropagation();
                 $('#eventTimePopover').toggleClass('show');
             });
 
-            // Each chevron steps its number up or down by one and wraps around
             $('#eventTimePicker').on('click', '.event-time-spin-btn', function () {
                 var unit = $(this).data('unit');
                 var goingUp = $(this).data('dir') === 'up';
@@ -515,23 +455,19 @@
 
                 showTime();
 
-                // The field stays empty until the user picks a time
                 fillTimeField();
             });
 
-            // Copies the popover's time into the Event Time field
             function fillTimeField() {
                 $('#enterEventTime').val(twoDigits(hour) + ':' + twoDigits(minute));
             }
 
-            // The tick locks in the time shown - including the starting 09:00,
-            // which the arrows alone never fill in - and closes the popover
+            // the arrows never fill in the starting 09:00, so the tick has to
             $('#eventTimeConfirm').on('click', function () {
                 fillTimeField();
                 $('#eventTimePopover').removeClass('show');
             });
 
-            // Clicking anywhere outside picker closes popover
             $(document).on('click', function (event) {
                 if ($(event.target).closest('#eventTimePicker').length === 0) {
                     $('#eventTimePopover').removeClass('show');
