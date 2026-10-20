@@ -231,7 +231,8 @@ def search():
         if 'use_ai' in request.args:
             print('Semantic search selected.')
             query_embedding = encoder.encode(request.args['q'])
-            events = db.session.scalars(db.select(Event)).all()
+            # like every other listing, skip cancelled and past events
+            events = db.session.scalars(db.select(Event).where(_upcoming())).all()
             results = []
             for event in events:
                 event_embedding = np.array(json.loads(event.description_embedding))
