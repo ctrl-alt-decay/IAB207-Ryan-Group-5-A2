@@ -61,11 +61,6 @@
     background: transparent;
 }
 
-.event-search-divider {
-    width: 1px;
-    margin: 0.5rem 0;
-}
-
 .event-search-submit {
     display: flex;
     align-items: center;
@@ -519,12 +514,6 @@ html {
 .price-heading {
     font-size: 1.5rem;
     font-weight: 700;
-}
-
-.event-meta-line {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
 }
 
 .event-meta-icon {
@@ -1324,10 +1313,6 @@ body:has(.checkout-overlay) {
     color: #888;
 }
 
-.event-search-divider {
-    background-color: #ced4da;
-}
-
 .event-search-submit {
     background-color: #a0c1ec;
     color: #fff;
@@ -1407,12 +1392,6 @@ body:has(.checkout-overlay) {
     color: #721c24;
     background-color: #f8d7da;
     border: 1px solid #dc3545;
-}
-
-.event-status--ending-soon {
-    color: #4b1d80;
-    background-color: #e7d9f7;
-    border: 1px solid #6f42c1;
 }
 
 .event-status--inactive {

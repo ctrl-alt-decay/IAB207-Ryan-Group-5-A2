@@ -1,5 +1,5 @@
 {% extends "base_epicurean.html" %}
-{% from "_event_macros.html" import section_heading, event_grid %}
+{% from "_event_macros.html" import section_heading, event_grid, filter_selects %}
 
 {% block title %}Epicurean{% endblock %}
 {% block description %}Epicurean Home Page{% endblock %}
@@ -23,30 +23,7 @@
 
         <form method="get" action="{{ url_for('main.search') }}">
         <div class="row event-section-px py-1">
-            <div class="col-12 col-sm-4 mb-2 mb-sm-0">
-                <label for="selectDietary" class="event-filter-label">Dietary Preference</label>
-                <select class="form-select" id="selectDietary" name="dietary">
-                    {% for option in dietary_options %}
-                    <option>{{ option }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-12 col-sm-4 mb-2 mb-sm-0">
-                <label for="selectSeasonal" class="event-filter-label">Seasonal / Cultural Options</label>
-                <select class="form-select" id="selectSeasonal" name="seasonal">
-                    {% for option in seasonal_options %}
-                    <option>{{ option }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-12 col-sm-4 mb-2 mb-sm-0">
-                <label for="selectProficiency" class="event-filter-label">Proficiency Filter</label>
-                <select class="form-select" id="selectProficiency" name="proficiency">
-                    {% for option in proficiency_options %}
-                    <option>{{ option }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+            {{ filter_selects('col-12 col-sm-4 mb-2 mb-sm-0') }}
             <div class="col-12 mt-2">
                 <button type="submit" class="btn btn-primary">Apply Filters</button>
             </div>

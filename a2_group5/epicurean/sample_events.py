@@ -14,10 +14,8 @@ dating it last weekend. "Sales End Soon" isn't a real status, so those are Open.
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 
-from flask_bcrypt import generate_password_hash
-
 from . import db
-from .models import User, Event, TicketType, Booking
+from .models import User, Event, TicketType, Booking, hash_password
 
 
 # all use 'Password123'
@@ -491,12 +489,12 @@ def _ticket_types(spec):
     return tickets
 
 
-def _organisers():
+def get_organisers():
     users = []
     for details in ORGANISERS:
         user = db.session.scalar(db.select(User).where(User.email == details['email']))
         if user is None:
-            user = User(password_hash=generate_password_hash('Password123').decode('utf-8'),
+            user = User(password_hash=hash_password('Password123'),
                         **details)
             db.session.add(user)
         users.append(user)
@@ -507,7 +505,7 @@ def _organisers():
 def add_sample_events():
     from .views import new_order_number  # circular import
 
-    users = _organisers()
+    users = get_organisers()
     now = datetime.utcnow()
     today = date.today()
     added = []

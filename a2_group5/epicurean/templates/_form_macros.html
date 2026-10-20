@@ -1,0 +1,29 @@
+{# d-block: .is-invalid sibling rule doesn't reach file inputs or input groups #}
+{% macro errors(f) %}
+    {% for error in f.errors %}
+    <div class="invalid-feedback d-block">{{ error }}</div>
+    {% endfor %}
+{% endmacro %}
+
+{% macro invalid(f) %}{{ " is-invalid" if f.errors else "" }}{% endmacro %}
+
+{% macro required_mark() %}<span class="event-form-required">*</span>{% endmacro %}
+
+{# one labelled input in the .event-form-row layout; toggle adds the show/hide password button #}
+{% macro field(f, id, placeholder='', required=False, toggle=False) %}
+<div class="event-form-row">
+    <label class="event-form-label" for="{{ id }}">{{ f.label.text }}{% if required %}{{ required_mark() }}{% endif %}</label>
+    <div class="event-form-field">
+        {% if toggle %}<div class="input-group has-validation">{% endif %}
+        {{ f(class="form-control" ~ invalid(f), id=id, placeholder=placeholder) }}
+        {% if toggle %}
+        <button class="btn btn-outline-secondary" type="button" data-password-toggle="{{ id }}"
+            aria-label="Show password" aria-pressed="false" title="Show password">
+            <i class="fa fa-eye" aria-hidden="true"></i>
+        </button>
+        {% endif %}
+        {{ errors(f) }}
+        {% if toggle %}</div>{% endif %}
+    </div>
+</div>
+{% endmacro %}

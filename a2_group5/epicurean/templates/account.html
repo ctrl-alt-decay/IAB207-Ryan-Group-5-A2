@@ -17,14 +17,10 @@
                 <div class="event-form-row">
                     <span class="event-form-label">Current Picture</span>
                     <div class="event-form-field">
-                        {% if current_user.profile_image %}
-                        <img src="{{ url_for('static', filename='uploads/profile/' ~ current_user.profile_image) }}"
+                        <img src="{{ url_for('static', filename=current_user.avatar_path) }}"
                             class="img-fluid event-form-image-preview" id="profilePicturePreview"
-                            alt="Your profile picture">
-                        {% else %}
-                        <img src="{{ url_for('static', filename='img/image-placeholder.jpg') }}"
-                            class="img-fluid event-form-image-preview" id="profilePicturePreview"
-                            alt="No profile picture set">
+                            alt="{{ 'Your profile picture' if current_user.profile_image else 'No profile picture set' }}">
+                        {% if not current_user.profile_image %}
                         <div class="text-muted mt-2"><small>No picture uploaded yet.</small></div>
                         {% endif %}
                     </div>
@@ -68,11 +64,11 @@
                 </div>
                 <div class="event-form-row">
                     <span class="event-form-label">Contact Number</span>
-                    <div class="event-form-field">{{ current_user.contact_number or 'Not provided' }}</div>
+                    <div class="event-form-field">{{ current_user.contact_number }}</div>
                 </div>
                 <div class="event-form-row">
                     <span class="event-form-label">Street Address</span>
-                    <div class="event-form-field">{{ current_user.street_address or 'Not provided' }}</div>
+                    <div class="event-form-field">{{ current_user.street_address }}</div>
                 </div>
 
                 <div class="event-form-actions mt-4">
@@ -94,35 +90,16 @@
                 </div>
                 <div class="event-form-row">
                     <span class="event-form-label">Bookings</span>
-                    <div class="event-form-field">{{ current_user.bookings|length }}</div>
+                    <div class="event-form-field">{{ current_user.orders|length }}</div>
                 </div>
                 <div class="event-form-row">
                     <span class="event-form-label">Comments</span>
                     <div class="event-form-field">{{ current_user.comments|length }}</div>
                 </div>
 
-                {% if current_user.events %}
-                <div class="event-form-row">
-                    <span class="event-form-label">Events</span>
-                    <div class="event-form-field">
-                        {% for event in current_user.events %}
-                        <div>{{ event.title }} <span class="event-status event-status--sm">{{ event.effective_status }}</span></div>
-                        {% endfor %}
-                    </div>
+                <div class="event-form-actions mt-4">
+                    <a class="btn btn-primary text-nowrap mx-2" href="{{ url_for('main.history') }}">See bookings and events</a>
                 </div>
-                {% endif %}
-
-                {% if current_user.bookings %}
-                <div class="event-form-row">
-                    <span class="event-form-label">Bookings</span>
-                    <div class="event-form-field">
-                        {% for booking in current_user.bookings %}
-                        <div>{{ booking.order_number }} &mdash; {{ booking.quantity }} &times;
-                            {{ booking.ticket_type.name }} for {{ booking.event.title }}</div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
             </div>
         </div>
 

@@ -19,7 +19,7 @@
         <div class="row d-none d-lg-flex">
             <div class="col-12">
                 <div class="table-responsive">
-                    <table class="table ticket-type-table" id="bookingHistoryTable">
+                    <table class="table ticket-type-table">
                         <thead>
                             <tr>
                                 <th>Product</th>
@@ -42,7 +42,7 @@
                                 </td>
                                 <td>{{ order_tickets(order) }}</td>
                                 <td><a href="{{ url_for('main.order_confirmation', order_number=order.order_number) }}" title="Order details">{{ order.order_number }}</a></td>
-                                <td>${{ '%.2f'|format(order.total_price) }}</td>
+                                <td>{{ order.total_price|money }}</td>
                                 <td>{{ status_badge(order.event.effective_status) }}</td>
                                 <td>{{ order.booked_at|local_time }}</td>
                                 <td class="text-end"><a href="{{ url_for('main.event_details', event_id=order.event.id) }}" class="btn btn-primary btn-sm" aria-label="View {{ order.event.title }}">View</a></td>
@@ -72,7 +72,7 @@
                     </div>
                     <div class="booking-card-item">
                         <dt>Total</dt>
-                        <dd>${{ '%.2f'|format(order.total_price) }}</dd>
+                        <dd>{{ order.total_price|money }}</dd>
                     </div>
                     <div class="booking-card-item">
                         <dt>Status</dt>
@@ -104,14 +104,14 @@
         {% endmacro %}
 
         {% macro tickets_summary(event) -%}
-        {{ event.tickets_sold }} / {{ event.ticket_types|sum(attribute='capacity') }}
+        {{ event.tickets_sold }} / {{ event.capacity }}
         {%- endmacro %}
 
         {% if my_events %}
         <div class="row d-none d-lg-flex">
             <div class="col-12">
                 <div class="table-responsive">
-                    <table class="table ticket-type-table" id="myEventsTable">
+                    <table class="table ticket-type-table">
                         <thead>
                             <tr>
                                 <th>Event</th>

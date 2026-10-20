@@ -78,7 +78,9 @@ def create_app():
     # FLASK_DEBUG=1 shows the debugger instead of the 500 page.
     @app.errorhandler(404)
     def not_found(error):
-        return render_template('404.html'), 404
+        return render_template('error.html', code=404, title='Page Not Found',
+                               message="Sorry, we couldn't find that page. The link may be "
+                                       "wrong, or the page may have moved."), 404
 
     # Usually a form left open until its token expired.
     @app.errorhandler(CSRFError)
@@ -91,7 +93,9 @@ def create_app():
     @app.errorhandler(500)
     def server_error(error):
         db.session.rollback()
-        return render_template('500.html'), 500
+        return render_template('error.html', code=500, title='Something Went Wrong',
+                               message='Sorry, something went wrong on our end. '
+                                       'Please try again in a moment.'), 500
 
     with app.app_context():
         db.create_all()
