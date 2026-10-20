@@ -42,6 +42,24 @@ def add_missing_columns():
     db.session.commit()
 
 
+def add_missing_embeddings():
+    """Events made before AI search existed (the sample events, or ones in an
+    older database) have no description_embedding, which AI search needs for
+    every event. This works one out for each, the same way create_event does
+    for a new event. Only fills in missing ones - never changes existing ones."""
+    import json
+    from .models import Event
+    events = db.session.scalars(
+        db.select(Event).where(Event.description_embedding.is_(None))).all()
+    if not events:
+        return
+    vectors = encoder.encode([event.description for event in events])
+    for event, vector in zip(events, vectors):
+        event.description_embedding = json.dumps(vector.tolist())
+    db.session.commit()
+    print(' * Added AI search data for {} older events'.format(len(events)))
+
+
 # create a function that creates a web application
 # a web server will run this web application
 def create_app():
@@ -105,10 +123,12 @@ def create_app():
         return render_template('500.html'), 500
 
     # Create any tables that don't exist yet, so a fresh clone works with just
-    # `python main.py`, then add any columns an older database is missing.
+    # `python main.py`, then add any columns an older database is missing, and
+    # the AI search data for any events that don't have it yet.
     # Never drops or changes existing tables, columns or data.
     with app.app_context():
         db.create_all()
         add_missing_columns()
+        add_missing_embeddings()
 
     return app
