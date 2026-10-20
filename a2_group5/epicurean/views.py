@@ -227,7 +227,7 @@ def _has_search_criteria(args):
 
 @main_bp.route('/search')
 def search():
-    if request.args['q'] and request.args['q'] != "":
+    if request.args.get('q') and request.args['q'] != "":
         if 'use_ai' in request.args:
             print('Semantic search selected.')
             query_embedding = encoder.encode(request.args['q'])
@@ -268,7 +268,16 @@ def search():
                 filters_active=any(_filter_value(request.args, param) for param in FILTER_PARAMS),
                 dietary_options=EventForm.DIETARY, seasonal_options=EventForm.SEASONAL,
                 proficiency_options=EventForm.PROFICIENCY)
-    return redirect(url_for('main.index'))
+    # no keywords (homepage filters, dates only, Browse Events): normal search
+    events = db.paginate(_search_query(request.args), per_page=EVENTS_PER_PAGE, error_out=True)
+    start, end, date_problem = _date_range(request.args)
+    return render_template(
+        'search.html', events=events, liked_ids=_liked_event_ids(),
+        has_criteria=_has_search_criteria(request.args),
+        date_from=start.isoformat() if start else '',
+        date_to=end.isoformat() if end else '',
+        date_problem=date_problem,
+        filters_active=any(_filter_value(request.args, param) for param in FILTER_PARAMS))
 
 
 def local_path(path):
