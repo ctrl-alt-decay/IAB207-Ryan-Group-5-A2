@@ -36,8 +36,14 @@
                             class="event-search-input" placeholder="Search events"
                             aria-label="Search events">
                     </div>
-                    <input class="form-check-input ms-3 me-1" type="checkbox" id="useAI" name="use_ai">
-                        <label class="form-check-label" for="useAI"> Use AI</label>
+                    {# AI search switch: a hidden checkbox whose label is the pill.
+                       On by default; stays off on a search where it was turned off. #}
+                    <input class="ai-toggle-input" type="checkbox" id="useAI" name="use_ai"
+                        {{ 'checked' if 'use_ai' in request.args or not request.args.get('q') }}>
+                    <label class="ai-toggle" for="useAI"
+                        title="AI search finds events by meaning, not just exact words">
+                        <i class="fa fa-magic" aria-hidden="true"></i> AI
+                    </label>
                     <button class="event-search-submit" type="submit" title="Search">
                         <i class="fa fa-search"></i>
                     </button>
