@@ -1,48 +1,14 @@
-"""The 24 sample events from the A1 homepage cards, as real database rows (#15).
-The homepage sorts them into its categories like any other event - by likes,
-date and kids' tickets (CATEGORIES in views.py).
-
-Run from the projectfile directory (the one containing main.py):
+"""The 24 A1 homepage cards as real events.
 
     python -m epicurean.sample_events
 
-Safe to run on a database that matters - nothing is dropped:
-  - add_sample_events() adds any sample event whose title isn't there yet
-  - refresh_sample_events() updates sample events added by an older version
-    of this file (likes, longer description), but only where they're still
-    untouched - anything changed through Edit Event is left alone
-Running it twice is harmless. seed.py also calls add_sample_events() after
-rebuilding its own data.
+Doesn't drop anything - adds missing events by title and refreshes untouched
+ones from older versions of this file. Safe to rerun.
 
-Where the data came from:
-  - title, venue name, time, weekday, "From" price, status and likes: the A1 cards
-  - street address and City: added for each event (the cards only named the
-    venue), spread across Australia's major cities - see EventForm.CITIES
-  - image: the card's photo in static/img/ (stored as just the filename;
-    Event.image_path finds it there)
-  - ticket tiers: the patterns in TIERS, modelled on the A1 Cinco De Mayo page
-    (Child / Adult / Senior / Student). The card price is the main tier's price.
-    An event can set 'capacity' ({tier name: seats}) where its description
-    gives a seat count that the pattern's default wouldn't match.
-  - description (a brief plus a longer paragraph in DETAILS) and categories:
-    written for each event (the cards had none)
-
-Dates: the cards gave a day and month but no year, and most had passed. Upcoming
-events start no earlier than 1 November (or the day of seeding, once that's
-later - see EARLIEST_MONTH), so they stay open for a while after seeding:
-  - Popular events: the first time that day and month comes round from then
-  - This Weekend: the first Friday-Sunday from then (on the card's weekday).
-    (So the homepage's This Weekend section is empty until that weekend.)
-  - Bring Your Kids: the weekend after that
-  - the one Inactive card: last weekend, so its status matches its date
-
-Statuses (#25): the status shown is worked out from the date and the tickets
-left (Event.effective_status), and only Cancelled is stored. So the cards'
-statuses come about like this:
-  - Cancelled: stored as Cancelled
-  - Inactive: dated last weekend (above), so it shows Inactive
-  - Sold Out: sample bookings take every ticket that's left
-"Sales End Soon" isn't one of the four statuses, so those cards became Open.
+The cards had no year, so dates are generated from EARLIEST_MONTH (or today if
+later). This Weekend will be empty until that weekend comes round. Only
+Cancelled is stored; Sold Out comes from booking every ticket and Inactive from
+dating it last weekend. "Sales End Soon" isn't a real status, so those are Open.
 """
 
 from datetime import date, datetime, time, timedelta
@@ -54,8 +20,7 @@ from . import db
 from .models import User, Event, TicketType, Booking
 
 
-# The events are shared out between the group's three test accounts (all with
-# password 'Password123'). They're created here if they don't exist yet.
+# all use 'Password123'
 ORGANISERS = [
     dict(first_name='Amity', last_name='Group5', email='amity@example.com',
          contact_number='0400 111 222', street_address='12 Ann St, Brisbane QLD 4000'),
@@ -65,9 +30,7 @@ ORGANISERS = [
          contact_number='0400 777 888', street_address='1 Test St, Brisbane QLD 4000'),
 ]
 
-# Ticket tier patterns: (name, share of the card price, description, capacity).
-# The share-1 tier is charged exactly the card price; others are rounded to 50c.
-# FAMILY reproduces the A1 Cinco De Mayo page's four tiers exactly.
+# (name, share of card price, description, capacity). Non-1 shares round to 50c.
 TIERS = {
     'family': [
         ('Child', '0.43', "Ages 3-12. Under 3s enter free and don't need a ticket.", 60),
@@ -108,14 +71,9 @@ CINCO_DESCRIPTION = (
     'come ready to dance, and stay for the fireworks that close out the night.'
 )
 
-# One entry per A1 card, in the order they appeared on the homepage.
-# 'group' is the A1 homepage section the card was in (it decides the date - see
-# the top of this file). 'day' is (day, month) for Popular events; weekend
-# events give their weekday. 'likes' is the card's like count, saved as
-# Event.likes (the homepage sorts by it) and used to size the sample bookings.
-# 'description' is the short brief; DETAILS below adds a longer paragraph.
+# In A1 card order. 'day' is (day, month) for popular, a weekday name otherwise.
+# 'likes' also sizes the sample bookings.
 EVENTS = [
-    # ---- Popular ----
     dict(group='popular', title='Cinco De Mayo Fiesta', image='cinco-de-mayo_event.jpg',
          day=(2, 5), at=time(12, 0),
          venue='Fiesta Square, 2 Riverside Markets Way, Parramatta NSW 2150', city='Sydney, NSW',
@@ -137,7 +95,7 @@ EVENTS = [
          day=(14, 11), at=time(19, 0),
          venue='The Reef Room, 1 Marina Point, Cairns City QLD 4870', city='Cairns, QLD',
          price='250.00', status='Sold Out', tiers='premium', likes=289,
-         capacity={'Standard': 22, 'With Wine Pairing': 10},  # 32 seats, as DETAILS says
+         capacity={'Standard': 22, 'With Wine Pairing': 10},  # must match the seat count in DETAILS
          dietary='Gluten-Free', seasonal=None, proficiency='Foodie', ack=None,
          description='Dinner five metres below the surface, with the reef as your only view. Seven '
                      'courses of seafood arrive one after another while schools of fish drift past '
@@ -184,7 +142,7 @@ EVENTS = [
          day=(30, 8), at=time(19, 30),
          venue='The Pass, 30 Lonsdale Street, Braddon ACT 2612', city='Canberra, ACT',
          price='180.00', status='Open', tiers='premium', likes=94,
-         capacity={'Standard': 8, 'With Wine Pairing': 4},  # twelve seats at the pass
+         capacity={'Standard': 8, 'With Wine Pairing': 4},
          dietary=None, seasonal=None, proficiency='Expert', ack=None,
          description='The best seat in the restaurant isn\'t in the dining room: it\'s at the pass. '
                      'Built for diners who want to know how a dish is made, not just how it tastes, '
@@ -205,7 +163,6 @@ EVENTS = [
                      'fishmongers run filleting demos on the hour, and at the dockside market you '
                      'can buy fresh fish to take home straight from the trawlers moored alongside.'),
 
-    # ---- This Weekend ----
     dict(group='weekend', title='Gnocchi Culinary Workshop', image='gnocchi_workshop.jpg',
          day='Sat', at=time(10, 0),
          venue='Trattoria Alessandra, 45 Norton Street, Leichhardt NSW 2040', city='Sydney, NSW',
@@ -298,7 +255,6 @@ EVENTS = [
                      'giant Jenga and cornhole on the lawn, and sunset over the river is the perfect '
                      'excuse to go back for one more dessert.'),
 
-    # ---- Bring Your Kids ----
     dict(group='kids', title='Sunrise Sourdough Bake', image='sourdough-class_event.jpg',
          day='Sat', at=time(7, 0),
          venue='The Rustic Loaf Bakery, 40 Pall Mall, Bendigo VIC 3550', city='Bendigo, VIC',
@@ -390,7 +346,6 @@ EVENTS = [
                      'lights parade that closes out the day.'),
 ]
 
-# The longer paragraph that follows each event's brief in its description.
 DETAILS = {
     'Cinco De Mayo Fiesta':
         'Food and drink stalls take card and cash. The plaza is step-free with shaded seating '
@@ -493,14 +448,11 @@ DETAILS = {
 
 
 def _full_description(spec):
-    """The brief plus its longer paragraph (the event page keeps line breaks)."""
     return spec['description'] + '\n\n' + DETAILS[spec['title']]
 
 
 WEEKDAY_OFFSET = {'Fri': 0, 'Sat': 1, 'Sun': 2}
 
-# Upcoming sample events are dated from the 1st of this month of the seeding
-# year (or from the day of seeding, if that's later) - see the top of this file.
 EARLIEST_MONTH = 11
 
 
@@ -509,10 +461,8 @@ def _coming_friday(day):
 
 
 def _event_date(spec, today):
-    """Work out the event date from the card, as described at the top of this file."""
     offset = WEEKDAY_OFFSET.get(spec['day'])
     if spec['status'] == 'Inactive':
-        # last weekend, so it has already happened
         return _coming_friday(today) - timedelta(days=7) + timedelta(days=offset)
     start = max(today + timedelta(days=1), date(today.year, EARLIEST_MONTH, 1))
     if spec['group'] == 'popular':
@@ -534,7 +484,6 @@ def _ticket_types(spec):
         if share == '1':
             price = card_price
         else:
-            # round to the nearest 50c
             price = (card_price * Decimal(share) * 2).quantize(Decimal('1'), ROUND_HALF_UP) / 2
         tickets.append(TicketType(name=name, price=price.quantize(Decimal('0.01')),
                                   capacity=spec.get('capacity', {}).get(name, capacity),
@@ -543,7 +492,6 @@ def _ticket_types(spec):
 
 
 def _organisers():
-    """The three test accounts, creating any that don't exist yet."""
     users = []
     for details in ORGANISERS:
         user = db.session.scalar(db.select(User).where(User.email == details['email']))
@@ -552,15 +500,12 @@ def _organisers():
                         **details)
             db.session.add(user)
         users.append(user)
-    db.session.flush()  # gives new users their ids
+    db.session.flush()
     return users
 
 
 def add_sample_events():
-    """Add any of the sample events that aren't in the database yet (matched by
-    title), plus sample bookings: a few for the Popular ones, and enough to sell
-    out the Sold Out ones. Returns how many events were added. Commits."""
-    from .views import new_order_number  # here, not at the top: views imports forms etc.
+    from .views import new_order_number  # circular import
 
     users = _organisers()
     now = datetime.utcnow()
@@ -584,12 +529,11 @@ def add_sample_events():
             dietary_preference=spec['dietary'],
             seasonal_cultural=spec['seasonal'],
             proficiency=spec['proficiency'],
-            # only Cancelled is stored - the rest is worked out (#25)
             status='Cancelled' if spec['status'] == 'Cancelled' else 'Open',
             acknowledgement_type=ack_type,
             acknowledgement_city=ack_city,
             owner=users[index % len(users)],
-            # a minute apart, in card order, so Recently Added lists them predictably
+            # staggered so Recently Added has a stable order
             created_at=now - timedelta(minutes=len(EVENTS) - index),
             ticket_types=_ticket_types(spec),
         )
@@ -597,13 +541,10 @@ def add_sample_events():
         added.append((spec, event))
     db.session.flush()
 
-    # Sample bookings on the Popular events, so they have tickets sold like a
-    # popular event would: roughly one ticket per 60 likes, in bookings of up
-    # to 4, made by the test accounts that don't own the event
+    # ~1 ticket per 60 likes, in bookings of up to 4
     for spec, event in added:
         if spec['group'] != 'popular' or event.status == 'Cancelled':
             continue
-        # the main tier - the one charged the card price
         ticket = next(t for t in event.ticket_types if t.price == Decimal(spec['price']))
         remaining = spec['likes'] // 60
         buyers = [u for u in users if u is not event.owner]
@@ -614,13 +555,11 @@ def add_sample_events():
                 order_number=new_order_number(), user=buyers[turn % len(buyers)],
                 event=event, ticket_type=ticket, quantity=quantity,
                 total_price=ticket.price * quantity))
-            db.session.flush()  # so the next order number sees this one
+            db.session.flush()  # so new_order_number sees it
             remaining -= quantity
             turn += 1
 
-    # The cards that were Sold Out: book whatever is left of every tier, so
-    # they really are sold out (#25 works the status out from the tickets).
-    # One block booking per tier keeps the test accounts' histories short.
+    # one block booking per tier keeps the test accounts' histories short
     for spec, event in added:
         if spec['status'] != 'Sold Out':
             continue
@@ -639,12 +578,7 @@ def add_sample_events():
 
 
 def refresh_sample_events():
-    """Bring sample events added by an older version of this file up to date:
-    set their likes if they have none, extend a description that is still
-    exactly the old short brief, and give events from before the City field
-    their city and street address (the address only if the venue still has the
-    same name). Anything an owner has changed through Edit Event is left alone.
-    Returns (likes set, descriptions extended, cities added). Commits."""
+    # Only touches fields still at their old defaults, so owner edits survive.
     likes_set = descriptions_extended = cities_added = 0
     for spec in EVENTS:
         event = db.session.scalar(db.select(Event).where(Event.title == spec['title']))

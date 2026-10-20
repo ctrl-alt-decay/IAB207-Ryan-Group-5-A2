@@ -1,14 +1,7 @@
-"""Seed the database with sample data so the schema can be checked end to end.
+"""Usage (from the folder with main.py): python -m epicurean.seed
 
-Run from the projectfile directory (the one containing main.py):
-
-    python -m epicurean.seed
-
-This DROPS and recreates every table, so only run it against the dev database.
-After its own data it adds the 24 sample events from sample_events.py. To add
-just those to an existing database WITHOUT dropping anything, run
-`python -m epicurean.sample_events` instead.
-Uses nothing beyond what is already in requirements.txt.
+DROPS every table. To add the sample events without wiping anything, use
+python -m epicurean.sample_events instead.
 """
 
 from datetime import date, time, datetime
@@ -22,13 +15,12 @@ from .sample_events import add_sample_events
 
 
 def _hash(password):
-    # flask_bcrypt returns bytes; password_hash is a String column
+    # bcrypt returns bytes
     return generate_password_hash(password).decode('utf-8')
 
 
-# Every account created here uses the password 'Password123'.
+# all accounts use 'Password123'
 def seed():
-    # --- Users -------------------------------------------------------
     amity = User(
         first_name='Amity',
         last_name='Group5',
@@ -54,9 +46,8 @@ def seed():
         street_address='1 Test St, Brisbane QLD 4000',
     )
     db.session.add_all([amity, rukayya, ro])
-    db.session.flush()  # assigns user ids for the FKs below
+    db.session.flush()
 
-    # --- Events ------------------------------------------------------
     bbq = Event(
         title='Summer Rooftop BBQ',
         description='A relaxed rooftop BBQ with seasonal produce and live music.',
@@ -64,7 +55,7 @@ def seed():
         city='Brisbane, QLD',
         event_date=date(2026, 12, 5),
         event_time=time(17, 30),
-        image_filename='bbq-seminar_event.jpg',   # an A1 photo in static/img/
+        image_filename='bbq-seminar_event.jpg',
         dietary_preference='Halal',
         seasonal_cultural='Summer BBQ',
         proficiency='Family Friendly',
@@ -79,7 +70,7 @@ def seed():
         city='Adelaide, SA',
         event_date=date(2026, 11, 21),
         event_time=time(10, 0),
-        image_filename='gnocchi_workshop.jpg',    # an A1 photo in static/img/
+        image_filename='gnocchi_workshop.jpg',
         dietary_preference='Vegan',
         seasonal_cultural='Cultural',
         proficiency='Beginner',
@@ -90,7 +81,6 @@ def seed():
     db.session.add_all([bbq, pasta])
     db.session.flush()
 
-    # --- Ticket types ------------------------------------------------
     bbq_adult = TicketType(event=bbq, name='Adult', price=Decimal('45.00'),
                            capacity=60, description='General admission, 18+')
     bbq_child = TicketType(event=bbq, name='Child', price=Decimal('20.00'),
@@ -102,7 +92,6 @@ def seed():
     db.session.add_all([bbq_adult, bbq_child, pasta_std, pasta_conc])
     db.session.flush()
 
-    # --- Booking -----------------------------------------------------
     qty = 2
     booking = Booking(
         order_number='EPI-64118',
@@ -115,7 +104,6 @@ def seed():
     )
     db.session.add(booking)
 
-    # --- Comment -----------------------------------------------------
     comment = Comment(
         event=bbq,
         user=amity,
@@ -128,7 +116,7 @@ def seed():
 
 
 def report(booking):
-    """Walk the relationships so a broken FK or backref shows up immediately."""
+    # touches every relationship so a broken FK/backref fails loudly
     print('--- seed summary ---')
     print('users      :', User.query.count())
     print('events     :', Event.query.count())
@@ -158,8 +146,7 @@ def report(booking):
         email='ro@example.com').first().bookings])
 
 
-# WARNING: drop_all() wipes the REAL database in instance/ - every account,
-# booking and profile-picture link is lost. Don't run it on data you need.
+# WARNING: wipes the real database in instance/.
 def main():
     app = create_app()
     with app.app_context():

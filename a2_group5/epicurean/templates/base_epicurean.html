@@ -1,28 +1,18 @@
-{# Shared layout for every Epicurean page (the A1 navbar, flashed messages and footer).
-   Nav links swap between Login/Sign Up and Name/Logout using current_user.
-   Bootstrap 5: its CSS comes from Bootstrap-Flask's bootstrap.load_css(), and the
-   nav links use its render_nav_item macro (which also marks the current page as
-   active). No Bootstrap JavaScript is loaded - the menu and message close are CSS.
-   Child templates fill: title, description, head_extra (page-only CSS), content,
-   scripts (page-only JS). #}
 {% from 'bootstrap5/nav.html' import render_nav_item %}
 <!DOCTYPE html>
 <html lang="en">
 
-<!-- ==== Head: metadata & stylesheets ============================== -->
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="{% block description %}Epicurean{% endblock %}">
     <meta name="author" content="J. Thomson">
 
-    <!-- Bootstrap 5 CSS (Bootstrap-Flask picks the version and adds the integrity hash) -->
     {{ bootstrap.load_css() }}
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 
     {% block head_extra %}{% endblock %}
 
-    <!-- Site CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style/style.css') }}">
 
     <title>{% block title %}Epicurean{% endblock %}</title>
@@ -31,8 +21,6 @@
 
 <body>
 
-    <!-- ==== Navbar: logo, search, links ============================== -->
-    <!-- Sticky  -->
     <nav class="navbar navbar-expand-md navbar-light epicurean-navbar sticky-top">
         <div class="d-flex flex-wrap flex-md-nowrap flex-grow-1 align-items-center">
             <a href="{{ url_for('main.index') }}" class="navbar-brand epicurean-logo">
@@ -40,12 +28,6 @@
                     class="epicurean-logo-img">
             </a>
 
-            <!-- Split search bar (#17). A plain GET form, so no JavaScript is
-                 needed to submit it - pressing the button or Enter sends the
-                 browser to main.search with q in the URL, which is
-                 how results stay a shareable, bookmarkable link. The current
-                 values are echoed back so a search done from any page (this
-                 bar is on every page) is still showing on the results page. -->
             <form class="event-search-form" method="get" action="{{ url_for('main.search') }}">
                 <div class="event-search-bar">
                     <div class="event-search-segment">
@@ -61,23 +43,18 @@
             </form>
         </div>
 
-        <!-- Below md the nav links fold behind the hamburger. No JavaScript: the
-             hamburger is the label of a hidden checkbox, and ticking it shows the
-             links (.nav-toggle:checked ~ .navbar-collapse in style.css). -->
+        <!-- CSS-only hamburger: hidden checkbox + label -->
         <input type="checkbox" class="nav-toggle" id="navToggle" aria-controls="mainNavbar"
             aria-label="Show the navigation links">
         <label class="navbar-toggler order-0" for="navToggle" title="Menu">
             <span class="navbar-toggler-icon"></span>
         </label>
         <div class="navbar-collapse collapse flex-shrink-1 flex-grow-0 order-last" id="mainNavbar">
-            {# Bootstrap-Flask's render_nav_item writes each <li class="nav-item"><a
-               class="nav-link"> and adds "active" on the page you're on #}
             <ul class="navbar-nav align-items-md-center">
                 {{ render_nav_item('main.create_event', 'Create Event', _use_li=True) }}
                 {{ render_nav_item('main.history', 'History', _use_li=True) }}
                 {% if current_user.is_authenticated %}
                 {{ render_nav_item('auth.account', current_user.first_name, _use_li=True) }}
-                {# logging out is a POST (#27): a form whose button looks like the other links #}
                 <li class="nav-item">
                     <form method="post" action="{{ url_for('auth.logout') }}" class="m-0">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -92,15 +69,10 @@
         </div>
     </nav>
 
-    <!-- ==== Flashed messages ============================== -->
-    {# 'ticket-error' and 'comment-error' messages are left out here: the event
-       page shows them in its Tickets and Comments sections, next to the form
-       they're about (#21, #23) #}
+    {# ticket/comment errors are shown next to their forms on the event page #}
     {% with messages = get_flashed_messages(with_categories=true)|rejectattr('0', 'in', ['ticket-error', 'comment-error'])|list %}
     {% if messages %}
-    {# The x closes a message without JavaScript: it's the label of a hidden
-       checkbox just before the message, and a ticked box hides the message
-       (.alert-dismiss-toggle:checked + .alert in style.css) #}
+    {# CSS-only close: the x is a label for the hidden checkbox #}
     <div class="container-fluid event-section-px pt-3">
         {% for category, message in messages %}
         <input type="checkbox" class="alert-dismiss-toggle" id="flashMessage{{ loop.index }}"
@@ -117,7 +89,6 @@
 
     {% block content %}{% endblock %}
 
-    <!-- ==== Footer ============================== -->
     <footer class="epicurean-footer py-4">
         <ul class="nav justify-content-center border-bottom pb-3 mb-3">
             <li class="nav-item">
@@ -136,16 +107,11 @@
         <p class="text-center text-muted mb-0">&copy; 2026 Epicurean &middot; IAB207 Group 5</p>
     </footer>
 
-    <!-- ==== Scripts ============================== -->
-    <!-- jQuery only: the password toggle and Copy link below, the Create Event date picker and
-         the account page's picture preview need it. Bootstrap's own JavaScript
-         (and Popper) was removed - the menu and message close work with CSS now. -->
+    <!-- jQuery only - Bootstrap JS was dropped, the menu and alerts are CSS-only -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
         integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
         crossorigin="anonymous"></script>
 
-    <!-- Show/hide password: any button with data-password-toggle="<input id>" flips
-         that input between hidden dots and plain text. Used on login and sign up. -->
     <script>
         $(document).on('click', '[data-password-toggle]', function () {
             var $input = $('#' + $(this).data('password-toggle'));
@@ -157,8 +123,6 @@
             $(this).find('i').toggleClass('fa-eye fa-eye-slash');
         });
 
-        // Copy link in an event card's share menu: copies the address in
-        // data-copy-link, and the button says "Copied!" for a moment.
         $(document).on('click', '[data-copy-link]', function () {
             var $button = $(this);
             navigator.clipboard.writeText($button.data('copy-link')).then(function () {

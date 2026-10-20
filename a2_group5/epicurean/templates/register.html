@@ -1,5 +1,3 @@
-{# Sign-up page (route auth.register). The field() macro below renders one
-   labelled input plus its validation errors in the A1 .event-form-row layout. #}
 {% extends "base_epicurean.html" %}
 
 {% block title %}Sign Up - Epicurean{% endblock %}
@@ -36,7 +34,6 @@
 
         <div class="event-form-columns">
 
-            <!-- Left: who you are -->
             <div class="event-form-col">
                 <h2 class="section-heading">Your Details</h2>
                 {{ field(form.first_name, 'registerFirstName', 'First name', True) }}
@@ -44,7 +41,6 @@
                 {{ field(form.email, 'registerEmail', 'you@example.com', True) }}
             </div>
 
-            <!-- Right: account security -->
             <div class="event-form-col">
                 <h2 class="section-heading">Contact &amp; Password</h2>
                 {{ field(form.contact_number, 'registerContact', 'e.g. 0400 123 456', True) }}

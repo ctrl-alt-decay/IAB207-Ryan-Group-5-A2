@@ -1,11 +1,3 @@
-{# History page (route main.history, login required). Two sections:
-     - My Bookings (#22): the logged-in user's orders, newest first - an
-       order's bookings (one per ticket type) share one row (models.Order).
-       View opens the event's page; the order number links to the order page,
-       which only its buyer can open.
-     - My Events: the events the logged-in user created, with Edit and Cancel
-       (#24). Those buttons only appear here for the owner, and main.edit_event
-       and main.cancel_event check ownership again on the server. #}
 {% extends "base_epicurean.html" %}
 {% from "_event_macros.html" import status_badge %}
 
@@ -17,18 +9,13 @@
         <h1 class="page-heading">History</h1>
         <h2 class="section-heading">My Bookings</h2>
 
-        {# Two views of the same orders: the table from 992px (lg) up, and one
-           stacked card per order below that, so phones and tablets never have
-           to scroll a table sideways (it doesn't fit below 992px). Bootstrap's
-           d-* classes show one and hide the other. #}
+        {# table from lg up, cards below - the table doesn't fit narrower #}
 
-        {# "2 × Adult", one line per ticket type in the order #}
         {% macro order_tickets(order) -%}
         {% for line in order.lines %}{{ line.quantity }} &times; {{ line.ticket_type.name }}{% if not loop.last %}<br>{% endif %}{% endfor %}
         {%- endmacro %}
 
         {% if orders %}
-        <!-- ==== Booking table (lg and up) ============================== -->
         <div class="row d-none d-lg-flex">
             <div class="col-12">
                 <div class="table-responsive">
@@ -67,7 +54,6 @@
             </div>
         </div>
 
-        <!-- ==== Booking cards (below lg) ============================== -->
         <ul class="list-unstyled d-lg-none mb-0">
             {% for order in orders %}
             <li class="event-form-card booking-card">
@@ -107,10 +93,8 @@
         </p>
         {% endif %}
 
-        <!-- ==== My Events (#24) ============================== -->
         <h2 class="section-heading mt-5" id="myEvents">My Events</h2>
 
-        {# Edit/Cancel, or nothing once an event is cancelled #}
         {% macro owner_actions(event) %}
         <a href="{{ url_for('main.event_details', event_id=event.id) }}" class="btn btn-primary btn-sm">View</a>
         {% if event.status != 'Cancelled' %}
@@ -124,7 +108,6 @@
         {%- endmacro %}
 
         {% if my_events %}
-        <!-- table from lg, cards below - the same pattern as the bookings above -->
         <div class="row d-none d-lg-flex">
             <div class="col-12">
                 <div class="table-responsive">
@@ -191,5 +174,4 @@
         {% endif %}
     </div>
 
-    <!-- ==== Footer ============================== -->
 {% endblock %}

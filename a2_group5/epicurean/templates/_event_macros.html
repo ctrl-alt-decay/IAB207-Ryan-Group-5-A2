@@ -1,10 +1,6 @@
-{# Shared event pieces. Import with:
-     {% from "_event_macros.html" import event_card, status_badge, section_heading %} #}
 
 
-{# Coloured status pill. The four statuses map onto the badge styles in
-   style.css; small=True is the compact version used on the cards. Pass it
-   event.effective_status (#25), not the stored event.status. #}
+{# pass effective_status, not the stored event.status #}
 {% macro status_badge(status, small=False) -%}
 {%- set styles = {'Open': 'available', 'Sold Out': 'sold-out',
                   'Cancelled': 'cancelled', 'Inactive': 'inactive'} -%}
@@ -12,9 +8,6 @@
 {%- endmacro %}
 
 
-{# A section heading with an "Explore more events" link on the right (the
-   Eventbrite pattern). The heading itself links to the same page. With no
-   url it's a plain heading. #}
 {% macro section_heading(heading, url=None, first=False) %}
 <div class="event-section-px event-section-heading {{ 'mt-0' if first else 'mt-5' }}">
     <h2 class="event-heading mb-0">
@@ -29,14 +22,7 @@
 {% endmacro %}
 
 
-{# One event tile. The title is a real link, and Bootstrap's stretched-link
-   stretches it over the whole card, so the card is clickable without
-   JavaScript. The like/share buttons sit above it (z-index in style.css).
-   The heart is a small form (main.toggle_like), so it needs no JavaScript
-   either: clicking it likes the event - or unlikes it if `liked` - and the
-   page reloads scrolled back to this card (its id, event-<id>) with the new
-   count. with_id=False leaves the id off a second card for the same event
-   (the homepage can repeat one to fill a section), so ids stay unique. #}
+{# with_id=False for repeated cards so HTML ids stay unique #}
 {% macro event_card(event, liked=False, with_id=True) %}
 <div class="card event-card scroll-target h-100"{% if with_id %} id="event-{{ event.id }}"{% endif %}>
     <div class="event-card-img-wrap">
@@ -52,10 +38,7 @@
                     <i class="fa {{ 'fa-heart' if liked else 'fa-heart-o' }}" aria-hidden="true"></i>
                 </button>
             </form>
-            {# Share menu: a <details>, so clicking the icon opens and closes it.
-               Copy link copies the event's full address (script in
-               base_epicurean.html); the social icons only open each site's
-               homepage. #}
+            {# social icons just open each site's homepage #}
             <details class="event-share">
                 <summary class="event-icon-btn event-icon-btn--share" title="Share" aria-label="Share {{ event.title }}">
                     <i class="fa fa-share-alt" aria-hidden="true"></i>
@@ -68,7 +51,7 @@
                     <div class="event-share-socials">
                         <a href="https://www.facebook.com/" target="_blank" rel="noopener" title="Facebook"
                             aria-label="Facebook"><i class="fa fa-facebook" aria-hidden="true"></i></a>
-                        {# Font Awesome 4.7 has no X logo, so it's drawn inline #}
+                        {# FA 4.7 has no X logo #}
                         <a href="https://x.com/" target="_blank" rel="noopener" title="X" aria-label="X">
                             <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="currentColor">
                                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
@@ -90,8 +73,7 @@
             {{ event.event_date.strftime('%a') }} {{ event.event_date.day }} {{ event.event_date.strftime('%b') }}
             at {{ event.event_time.strftime('%I:%M %p').lstrip('0') }}
         </p>
-        {# the city reads better than a full street address on a small card; events
-           made before the City field existed show their venue instead #}
+        {# older events have no city #}
         <p class="event-card-location mb-2">{{ event.city or event.venue }}</p>
         <div class="mt-auto d-flex justify-content-between align-items-end">
             <div>
@@ -108,10 +90,7 @@
 {% endmacro %}
 
 
-{# A grid of event cards: 5 a row from 1400px (event-grid-col in style.css), 4
-   from lg, 3 from md, 2 from sm, 1 on phones.
-   liked_ids: the events the logged-in user has liked (filled hearts).
-   repeat_ids: events already shown higher up the page (no id on their card). #}
+{# repeat_ids: cards already shown higher up the page #}
 {% macro event_grid(events, liked_ids=(), repeat_ids=()) %}
 <div class="row event-section-px py-3">
     {% for event in events %}
