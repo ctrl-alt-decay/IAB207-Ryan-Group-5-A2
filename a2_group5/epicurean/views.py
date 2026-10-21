@@ -136,8 +136,6 @@ def about():
     return render_template('about.html', stats=stats)
 
 
-# TODO: AI-enhanced discovery from the brief goes here (embeddings over
-# title + description?). Plain substring match for now.
 # (query param, label, column, options) - the homepage and search page both render these
 SEARCH_FILTERS = [
     ('dietary', 'Dietary Preference', Event.dietary_preference, EventForm.DIETARY),
@@ -189,7 +187,8 @@ def _date_range(args):
     return start, end, None
 
 
-def _search_query(args):
+# Dates and dropdowns only - shared by keyword and AI search.
+def _filtered_query(args):
     query = db.select(Event).where(_upcoming())
 
     start, end, _problem = _date_range(args)
@@ -201,6 +200,16 @@ def _search_query(args):
         if end:
             query = query.where(Event.event_date <= end)
 
+    for param, column in FILTER_PARAMS.items():
+        value = _filter_value(args, param)
+        if value:
+            query = query.where(column == value)
+
+    return query
+
+
+def _search_query(args):
+    query = _filtered_query(args)
     text = (args.get('q') or '').strip()
     if text:
         pattern = _contains(text)
@@ -209,13 +218,43 @@ def _search_query(args):
             Event.description.ilike(pattern, escape=LIKE_ESCAPE),
             Event.venue.ilike(pattern, escape=LIKE_ESCAPE),
             Event.city.ilike(pattern, escape=LIKE_ESCAPE)))
-
-    for param, column in FILTER_PARAMS.items():
-        value = _filter_value(args, param)
-        if value:
-            query = query.where(column == value)
-
     return query.order_by(*MOST_LIKED_FIRST)
+
+
+# Tuned on the sample events. An event matches if either:
+#  - it scores well outright: >= 0.29 and within 60% of the best match. The
+#    relative part stops bbq -> Rooftop BBQ (0.69) dragging in loosely
+#    food-related events at 0.35.
+#  - it stands well clear of the other events. One-word queries ("asian",
+#    "mexican") score low across the board, but the right event still sits
+#    ~2+ standard deviations above the rest.
+# Nonsense queries ("asdfgh", "football") never reach 0.14, hence the floor.
+AI_MIN_SCORE = 0.29
+AI_MIN_SHARE_OF_BEST = 0.6
+AI_STANDOUT_SDS = 1.7
+AI_STANDOUT_FLOOR = 0.15
+
+
+def _ai_search(args):
+    query_embedding = encoder.encode(args['q'].strip())
+
+    # scored over every upcoming event, not just the filtered ones, so
+    # narrowing the dates can't promote a weak match into the results
+    upcoming = db.session.scalars(db.select(Event).where(_upcoming())).all()
+    if not upcoming:
+        return []
+    scores = {event.id: cosine_similarity(query_embedding,
+                                          np.array(json.loads(event.description_embedding)))
+              for event in upcoming}
+    values = np.array(list(scores.values()))
+    good_cutoff = max(AI_MIN_SCORE, AI_MIN_SHARE_OF_BEST * values.max())
+    standout_cutoff = max(AI_STANDOUT_FLOOR, values.mean() + AI_STANDOUT_SDS * values.std())
+
+    def matches(event):
+        return scores[event.id] >= min(good_cutoff, standout_cutoff)
+
+    events = [event for event in db.session.scalars(_filtered_query(args)) if matches(event)]
+    return sorted(events, key=lambda event: scores[event.id], reverse=True)
 
 
 def _has_search_criteria(args):
@@ -227,50 +266,11 @@ def _has_search_criteria(args):
 
 @main_bp.route('/search')
 def search():
-    if request.args.get('q') and request.args['q'] != "":
-        if 'use_ai' in request.args:
-            print('Semantic search selected.')
-            query_embedding = encoder.encode(request.args['q'])
-            # like every other listing, skip cancelled and past events
-            events = db.session.scalars(db.select(Event).where(_upcoming())).all()
-            results = []
-            for event in events:
-                event_embedding = np.array(json.loads(event.description_embedding))
-                score = cosine_similarity(query_embedding, event_embedding)
-                results.append([event, score])
-
-            results.sort(key = lambda x : x[1], reverse = True)
-
-            events =  [x[0] for x in results]
-
-            start, end, date_problem = _date_range(request.args)
-
-            return render_template(
-                'search.html', events=events, liked_ids=_liked_event_ids(),
-                has_criteria=_has_search_criteria(request.args),
-                # the dates to echo back into the two date boxes (only readable ones)
-                date_from=start.isoformat() if start else '',
-                date_to=end.isoformat() if end else '',
-                date_problem=date_problem,
-                filters_active=any(_filter_value(request.args, param) for param in FILTER_PARAMS),
-                dietary_options=EventForm.DIETARY, seasonal_options=EventForm.SEASONAL,
-                proficiency_options=EventForm.PROFICIENCY)
-
-        else:
-            events = db.paginate(_search_query(request.args), per_page=EVENTS_PER_PAGE, error_out=True)
-            start, end, date_problem = _date_range(request.args)
-            return render_template(
-                'search.html', events=events, liked_ids=_liked_event_ids(),
-                has_criteria=_has_search_criteria(request.args),
-                # the dates to echo back into the two date boxes (only readable ones)
-                date_from=start.isoformat() if start else '',
-                date_to=end.isoformat() if end else '',
-                date_problem=date_problem,
-                filters_active=any(_filter_value(request.args, param) for param in FILTER_PARAMS),
-                dietary_options=EventForm.DIETARY, seasonal_options=EventForm.SEASONAL,
-                proficiency_options=EventForm.PROFICIENCY)
-    # no keywords (homepage filters, dates only, Browse Events): normal search
-    events = db.paginate(_search_query(request.args), per_page=EVENTS_PER_PAGE, error_out=True)
+    # AI needs keywords; without them (homepage filters, dates only, Browse Events) it's a normal search
+    if (request.args.get('q') or '').strip() and 'use_ai' in request.args:
+        events = _ai_search(request.args)
+    else:
+        events = db.paginate(_search_query(request.args), per_page=EVENTS_PER_PAGE, error_out=True)
     start, end, date_problem = _date_range(request.args)
     return render_template(
         'search.html', events=events, liked_ids=_liked_event_ids(),
