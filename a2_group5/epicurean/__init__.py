@@ -82,8 +82,9 @@ def create_app():
     app = Flask(__name__)
     app.secret_key = _secret_key(app)
     CSRFProtect(app)
-    # Relative path resolves to instance/sitedata.sqlite. Must be set before init_app.
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///sitedata.sqlite'
+    # Kept in the package folder (not instance/) so the seeded database ships with
+    # the submission. Must be set before init_app.
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(app.root_path, 'sitedata.sqlite')
     db.init_app(app)
 
     Bootstrap5(app)
