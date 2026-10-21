@@ -7,7 +7,7 @@ python -m epicurean.sample_events instead.
 from datetime import date, time, datetime
 from decimal import Decimal
 
-from . import create_app, db
+from . import create_app, db, add_missing_embeddings
 from .models import Event, TicketType, Booking, Comment
 from .sample_events import add_sample_events, get_organisers
 
@@ -80,6 +80,7 @@ def main():
         db.create_all()
         seed()
         print('Sample events added:', add_sample_events())
+        add_missing_embeddings()
     print('Done. Database seeded.')
 
 

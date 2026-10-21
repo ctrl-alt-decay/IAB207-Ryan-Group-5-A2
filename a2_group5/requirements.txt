@@ -8,3 +8,6 @@ flask-wtf
 flask-bcrypt
 sentence-transformers
 numpy
+# greenlet 3.2.5 has no pre-built wheel for Python 3.9 on Windows, so pip would
+# try to compile it (needs C++ build tools). Pin the last version that has one.
+greenlet<3.2.5; python_version < "3.10"
