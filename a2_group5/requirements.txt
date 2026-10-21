@@ -8,6 +8,8 @@ flask-wtf
 flask-bcrypt
 sentence-transformers
 numpy
-# greenlet 3.2.5 has no pre-built wheel for Python 3.9 on Windows, so pip would
-# try to compile it (needs C++ build tools). Pin the last version that has one.
+# Python 3.9 only: greenlet 3.2.5 has no pre-built wheel there, so pip would try
+# to compile it (needs C++ build tools). huggingface-hub is pinned to what
+# transformers requires, for the older pip that ships with Python 3.9.
 greenlet<3.2.5; python_version < "3.10"
+huggingface-hub<1.0; python_version < "3.10"
