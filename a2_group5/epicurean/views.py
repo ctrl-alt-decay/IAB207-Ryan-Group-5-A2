@@ -12,9 +12,13 @@ from .forms import (OrderForm, EventForm, EditEventForm, CancelEventForm, LikeFo
                     CommentForm)
 from .uploads import EVENT_IMAGES, save_upload, delete_upload
 
-from . import encoder
+from . import encoder, embed
 import json
-import numpy as np
+try:
+    import numpy as np
+except ImportError:   # only AI search needs it
+    np = None
+
 main_bp = Blueprint('main', __name__)
 
 # Grid is 5 per row >=1400px, 4 below, 2 on tablet - keep sizes multiples of 5 and 2.
@@ -145,6 +149,11 @@ SEARCH_FILTERS = [
 FILTER_PARAMS = {param: column for param, _, column, _ in SEARCH_FILTERS}
 
 
+@main_bp.app_template_global('ai_available')
+def ai_available():
+    return encoder is not None
+
+
 @main_bp.app_template_global('search_filters')
 def search_filters():
     return [(param, label, options) for param, label, _, options in SEARCH_FILTERS]
@@ -267,7 +276,7 @@ def _has_search_criteria(args):
 @main_bp.route('/search')
 def search():
     # AI needs keywords; without them (homepage filters, dates only, Browse Events) it's a normal search
-    if (request.args.get('q') or '').strip() and 'use_ai' in request.args:
+    if (request.args.get('q') or '').strip() and 'use_ai' in request.args and ai_available():
         events = _ai_search(request.args)
     else:
         events = db.paginate(_search_query(request.args), per_page=EVENTS_PER_PAGE, error_out=True)
@@ -325,12 +334,8 @@ def create_event():
         return render_template('listevent.html', form=form,
                                ack_preview=_acknowledgement_preview(form))
     if form.validate_on_submit():
-        embedding = encoder.encode(form.description.data)
-        embedding_text = json.dumps(embedding.tolist())
-
         event = Event(owner_id=current_user.id,
-                      image_filename=save_upload(form.image.data, EVENT_IMAGES),
-                      description_embedding=embedding_text)
+                      image_filename=save_upload(form.image.data, EVENT_IMAGES))
         _apply_event_details(event, form)
         _apply_ticket_rows(event, form)
         db.session.add(event)
@@ -436,7 +441,11 @@ def cancel_event(event_id):
 def _apply_event_details(event, form):
     ack_type = form.acknowledgement_type.data
     event.title = form.title.data.strip()
-    event.description = form.description.data.strip()
+    description = form.description.data.strip()
+    # re-embed on edit too, or AI search keeps matching the old description
+    if description != event.description or event.description_embedding is None:
+        event.description_embedding = embed(description)
+    event.description = description
     event.venue = form.venue.data.strip()
     event.city = form.city.data
     event.event_date = form.event_date.data

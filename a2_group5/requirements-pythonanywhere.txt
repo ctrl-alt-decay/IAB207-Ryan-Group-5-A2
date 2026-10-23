@@ -1,0 +1,11 @@
+# For PythonAnywhere free accounts: requirements.txt without the AI search
+# packages (torch alone is bigger than the 512 MB disk quota). The site runs
+# normally with AI search switched off.
+flask
+werkzeug
+bootstrap-flask
+email-validator
+flask-login
+flask-sqlalchemy
+flask-wtf
+flask-bcrypt

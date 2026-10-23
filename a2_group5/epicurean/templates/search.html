@@ -45,12 +45,14 @@
                     <div class="d-flex align-items-center gap-2">
                         <input type="text" class="form-control" id="searchQ" name="q"
                             value="{{ request.args.get('q', '') }}" placeholder="Search events">
+                        {% if ai_available() %}
                         <input class="ai-toggle-input" type="checkbox" id="refineUseAI" name="use_ai"
                             {{ 'checked' if 'use_ai' in request.args or not request.args.get('q') }}>
                         <label class="ai-toggle ai-toggle--boxed" for="refineUseAI"
                             title="AI search finds events by meaning, not just exact words">
                             <i class="fa fa-magic" aria-hidden="true"></i> AI
                         </label>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="col-12 col-md-6">
