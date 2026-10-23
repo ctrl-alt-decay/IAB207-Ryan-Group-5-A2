@@ -5,20 +5,37 @@ from flask import Flask, render_template, flash, redirect, request, url_for
 from flask_bootstrap import Bootstrap5
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
-from sentence_transformers import SentenceTransformer
 from flask_wtf.csrf import CSRFProtect, CSRFError
 
 db = SQLAlchemy()
 
+# AI search is optional so the site still runs where sentence-transformers can't
+# be installed (PythonAnywhere's free disk quota is too small for torch). Without
+# it, encoder is None and search falls back to keywords.
 try:
-    encoder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", local_files_only=True )
-    print("Loaded local AI model")
-except Exception:
-    print("Local AI model not found. Downloading...")
-    encoder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-    print("Downloaded and loaded AI model")
+    from sentence_transformers import SentenceTransformer
+except ImportError:
+    SentenceTransformer = None
 
-print(f"\nencoder string representation:\n{encoder}")
+if SentenceTransformer is None:
+    encoder = None
+    print(' * AI search is off: sentence-transformers is not installed')
+else:
+    try:
+        encoder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", local_files_only=True)
+        print("Loaded local AI model")
+    except Exception:
+        print("Local AI model not found. Downloading...")
+        encoder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+        print("Downloaded and loaded AI model")
+
+
+def embed(text):
+    # stored as JSON text in Event.description_embedding; None when AI search is off
+    if encoder is None:
+        return None
+    import json
+    return json.dumps(encoder.encode(text).tolist())
 
 def add_missing_columns():
     # create_all() won't add new columns to existing tables, so older databases
@@ -46,6 +63,8 @@ def add_missing_embeddings():
     older database) have no description_embedding, which AI search needs for
     every event. This works one out for each, the same way create_event does
     for a new event. Only fills in missing ones - never changes existing ones."""
+    if encoder is None:
+        return
     import json
     from .models import Event
     events = db.session.scalars(
